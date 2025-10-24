@@ -28,8 +28,8 @@ const NotFound = () => {
           <a href="/" className="text-primary underline hover:text-primary/80">
             Return to Home
           </a>
-          <a href="/news" className="text-primary underline hover:text-primary/80">
-            Visit Job News
+          <a href="/insights" className="text-primary underline hover:text-primary/80">
+            View Insights
           </a>
         </div>
       </div>

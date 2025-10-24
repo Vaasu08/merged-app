@@ -39,19 +39,13 @@ Horizon is an AI-powered career discovery platform that helps users discover the
 - Skill demand and growth rate analysis
 - Interactive charts showing industry trends
 
-### 4. Job News Aggregator
-- RSS feed integration from 40+ job sources
-- Real-time job posting updates
-- Advanced filtering and search capabilities
-- Categories include: Remote, Tech, General, Startup, Developer, Community, News, International, Freelance
-
-### 5. CV/Resume Analysis
+### 4. CV/Resume Analysis
 - File upload support for TXT, PDF, CSV, JSON formats
 - Intelligent skill extraction from documents
 - Pattern matching and fallback algorithms
 - Confidence scoring for parsed results
 
-### 6. Career Planning Tools
+### 5. Career Planning Tools
 - Step-by-step career roadmaps
 - Resource recommendations (courses, tutorials, certifications)
 - Progress tracking with completion status
@@ -80,16 +74,12 @@ Horizon is an AI-powered career discovery platform that helps users discover the
 - **Learning Resources**: Provides courses, tutorials, and certifications for career development
 - **Progress Tracking**: Users can track their progress through career development steps
 - **Resume Building**: Built-in resume builder to help users create professional resumes
-- **LinkedIn Analysis**: LinkedIn profile analysis tool for career optimization
 - **Industry Insights**: Real-time job market trends and salary information
-- **Job News**: Aggregated job postings from 40+ sources
 
 ## Key Pages
 - Home (Index): Landing page with hero section and skill input
 - Profile: User profile management and skills overview
 - Insights: Industry trends and salary data dashboard
-- Job News: Real-time job posting aggregator
-- LinkedIn Analyzer: LinkedIn profile analysis tool
 - Resume Builder: Resume creation and export tool
 - Login/Signup: Authentication pages
 
@@ -112,8 +102,6 @@ Our mission is to help confused students find clarity, confidence, and direction
 - "How do I track my progress?" - Answer: Complete steps in your career roadmap and mark them as done
 - "What skills should I learn?" - Answer: Use our skill gap analysis to see which skills you need for specific careers
 - "How do I build a resume?" - Answer: Use our Resume Builder tool in your profile
-- "What job opportunities are available?" - Answer: Check our Job News section for real-time job postings
-- "How do I analyze my LinkedIn?" - Answer: Use our LinkedIn Analyzer tool
 - "What are the salary ranges?" - Answer: Check our Insights page for salary data by career and experience level
 `;
 

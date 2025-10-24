@@ -9,8 +9,6 @@ import { Chatbot } from "@/components/Chatbot";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import JobNews from "./pages/JobNews";
-import LinkedInAnalyzer from "./pages/LinkedInAnalyzer";
 import Insights from "./pages/Insights";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -40,8 +38,6 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/news" element={<JobNews />} />
-                  <Route path="/linkedin" element={<LinkedInAnalyzer />} />
                   <Route path="/insights" element={<Insights />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/login" element={<Login />} />

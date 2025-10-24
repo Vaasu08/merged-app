@@ -547,9 +547,9 @@ const Insights = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Button asChild variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-primary font-bold px-6 py-4 rounded-xl backdrop-blur-sm transition-all duration-300 shadow-lg [text-shadow:_0_1px_2px_rgb(0_0_0_/_80%)]">
-                    <Link to="/news" className="flex items-center gap-2">
+                    <Link to="/" className="flex items-center gap-2">
                       <Globe className="h-5 w-5" />
-                      Explore Job News
+                      Get Career Recommendations
                     </Link>
                   </Button>
                 </motion.div>

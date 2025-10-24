@@ -133,10 +133,6 @@ const Profile = () => {
             <Link to="/insights" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Insights
             </Link>
-            <span className="text-muted-foreground">•</span>
-            <Link to="/news" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Job News
-            </Link>
           </div>
         </div>
 

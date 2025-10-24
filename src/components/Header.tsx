@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
 import { ModeToggle } from '@/components/mode-toggle';
-import { NotificationBell } from '@/components/NotificationBell';
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -25,22 +24,10 @@ export const Header = ({ showBackButton = true, className = '' }: HeaderProps) =
               </Link>
             )}
             <Link 
-              to="/news" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
-            >
-              Job News
-            </Link>
-            <Link 
               to="/insights" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
             >
               Insights
-            </Link>
-            <Link 
-              to="/linkedin" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
-            >
-              LinkedIn Analyzer
             </Link>
             {user && (
               <Link 
@@ -53,7 +40,6 @@ export const Header = ({ showBackButton = true, className = '' }: HeaderProps) =
           </nav>
           
           <div className="flex items-center gap-2">
-            <NotificationBell />
             <ModeToggle />
           </div>
         </div>

@@ -286,21 +286,9 @@ const Index = () => {
             {/* Mobile Menu - Show only essential links */}
             <div className="flex items-center gap-1 sm:gap-4 overflow-x-auto scrollbar-hide">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/news" className="text-white/80 hover:text-white text-xs sm:text-sm font-medium transition-colors duration-300 whitespace-nowrap">
-                  <span className="hidden sm:inline">Job News</span>
-                  <span className="sm:hidden">News</span>
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link to="/insights" className="text-white/80 hover:text-white text-xs sm:text-sm font-medium transition-colors duration-300 whitespace-nowrap">
                   <span className="hidden sm:inline">Insights</span>
                   <span className="sm:hidden">Insights</span>
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/linkedin" className="text-white/80 hover:text-white text-xs sm:text-sm font-medium transition-colors duration-300 whitespace-nowrap">
-                  <span className="hidden sm:inline">LinkedIn Analyzer</span>
-                  <span className="sm:hidden">LinkedIn</span>
                 </Link>
               </motion.div>
             </div>
@@ -753,11 +741,6 @@ We aim to bridge the gap between students and the evolving job market by offerin
                 ← Back to Home
               </Button>
               <div className="flex items-center gap-2 sm:gap-4 text-xs overflow-x-auto">
-                <Link to="/news" className="text-muted-foreground hover:text-foreground whitespace-nowrap">
-                  <span className="hidden sm:inline">Job News</span>
-                  <span className="sm:hidden">News</span>
-                </Link>
-                <span className="text-muted-foreground hidden sm:inline">•</span>
                 <Link to="/insights" className="text-muted-foreground hover:text-foreground whitespace-nowrap">
                   Insights
                 </Link>
@@ -807,10 +790,6 @@ We aim to bridge the gap between students and the evolving job market by offerin
               </Button>
             </div>
             <div className="flex items-center gap-1 sm:gap-4 text-xs overflow-x-auto">
-              <Link to="/news" className="text-muted-foreground hover:text-foreground whitespace-nowrap">
-                <span className="hidden sm:inline">Job News</span>
-                <span className="sm:hidden">News</span>
-              </Link>
               <Link to="/insights" className="text-muted-foreground hover:text-foreground whitespace-nowrap">
                 Insights
               </Link>

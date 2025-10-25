@@ -23,6 +23,7 @@ import InterviewWelcome from "./pages/InterviewWelcome";
 import InterviewPrep from "./pages/InterviewPrep";
 import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
+import Community from "./pages/Community";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/insights" element={<Insights />} />
+                  <Route path="/community" element={<Community />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/terms" element={<Terms />} />

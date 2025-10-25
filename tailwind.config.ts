@@ -20,6 +20,11 @@ export default {
       'xl': '1280px',
       '2xl': '1536px',
     },
+    fontFamily: {
+      'inter': ['Inter', 'sans-serif'],
+      'poppins': ['Poppins', 'sans-serif'],
+      'sora': ['Sora', 'sans-serif'],
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",

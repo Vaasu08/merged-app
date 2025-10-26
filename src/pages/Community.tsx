@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { ModeToggle } from '@/components/mode-toggle';
+import { HorizonLogo } from '@/components/HorizonLogo';
 import { 
   Heart, MessageCircle, Share2, TrendingUp, Users, 
   Calendar, Filter, Search, ArrowLeft, Plus
@@ -147,14 +148,11 @@ const Community = () => {
         <div className="flex items-center justify-between w-full px-6 py-4">
           {/* Logo */}
           <motion.div 
-            className="flex items-center gap-2"
+            className="flex items-center"
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate('/')}
           >
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-            <span className="text-white font-bold text-lg font-inter">HORIZON</span>
+            <HorizonLogo size="md" variant="light" />
           </motion.div>
           
           {/* Navigation Links */}

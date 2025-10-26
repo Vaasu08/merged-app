@@ -8,6 +8,7 @@ import { getCareerRecommendations } from '@/data/careerData';
 import { CareerPath } from '@/types/career';
 import { useAuth } from '@/components/AuthProvider';
 import { getUserSkills, saveUserSkills } from '@/lib/profile';
+import { HorizonLogo } from '@/components/HorizonLogo';
 import { 
   Brain, Target, TrendingUp, Users, ArrowRight, Sparkles, 
   Zap, Star, Award, Globe, Code, BarChart3, Rocket, 
@@ -34,6 +35,14 @@ const Index = () => {
   const skillsLoadedRef = useRef(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Scroll to features section
+  const scrollToFeatures = () => {
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Load user's saved skills when they log in
   useEffect(() => {
@@ -257,23 +266,20 @@ const Index = () => {
           <div className="flex items-center justify-between w-full px-6 py-6">
             {/* Logo */}
             <motion.div 
-              className="flex items-center gap-2"
+              className="flex items-center"
               whileHover={{ scale: 1.05 }}
             >
-              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-full"></div>
-              </div>
-              <span className="text-white font-bold text-lg font-inter">HORIZON</span>
-              </motion.div>
+              <HorizonLogo size="md" variant="light" />
+            </motion.div>
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 HOME
               </Link>
-              <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
+              <button onClick={scrollToFeatures} className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 FEATURES
-              </Link>
+              </button>
               <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 DASHBOARD
               </Link>
@@ -335,9 +341,9 @@ const Index = () => {
                 <Link to='/' className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                   HOME
                 </Link>
-                <Link to='/' className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
+                <button onClick={() => { scrollToFeatures(); setMobileMenuOpen(false); }} className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                   FEATURES
-                </Link>
+                </button>
                 <Link to='/' className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                   DASHBOARD
                 </Link>
@@ -800,7 +806,7 @@ const Index = () => {
         <HowItWorks />
 
         {/* Dynamic Features Showcase */}
-        <div className="relative bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 py-16 sm:py-20 lg:py-24">
+        <div id="features" className="relative bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 py-16 sm:py-20 lg:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ y: 50, opacity: 0 }}
@@ -810,7 +816,7 @@ const Index = () => {
               className="text-center mb-12 sm:mb-16"
             >
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6">
-                Top Highlights
+                Features
               </h2>
               <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
                 Explore our comprehensive suite of AI-powered tools designed to accelerate your career journey
@@ -826,7 +832,14 @@ const Index = () => {
                   icon: Brain,
                   color: "from-blue-500 to-cyan-500",
                   features: ["Skill Analysis", "Job Matching", "Career Scoring", "Market Trends"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => {
+                    if (user) {
+                      navigate('/profile');
+                    } else {
+                      setCurrentStep('skills');
+                    }
+                  }
                 },
                 {
                   title: "Interview Simulator",
@@ -834,7 +847,8 @@ const Index = () => {
                   icon: Users,
                   color: "from-purple-500 to-pink-500",
                   features: ["AI Questions", "Real-time Feedback", "Performance Analytics", "Mock Interviews"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => navigate('/interview')
                 },
                 {
                   title: "Skill Gap Analysis",
@@ -842,7 +856,14 @@ const Index = () => {
                   icon: Target,
                   color: "from-green-500 to-emerald-500",
                   features: ["Gap Detection", "Learning Paths", "Progress Tracking", "Certifications"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => {
+                    if (user) {
+                      navigate('/profile');
+                    } else {
+                      setCurrentStep('skills');
+                    }
+                  }
                 },
                 {
                   title: "Resume Builder",
@@ -850,7 +871,14 @@ const Index = () => {
                   icon: Code,
                   color: "from-orange-500 to-red-500",
                   features: ["ATS Optimization", "Template Library", "AI Suggestions", "Export Options"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => {
+                    if (user) {
+                      navigate('/resume');
+                    } else {
+                      navigate('/login');
+                    }
+                  }
                 },
                 {
                   title: "Career Roadmap",
@@ -858,7 +886,14 @@ const Index = () => {
                   icon: TrendingUp,
                   color: "from-indigo-500 to-purple-500",
                   features: ["5-Year Planning", "Milestone Tracking", "Goal Setting", "Progress Monitoring"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => {
+                    if (user) {
+                      navigate('/roadmap');
+                    } else {
+                      navigate('/login');
+                    }
+                  }
                 },
                 {
                   title: "Community Network",
@@ -866,7 +901,8 @@ const Index = () => {
                   icon: Globe,
                   color: "from-pink-500 to-rose-500",
                   features: ["Professional Network", "Mentorship", "Industry Events", "Knowledge Sharing"],
-                  status: "Live"
+                  status: "Live",
+                  onClick: () => navigate('/community')
                 }
               ].map((feature, index) => (
                 <motion.div
@@ -877,6 +913,7 @@ const Index = () => {
                   viewport={{ once: true }}
                   whileHover={{ y: -5, scale: 1.02 }}
                   className="group cursor-pointer"
+                  onClick={feature.onClick}
                 >
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:shadow-lg hover:shadow-white/10 h-full">
                     {/* Header */}
@@ -927,7 +964,7 @@ const Index = () => {
                         className="pt-4 border-t border-white/10"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-white/60 text-xs">Try it now</span>
+                          <span className="text-white/60 text-xs group-hover:text-white/80 transition-colors">Try it now</span>
                           <motion.div
                             whileHover={{ x: 5 }}
                             className="text-white/80 hover:text-white transition-colors"

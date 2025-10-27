@@ -4,13 +4,13 @@ import ATSScoreDisplay from '@/components/ATSScoreDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Brain, Sparkles, AlertCircle } from 'lucide-react';
 
 
 export default function ATSResults() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { scores, parsedData } = location.state || {};
+  const { scores, parsedData, usedAI } = location.state || {};
 
 
   useEffect(() => {
@@ -27,9 +27,25 @@ export default function ATSResults() {
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Assessment Results</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Assessment Results</h1>
+            {usedAI ? (
+              <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                <Brain className="w-3 h-3 mr-1" />
+                AI-Powered
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Standard Analysis
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
-            Here's how your resume performs against ATS systems
+            {usedAI 
+              ? "Advanced AI analysis with semantic understanding and personalized feedback"
+              : "Standard rule-based analysis of your resume's ATS compatibility"
+            }
           </p>
         </div>
         <div className="flex gap-3">

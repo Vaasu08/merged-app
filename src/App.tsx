@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ChatbotProvider } from "@/components/ChatbotProvider";
 import { Chatbot } from "@/components/Chatbot";
 import { InterviewProvider } from "@/contexts/InterviewContext";
-import { RoadmapProvider } from "@/contexts/RoadmapContext"; // NEW
+import { RoadmapProvider } from "@/contexts/RoadmapContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Insights from "./pages/Insights";
@@ -25,8 +25,12 @@ import InterviewPrep from "./pages/InterviewPrep";
 import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
 import Community from "./pages/Community";
-import RoadmapOnboarding from "@/components/RoadmapOnboarding"; // NEW
-import RoadmapView from "@/pages/RoadmapView"; // NEW
+import RoadmapOnboarding from "@/components/RoadmapOnboarding";
+import RoadmapView from "@/pages/RoadmapView";
+
+// --- ATS Resume Assessment Imports ---
+import ATSAssessment from "@/pages/ATSAssessment";
+import ATSResults from "@/pages/ATSResults";
 
 const queryClient = new QueryClient();
 
@@ -39,10 +43,10 @@ const App = () => (
         <AuthProvider>
           <ChatbotProvider>
             <InterviewProvider>
-              <RoadmapProvider> {/* NEW: Wrap everything with RoadmapProvider */}
+              <RoadmapProvider>
                 <BrowserRouter>
                   <Routes>
-                    {/* Existing Routes */}
+                    {/* Home and Info */}
                     <Route path="/" element={<Index />} />
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/community" element={<Community />} />
@@ -50,45 +54,40 @@ const App = () => (
                     <Route path="/login" element={<Login />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
-                    
-                    {/* Protected Routes */}
-                    <Route
-                      path="/profile"
-                      element={
-                        <AuthGuard>
-                          <Profile />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/resume"
-                      element={
-                        <AuthGuard>
-                          <ResumeBuilder />
-                        </AuthGuard>
-                      }
-                    />
-                    
-                    {/* Interview Simulator Routes */}
+
+                    {/* ATS Resume Assessment */}
+                    <Route path="/ats-assessment" element={<ATSAssessment />} />
+                    <Route path="/ats-results" element={<ATSResults />} />
+
+                    {/* Protected Profile/Resume */}
+                    <Route path="/profile" element={
+                      <AuthGuard>
+                        <Profile />
+                      </AuthGuard>
+                    } />
+                    <Route path="/resume" element={
+                      <AuthGuard>
+                        <ResumeBuilder />
+                      </AuthGuard>
+                    } />
+
+                    {/* Interview Simulator */}
                     <Route path="/interview" element={<InterviewHome />} />
                     <Route path="/interview-home" element={<InterviewHome />} />
                     <Route path="/interview-welcome" element={<InterviewWelcome />} />
                     <Route path="/interview-prep" element={<InterviewPrep />} />
                     <Route path="/interview-session" element={<InterviewSession />} />
                     <Route path="/interview-feedback" element={<InterviewFeedback />} />
-                    
-                    {/* NEW: Roadmap Builder Routes */}
+
+                    {/* Learning Roadmap Builder */}
                     <Route path="/roadmap" element={<RoadmapOnboarding />} />
-                    <Route 
-                      path="/roadmap/view" 
-                      element={
-                        <AuthGuard>
-                          <RoadmapView />
-                        </AuthGuard>
-                      } 
-                    />
-                    
-                    {/* Catch-all 404 route - MUST BE LAST */}
+                    <Route path="/roadmap/view" element={
+                      <AuthGuard>
+                        <RoadmapView />
+                      </AuthGuard>
+                    } />
+
+                    {/* 404 Fallback */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Chatbot />

@@ -37,13 +37,29 @@ export const Header = ({ showBackButton = true, className = '' }: HeaderProps) =
             >
               Insights
             </Link>
+            {/* === Add ATS Assessment Nav Link === */}
+            <Link 
+              to="/ats-assessment"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+            >
+              ATS Assessment
+            </Link>
+            {/* === Add Resume Builder Link (optional, usually for authenticated users) === */}
             {user && (
-              <Link 
-                to="/profile" 
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
-              >
-                Profile
-              </Link>
+              <>
+                <Link 
+                  to="/resume"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+                >
+                  Resume Builder
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+                >
+                  Profile
+                </Link>
+              </>
             )}
             {/* Roadmap Builder Link */}
             <Link to="/roadmap">

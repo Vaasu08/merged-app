@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,8 +55,18 @@ interface ResumeData {
   }>;
 }
 
-
-
+interface ATSDetails {
+  overall: number;
+  keywordMatch: number;
+  skillsMatch: number;
+  experience: number;
+  education: number;
+  formatting: number;
+  suggestions: Array<{
+    priority: 'high' | 'medium' | 'low';
+    message: string;
+  }>;
+}
 
 const ResumeBuilder = () => {
   const { user } = useAuth();
@@ -68,30 +78,10 @@ const ResumeBuilder = () => {
  
   // ATS Score state
   const [atsScore, setATSScore] = useState<number | null>(null);
-  const [atsDetails, setATSDetails] = useState<any>(null);
+  const [atsDetails, setATSDetails] = useState<ATSDetails | null>(null);
   const [showATSDetails, setShowATSDetails] = useState(false);
 
-
-
-
-  useEffect(() => {
-    loadResumeData();
-  }, [user?.id]);
-
-
-
-
-  // Calculate ATS score whenever resume data changes
-  useEffect(() => {
-    if (resumeData) {
-      calculateATSScore();
-    }
-  }, [resumeData]);
-
-
-
-
-  const loadResumeData = async () => {
+  const loadResumeData = useCallback(async () => {
     if (!user?.id) return;
 
 
@@ -167,13 +157,9 @@ const ResumeBuilder = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, user?.email, user?.user_metadata?.full_name]);
 
-
-
-
-  // Calculate ATS Score
-  const calculateATSScore = () => {
+  const calculateATSScore = useCallback(() => {
     if (!resumeData) return;
 
 
@@ -218,10 +204,18 @@ const ResumeBuilder = () => {
     } catch (error) {
       console.error('ATS scoring error:', error);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeData]);
 
+  useEffect(() => {
+    loadResumeData();
+  }, [loadResumeData]);
 
-
+  useEffect(() => {
+    if (resumeData) {
+      calculateATSScore();
+    }
+  }, [resumeData, calculateATSScore]);
 
   // Helper to generate resume text
   const generateResumeText = (): string => {
@@ -863,7 +857,7 @@ const ResumeBuilder = () => {
                 {showATSDetails && atsDetails && atsDetails.suggestions && (
                   <div className="mt-4 space-y-3 pt-4 border-t">
                     <h4 className="font-semibold text-sm">Improvement Suggestions:</h4>
-                    {atsDetails.suggestions.map((suggestion: any, idx: number) => (
+                    {atsDetails.suggestions.map((suggestion, idx: number) => (
                       <div
                         key={idx}
                         className={`p-3 rounded-lg text-sm ${
@@ -876,7 +870,7 @@ const ResumeBuilder = () => {
                       >
                         <div className="flex items-start gap-2">
                           <Badge variant="outline" className="mt-0.5">
-                            {suggestion.type}
+                            {suggestion.priority}
                           </Badge>
                           <p className="flex-1">{suggestion.message}</p>
                         </div>

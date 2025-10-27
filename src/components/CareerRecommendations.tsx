@@ -477,6 +477,8 @@ export const CareerRecommendations = ({
                           className={`mt-1 rounded-full transition-colors duration-200 ${
                             isCompleted ? 'text-success' : 'text-muted-foreground hover:text-primary'
                           }`}
+                          aria-label={isCompleted ? `Mark "${step.title}" as incomplete` : `Mark "${step.title}" as complete`}
+                          title={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
                         >
                           <CheckCircle2 className={`h-5 w-5 ${isCompleted ? 'fill-current' : ''}`} />
                         </button>
@@ -530,7 +532,13 @@ export const CareerRecommendations = ({
                         </div>
                       </div>
                       <Button size="sm" variant="ghost" asChild>
-                        <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                        <a 
+                          href={resource.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          aria-label={`Open ${resource.title} in new tab`}
+                          title={`Open ${resource.title}`}
+                        >
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </Button>

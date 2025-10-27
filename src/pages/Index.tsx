@@ -4,11 +4,14 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ModeToggle } from '@/components/mode-toggle';
 import { SkillInput } from '@/components/SkillInput';
 import { CareerRecommendations } from '@/components/CareerRecommendations';
+import { CareerAssessmentModal } from '@/components/CareerAssessmentModal';
+import { CareerRecommendationResults } from '@/components/CareerRecommendationResults';
 import { getCareerRecommendations } from '@/data/careerData';
 import { CareerPath } from '@/types/career';
 import { useAuth } from '@/components/AuthProvider';
 import { getUserSkills, saveUserSkills } from '@/lib/profile';
 import { HorizonLogo } from '@/components/HorizonLogo';
+import { analyzeAssessmentAnswersWithGemini, JobRecommendation } from '@/lib/geminiCareerRecommendation';
 import { 
   Brain, Target, TrendingUp, Users, ArrowRight, Sparkles, 
   Zap, Star, Award, Globe, Code, BarChart3, Rocket, 
@@ -35,6 +38,9 @@ const Index = () => {
   const skillsLoadedRef = useRef(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAssessmentOpen, setIsAssessmentOpen] = useState(false);
+  const [jobRecommendations, setJobRecommendations] = useState<JobRecommendation[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   // Scroll to features section
   const scrollToFeatures = () => {
@@ -103,7 +109,6 @@ const Index = () => {
         }
         // If no skills, stay on welcome screen
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('Failed to load user skills', e);
       } finally {
         skillsLoadedRef.current = true;
@@ -116,6 +121,7 @@ const Index = () => {
       skillsLoadedRef.current = false;
       setInitialLoadComplete(false);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, location.state]);
 
   // Enhanced skill persistence - backup sync in case SkillInput component fails
@@ -129,7 +135,6 @@ const Index = () => {
         await saveUserSkills(user.id, selectedSkills);
         console.log('Backup sync successful');
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('Failed to backup sync user skills:', e);
         // Don't show toast for backup sync failures to avoid spam
       }
@@ -281,9 +286,6 @@ const Index = () => {
                 FEATURES
               </button>
               <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
-                DASHBOARD
-              </Link>
-              <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 BLOGS
               </Link>
               <Link to='/insights' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
@@ -344,9 +346,6 @@ const Index = () => {
                 <button onClick={() => { scrollToFeatures(); setMobileMenuOpen(false); }} className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                   FEATURES
                 </button>
-                <Link to='/' className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
-                  DASHBOARD
-                </Link>
                 <Link to='/' className='block text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                   BLOGS
                 </Link>
@@ -487,26 +486,27 @@ const Index = () => {
                   transition={{ duration: 0.8, delay: 0.8 }}
                   className="pt-4"
               >
-                <motion.div
+                  {/* Test button for modal */}
+                  <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                >
-                <Button 
-                  size="lg"
-                  onClick={() => {
-                    if (user) {
-                      navigate('/profile');
-                    } else {
-                      setCurrentStep('skills');
-                    }
-                  }}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:border-white/40 font-medium px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-white/10 font-inter"
-                >
-                      {user ? 'Dashboard →' : 'Get Started →'}
-                  </Button>
+                  >
+                    <Button 
+                      size="lg"
+                      variant="outline"
+                      onClick={() => {
+                        console.log('TEST: Opening modal, current state:', isAssessmentOpen);
+                        setIsAssessmentOpen(true);
+                        console.log('TEST: After setState');
+                      }}
+                      className="bg-purple-600 text-white hover:bg-purple-700 font-medium px-8 py-4 rounded-2xl transition-all duration-300"
+                    >
+                      Test Career Assessment
+                    </Button>
                   </motion.div>
+
                 </motion.div>
-                </motion.div>
+              </motion.div>
                 
               {/* Right Content - 3D Resume Illustration */}
                 <motion.div
@@ -1537,6 +1537,43 @@ We aim to bridge the gap between students and the evolving job market by offerin
             </div>
           </div>
         </footer>
+
+        <CareerAssessmentModal
+          isOpen={isAssessmentOpen}
+          onClose={() => setIsAssessmentOpen(false)}
+          onComplete={async (answers) => {
+            console.log('Assessment completed:', answers);
+            
+            try {
+              toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis' });
+              
+              // Analyze answers and get job recommendations from Gemini
+              const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
+              setJobRecommendations(recommendations);
+              
+              // Close modal and show results
+              setIsAssessmentOpen(false);
+              setShowRecommendations(true);
+              
+              toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis' });
+            } catch (error) {
+              console.error('Error generating recommendations:', error);
+              toast.error('Failed to generate recommendations. Please try again.', { id: 'gemini-analysis' });
+            }
+          }}
+        />
+
+        {/* Career Recommendations Results */}
+        {showRecommendations && jobRecommendations.length > 0 && (
+          <CareerRecommendationResults
+            recommendations={jobRecommendations}
+            onClose={() => {
+              setShowRecommendations(false);
+              // Optionally navigate to skills input
+              setCurrentStep('skills');
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1578,6 +1615,41 @@ We aim to bridge the gap between students and the evolving job market by offerin
             onAnalyze={handleAnalyze}
           />
         </div>
+
+        <CareerAssessmentModal
+          isOpen={isAssessmentOpen}
+          onClose={() => setIsAssessmentOpen(false)}
+          onComplete={async (answers) => {
+            console.log('Assessment completed:', answers);
+            
+            try {
+              toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis-skills' });
+              
+              // Analyze answers and get job recommendations from Gemini
+              const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
+              setJobRecommendations(recommendations);
+              
+              // Close modal and show results
+              setIsAssessmentOpen(false);
+              setShowRecommendations(true);
+              
+              toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis-skills' });
+            } catch (error) {
+              console.error('Error generating recommendations:', error);
+              toast.error('Failed to generate recommendations. Please try again.', { id: 'gemini-analysis-skills' });
+            }
+          }}
+        />
+        
+        {/* Career Recommendations Results */}
+        {showRecommendations && jobRecommendations.length > 0 && (
+          <CareerRecommendationResults
+            recommendations={jobRecommendations}
+            onClose={() => {
+              setShowRecommendations(false);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1628,6 +1700,41 @@ We aim to bridge the gap between students and the evolving job market by offerin
           onAddSkills={handleAddSkills}
         />
       </div>
+
+      <CareerAssessmentModal
+        isOpen={isAssessmentOpen}
+        onClose={() => setIsAssessmentOpen(false)}
+        onComplete={async (answers) => {
+          console.log('Assessment completed:', answers);
+          
+          try {
+            toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis-recs' });
+            
+            // Analyze answers and get job recommendations from Gemini
+            const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
+            setJobRecommendations(recommendations);
+            
+            // Close modal and show results
+            setIsAssessmentOpen(false);
+            setShowRecommendations(true);
+            
+            toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis-recs' });
+          } catch (error) {
+            console.error('Error generating recommendations:', error);
+            toast.error('Failed to generate recommendations. Please try again.', { id: 'gemini-analysis-recs' });
+          }
+        }}
+      />
+      
+      {/* Career Recommendations Results */}
+      {showRecommendations && jobRecommendations.length > 0 && (
+        <CareerRecommendationResults
+          recommendations={jobRecommendations}
+          onClose={() => {
+            setShowRecommendations(false);
+          }}
+        />
+      )}
     </div>
   );
 };

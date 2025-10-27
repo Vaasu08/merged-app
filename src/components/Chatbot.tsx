@@ -13,7 +13,10 @@ import {
   Loader2,
   Minimize2,
   Maximize2,
-  Cloud
+  Sparkles,
+  Zap,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -31,19 +34,28 @@ interface ChatbotProps {
   className?: string;
 }
 
+// Suggested quick actions for users
+const QUICK_ACTIONS = [
+  { icon: Target, label: "How do I start?", query: "How do I get started with Horizon?" },
+  { icon: Sparkles, label: "Career assessment", query: "Tell me about the career assessment" },
+  { icon: TrendingUp, label: "Career paths", query: "What career paths are available?" },
+  { icon: Zap, label: "Features", query: "What are Horizon's main features?" }
+];
+
 export const Chatbot = ({ className }: ChatbotProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm here to help you with career guidance and questions about Horizon. What would you like to know?",
+      text: "Hey there! 👋 I'm your Horizon AI Assistant, powered by Gemini! I can help you:\n\n🎯 Take the career assessment\n📊 Understand features & tools\n💼 Find your perfect career path\n🚀 Navigate the platform\n\nWhat would you like to know?",
       sender: 'bot',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,17 +68,26 @@ export const Chatbot = ({ className }: ChatbotProps) => {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (isOpen && !isMinimized && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isOpen, isMinimized]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleQuickAction = (query: string) => {
+    setInputValue(query);
+    setShowQuickActions(false);
+    setTimeout(() => {
+      handleSendMessage(query);
+    }, 100);
+  };
+
+  const handleSendMessage = async (customMessage?: string) => {
+    const messageText = customMessage || inputValue.trim();
+    if (!messageText || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue.trim(),
+      text: messageText,
       sender: 'user',
       timestamp: new Date()
     };
@@ -74,6 +95,7 @@ export const Chatbot = ({ className }: ChatbotProps) => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    setShowQuickActions(false);
 
     try {
       const chatbotService = getChatbotService();
@@ -223,6 +245,33 @@ export const Chatbot = ({ className }: ChatbotProps) => {
                             </div>
                           </motion.div>
                         )}
+                        
+                        {/* Quick Actions */}
+                        {showQuickActions && messages.length === 1 && !isLoading && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="space-y-2 mt-3"
+                          >
+                            <p className="text-xs text-muted-foreground font-medium">Quick actions:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {QUICK_ACTIONS.map((action, index) => (
+                                <Button
+                                  key={index}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleQuickAction(action.query)}
+                                  className="justify-start h-auto py-2 px-3 text-xs hover:bg-primary/5"
+                                >
+                                  <action.icon className="h-3 w-3 mr-2 flex-shrink-0" />
+                                  <span className="text-left">{action.label}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                        
                         <div ref={messagesEndRef} />
                       </div>
                     </ScrollArea>
@@ -241,7 +290,7 @@ export const Chatbot = ({ className }: ChatbotProps) => {
                         className="flex-1 text-sm"
                       />
                       <Button
-                        onClick={handleSendMessage}
+                        onClick={() => handleSendMessage()}
                         disabled={!inputValue.trim() || isLoading}
                         size="sm"
                         className="px-3"
@@ -253,9 +302,10 @@ export const Chatbot = ({ className }: ChatbotProps) => {
                         )}
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                      I can help with questions about this website
-                    </p>
+                    <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <Sparkles className="h-3 w-3" />
+                      <span>Powered by Gemini AI</span>
+                    </div>
                   </div>
                 </>
               )}

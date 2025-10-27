@@ -200,6 +200,8 @@ export const SkillInput = ({ selectedSkills, onSkillsChange, onAnalyze }: SkillI
                     onClick={() => removeSkill(skillId)}
                     className="ml-2 hover:text-destructive transition-colors"
                     disabled={isSaving}
+                    aria-label={`Remove ${getSkillName(skillId)}`}
+                    title={`Remove ${getSkillName(skillId)}`}
                   >
                     <X className="h-3 w-3" />
                   </button>

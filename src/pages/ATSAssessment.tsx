@@ -4,9 +4,12 @@ import ResumeUpload from '@/components/ResumeUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { parseCV } from '@/lib/cvParser';
 import { ATSScorer } from '@/lib/atsScorer';
-import { Loader2 } from 'lucide-react';
+import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
+import { Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -16,6 +19,8 @@ export default function ATSAssessment() {
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [useAI, setUseAI] = useState(true); // AI-powered by default
+  const [aiAvailable, setAiAvailable] = useState(true);
 
 
   const handleAnalyze = async () => {
@@ -28,22 +33,49 @@ export default function ATSAssessment() {
       return;
     }
 
-
     setLoading(true);
     try {
       // Parse resume using existing cvParser
       const parsedData = await parseCV(file);
-     
-      // Calculate ATS score
-      const scores = ATSScorer.calculateScore(parsedData, jobDescription || undefined);
-     
+      
+      let scores;
+      
+      if (useAI && aiAvailable) {
+        try {
+          // Use AI-powered scoring
+          const aiScorer = new ATSScorerAI();
+          scores = await aiScorer.calculateScore(parsedData, jobDescription || undefined);
+          
+          toast({
+            title: 'AI Analysis Complete',
+            description: 'Resume analyzed using advanced AI technology!',
+          });
+        } catch (aiError) {
+          console.warn('AI scoring failed, falling back to rule-based:', aiError);
+          setAiAvailable(false);
+          
+          // Fallback to rule-based scoring
+          scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
+          
+          toast({
+            title: 'Analysis Complete',
+            description: 'Resume analyzed using standard scoring (AI temporarily unavailable)',
+            variant: 'default',
+          });
+        }
+      } else {
+        // Use rule-based scoring
+        scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
+        
+        toast({
+          title: 'Analysis Complete',
+          description: 'Resume analyzed using standard scoring',
+        });
+      }
+      
       // Navigate to results with data
-      navigate('/ats-results', { state: { scores, parsedData } });
-     
-      toast({
-        title: 'Success',
-        description: 'Resume analyzed successfully!',
-      });
+      navigate('/ats-results', { state: { scores, parsedData, usedAI: useAI && aiAvailable } });
+      
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
@@ -64,6 +96,35 @@ export default function ATSAssessment() {
         <p className="text-lg text-muted-foreground">
           Get instant feedback on your resume's ATS compatibility
         </p>
+        
+        {/* AI Toggle */}
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <Switch
+            id="ai-mode"
+            checked={useAI}
+            onCheckedChange={setUseAI}
+            disabled={!aiAvailable}
+          />
+          <Label htmlFor="ai-mode" className="flex items-center gap-2 cursor-pointer">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            <span className="font-medium">AI-Powered Analysis</span>
+            {!aiAvailable && (
+              <AlertCircle className="w-4 h-4 text-orange-500" />
+            )}
+          </Label>
+        </div>
+        
+        <div className="text-sm text-muted-foreground mt-2">
+          {useAI && aiAvailable ? (
+            <span className="text-purple-600 font-medium">
+              🤖 Using advanced AI for semantic analysis and personalized feedback
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              📊 Using standard rule-based analysis
+            </span>
+          )}
+        </div>
       </div>
 
 
@@ -98,14 +159,28 @@ export default function ATSAssessment() {
             size="lg"
             onClick={handleAnalyze}
             disabled={!file || loading}
+            className={`${
+              useAI && aiAvailable 
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' 
+                : 'bg-primary hover:bg-primary/90'
+            }`}
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
+                {useAI && aiAvailable ? 'AI Analyzing...' : 'Analyzing...'}
               </>
             ) : (
-              'Analyze Resume'
+              <>
+                {useAI && aiAvailable ? (
+                  <>
+                    <Brain className="mr-2 h-4 w-4" />
+                    AI Analyze Resume
+                  </>
+                ) : (
+                  'Analyze Resume'
+                )}
+              </>
             )}
           </Button>
         </div>

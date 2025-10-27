@@ -9,11 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CheckCircle2, Clock, BookOpen, Code, Target, ArrowLeft, Download, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import QuizInterface from '@/components/QuizInterface';
+import { quizService, Quiz, QuizResult } from '@/lib/quizService';
 
 export default function RoadmapView() {
   const navigate = useNavigate();
   const { roadmap, reset } = useRoadmap();
   const [completedPhases, setCompletedPhases] = useState<number[]>([]);
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   if (!roadmap) {
     navigate('/roadmap');
@@ -26,6 +30,43 @@ export default function RoadmapView() {
     } else {
       setCompletedPhases([...completedPhases, phaseNumber]);
     }
+  };
+
+  const generateCheckpointQuiz = async (checkpointTitle: string, topicsCovered: string[]) => {
+    setIsGeneratingQuiz(true);
+    try {
+      const quiz = await quizService.generateCheckpointQuiz(checkpointTitle, topicsCovered);
+      setCurrentQuiz(quiz);
+      toast.success('Quiz generated successfully!');
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      toast.error('Failed to generate quiz. Please try again.');
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
+  };
+
+  const handleQuizComplete = async (score: number, totalQuestions: number, timeSpent: number) => {
+    if (currentQuiz) {
+      const result: QuizResult = {
+        score,
+        totalQuestions,
+        correctAnswers: Math.round((score / 100) * totalQuestions),
+        timeSpent,
+        streak: Math.round((score / 100) * totalQuestions), // Simple streak calculation
+      };
+
+      try {
+        await quizService.saveQuizResult(currentQuiz.id, 'user-id', result);
+        toast.success(`Quiz completed! Score: ${score}%`);
+      } catch (error) {
+        console.warn('Failed to save quiz result:', error);
+      }
+    }
+  };
+
+  const handleQuizClose = () => {
+    setCurrentQuiz(null);
   };
 
   const progressPercentage = (completedPhases.length / roadmap.phases.length) * 100;
@@ -298,16 +339,28 @@ export default function RoadmapView() {
                       {/* Checkpoint */}
                       {phase.checkpoint && (
                         <div>
-                          <h4 className="text-white font-semibold mb-3">Checkpoint</h4>
+                          <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                            <Target className="w-4 h-4" />
+                            Checkpoint
+                          </h4>
                           <Card className="bg-gray-700/30 border-gray-600">
                             <CardContent className="p-4">
                               <div className="text-white font-medium mb-2">{phase.checkpoint.title}</div>
                               <div className="text-sm text-gray-400 mb-2">
                                 Topics: {phase.checkpoint.topics_covered.join(', ')}
                               </div>
-                              <div className="text-sm text-gray-400">
+                              <div className="text-sm text-gray-400 mb-4">
                                 Estimated Time: {phase.checkpoint.estimated_time}
                               </div>
+                              <Button
+                                onClick={() => generateCheckpointQuiz(phase.checkpoint.title, phase.checkpoint.topics_covered)}
+                                disabled={isGeneratingQuiz}
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                                size="sm"
+                              >
+                                <Target className="w-4 h-4 mr-2" />
+                                {isGeneratingQuiz ? 'Generating...' : 'Generate Quiz'}
+                              </Button>
                             </CardContent>
                           </Card>
                         </div>
@@ -396,6 +449,15 @@ export default function RoadmapView() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Quiz Interface */}
+      {currentQuiz && (
+        <QuizInterface
+          quiz={currentQuiz}
+          onComplete={handleQuizComplete}
+          onClose={handleQuizClose}
+        />
+      )}
     </div>
   );
 }

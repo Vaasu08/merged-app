@@ -74,6 +74,14 @@ const RoadmapBodySchema = z.object({
   goals: z.string(),
 });
 
+const QuizBodySchema = z.object({
+  topic: z.string().min(1, 'Topic is required'),
+  subtopic: z.string().optional(),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
+  numQuestions: z.number().min(1).max(20),
+  duration: z.number().min(5).max(120),
+});
+
 // ==================== ROUTES ====================
 
 // Health check
@@ -457,6 +465,166 @@ Return ONLY valid JSON in this exact format:
   }
 });
 
+// ==================== QUIZ GENERATION ROUTE ====================
+app.post('/api/quiz/generate', async (req, res) => {
+  const parse = QuizBodySchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+  }
+
+  const { topic, subtopic, difficulty, numQuestions, duration } = parse.data;
+
+  // Fallback response if no Gemini API key
+  if (!GEMINI_API_KEY) {
+    const fallbackQuiz = {
+      id: `quiz_${Date.now()}`,
+      title: `${topic} ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Quiz`,
+      description: `Test your knowledge of ${topic}${subtopic ? ` - ${subtopic}` : ''}`,
+      questions: [
+        {
+          id: '1',
+          question: `What is the primary purpose of ${topic}?`,
+          options: [
+            'Creating web applications',
+            'Data manipulation and analysis',
+            'Machine learning model training',
+            'Game development'
+          ],
+          correctAnswer: 1,
+          explanation: `${topic} is primarily used for data manipulation and analysis tasks.`
+        },
+        {
+          id: '2',
+          question: `Which function is commonly used in ${topic}?`,
+          options: [
+            'create_function()',
+            'main_function()',
+            'primary_function()',
+            'core_function()'
+          ],
+          correctAnswer: 1,
+          explanation: 'The main_function() is a standard pattern in this field.'
+        },
+        {
+          id: '3',
+          question: `How do you implement best practices in ${topic}?`,
+          options: [
+            'By following coding standards',
+            'By using proper documentation',
+            'By implementing error handling',
+            'All of the above'
+          ],
+          correctAnswer: 3,
+          explanation: 'Best practices include all of these elements.'
+        },
+        {
+          id: '4',
+          question: `What is the most important aspect of ${topic}?`,
+          options: [
+            'Speed',
+            'Accuracy',
+            'Simplicity',
+            'Scalability'
+          ],
+          correctAnswer: 1,
+          explanation: 'Accuracy is crucial for reliable results.'
+        }
+      ].slice(0, numQuestions),
+      duration,
+      difficulty,
+      topic,
+      subtopic,
+    };
+
+    return res.status(200).json({
+      success: true,
+      quiz: fallbackQuiz,
+      note: 'Generated using fallback template (add GEMINI_API_KEY for AI-generated quizzes)'
+    });
+  }
+
+  try {
+    console.log('✅ Using Gemini API - generating quiz');
+    const prompt = `
+Create a ${difficulty} level quiz about ${topic}${subtopic ? ` focusing on ${subtopic}` : ''}.
+
+Generate exactly ${numQuestions} multiple-choice questions with 4 options each.
+
+Return ONLY valid JSON in this exact format:
+{
+  "id": "quiz_${Date.now()}",
+  "title": "${topic} ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Quiz",
+  "description": "Test your knowledge of ${topic}${subtopic ? ` - ${subtopic}` : ''}",
+  "questions": [
+    {
+      "id": "1",
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": 0,
+      "explanation": "Explanation of the correct answer"
+    }
+  ],
+  "duration": ${duration},
+  "difficulty": "${difficulty}",
+  "topic": "${topic}",
+  "subtopic": "${subtopic || ''}"
+}
+
+Make sure:
+- correctAnswer is 0, 1, 2, or 3 (index of correct option)
+- Questions are appropriate for ${difficulty} level
+- Options are plausible but only one is correct
+- Include helpful explanations
+- Focus on practical knowledge and best practices
+`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const quizText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    if (!quizText) throw new Error('Empty quiz from Gemini');
+
+    // Clean up the response - remove markdown code blocks if present
+    let cleanQuizText = quizText;
+    if (cleanQuizText.includes('```json')) {
+      cleanQuizText = cleanQuizText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanQuizText.includes('```')) {
+      cleanQuizText = cleanQuizText.replace(/```\n?/g, '');
+    }
+
+    const quiz = JSON.parse(cleanQuizText);
+
+    return res.status(200).json({
+      success: true,
+      quiz: quiz
+    });
+  } catch (error) {
+    console.error('Error generating quiz with Gemini:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
+    });
+  }
+});
+
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`✅ Server listening on :${PORT}`);
@@ -465,4 +633,5 @@ app.listen(PORT, () => {
   console.log(`   POST /api/query (Gemini OCR Q&A)`);
   console.log(`   POST /api/roadmap/generate (OpenAI)`);
   console.log(`   POST /api/roadmap/generate-gemini (Gemini - Free)`);
+  console.log(`   POST /api/quiz/generate (Gemini Quiz Generation)`);
 });

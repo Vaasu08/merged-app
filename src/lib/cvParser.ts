@@ -132,24 +132,67 @@ const getSkillVariations = (skillName: string): string[] => {
  
   // Common abbreviations and variations
   const skillVariations: Record<string, string[]> = {
-    'javascript': ['js', 'ecmascript', 'es6', 'es2015'],
+    'javascript': ['js', 'ecmascript', 'es6', 'es2015', 'es2020', 'vanilla js'],
     'typescript': ['ts'],
     'react': ['reactjs', 'react.js'],
-    'node.js': ['nodejs', 'node'],
-    'html': ['html5'],
-    'css': ['css3'],
-    'python': ['py'],
-    'machine learning': ['ml', 'ai'],
-    'artificial intelligence': ['ai'],
-    'data science': ['datascience'],
-    'sql': ['mysql', 'postgresql', 'postgres'],
-    'mongodb': ['mongo'],
-    'aws': ['amazon web services'],
-    'kubernetes': ['k8s'],
-    'docker': ['containerization'],
-    'git': ['github', 'gitlab', 'version control'],
-    'agile': ['scrum', 'kanban'],
-    'project management': ['pm', 'project mgmt']
+    'react native': ['react-native', 'reactnative', 'rn'],
+    'node.js': ['nodejs', 'node', 'express', 'expressjs'],
+    'html': ['html5', 'html/css'],
+    'css': ['css3', 'cascading style sheets'],
+    'python': ['py', 'python3'],
+    'machine learning': ['ml', 'ai', 'deep learning', 'neural networks'],
+    'artificial intelligence': ['ai', 'machine learning', 'ml'],
+    'data science': ['datascience', 'data analytics', 'data analysis'],
+    'sql': ['mysql', 'postgresql', 'postgres', 'mssql', 'oracle', 'database'],
+    'mongodb': ['mongo', 'nosql'],
+    'aws': ['amazon web services', 'amazon aws', 'cloud'],
+    'azure': ['microsoft azure', 'azure cloud'],
+    'kubernetes': ['k8s', 'container orchestration'],
+    'docker': ['containerization', 'containers'],
+    'git': ['github', 'gitlab', 'version control', 'bitbucket'],
+    'agile': ['scrum', 'kanban', 'sprint'],
+    'project management': ['pm', 'project mgmt', 'pmp'],
+    'java': ['jdk', 'jvm', 'spring', 'spring boot'],
+    'php': ['laravel', 'symfony', 'wordpress'],
+    'ruby': ['ruby on rails', 'rails', 'ror'],
+    'c++': ['cpp', 'c plus plus'],
+    'c#': ['csharp', 'c sharp', '.net'],
+    'go': ['golang'],
+    'swift': ['ios development'],
+    'kotlin': ['android development'],
+    'vue': ['vuejs', 'vue.js'],
+    'vue.js': ['vue', 'vuejs'],
+    'angular': ['angularjs', 'angular.js'],
+    'next.js': ['nextjs', 'next'],
+    'django': ['python django'],
+    'flask': ['python flask'],
+    'rest api': ['restful', 'rest', 'api'],
+    'graphql': ['graph ql'],
+    'bootstrap': ['bootstrap css'],
+    'tailwind': ['tailwindcss', 'tailwind css'],
+    'tailwind css': ['tailwind', 'tailwindcss'],
+    'sass': ['scss'],
+    'webpack': ['bundler', 'build tools'],
+    'figma': ['design tool', 'ui design'],
+    'photoshop': ['ps', 'adobe photoshop'],
+    'illustrator': ['ai', 'adobe illustrator'],
+    'excel': ['microsoft excel', 'spreadsheet'],
+    'microsoft excel': ['excel', 'spreadsheet'],
+    'powerpoint': ['ppt', 'microsoft powerpoint'],
+    'word': ['microsoft word', 'ms word'],
+    'leadership': ['team lead', 'management', 'manager'],
+    'communication': ['verbal communication', 'written communication'],
+    'problem solving': ['analytical thinking', 'critical thinking'],
+    'teamwork': ['collaboration', 'team player'],
+    'flutter': ['dart flutter'],
+    'asp.net': ['aspnet', '.net'],
+    '.net': ['dotnet', 'asp.net'],
+    'fastapi': ['fast api'],
+    'nestjs': ['nest.js', 'nest'],
+    'spring boot': ['springboot', 'spring'],
+    'tensorflow': ['tf'],
+    'pytorch': ['torch'],
+    'scikit-learn': ['sklearn'],
   };
  
   if (skillVariations[skillName]) {
@@ -168,7 +211,7 @@ const extractSkills = (text: string): string[] => {
  
   // Clean up the text for better matching
   const cleanText = textLower
-    .replace(/[^\w\s]/g, ' ') // Replace special characters with spaces
+    .replace(/[^\w\s.#+-]/g, ' ') // Keep dots, #, +, - for tech terms
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
  
@@ -177,48 +220,73 @@ const extractSkills = (text: string): string[] => {
     const skillName = skill.name.toLowerCase();
     const skillId = skill.id.toLowerCase();
    
-    // Check for exact skill name or ID
-    if (cleanText.includes(skillName) || cleanText.includes(skillId)) {
+    // Create word boundary pattern for more accurate matching
+    const createWordBoundaryPattern = (term: string) => {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`\\b${escaped}\\b`, 'i');
+    };
+    
+    // Check for exact skill name or ID with word boundaries
+    if (createWordBoundaryPattern(skillName).test(cleanText) || 
+        createWordBoundaryPattern(skillId).test(cleanText)) {
       foundSkills.push(skill.id);
     }
    
     // Also check for common variations
     const variations = getSkillVariations(skillName);
     variations.forEach(variation => {
-      if (cleanText.includes(variation)) {
+      if (createWordBoundaryPattern(variation).test(cleanText)) {
         foundSkills.push(skill.id);
       }
     });
   });
  
-  // Pattern-based extraction
+  // Enhanced pattern-based extraction with more patterns
   const skillPatterns = [
-    /(?:skills?|technologies?|tools?|expertise)[:\s]*(.+?)(?:\n|$)/gi,
-    /(?:proficient in|experience with|expertise in|knowledge of)[:\s]*(.+?)(?:\n|$)/gi,
+    // Section headers
+    /(?:skills?|technical skills?|core competencies|proficiencies)[:\s]*([^]*?)(?:\n\n|\n[A-Z]{2,}|$)/gi,
+    /(?:technologies?|tools?|expertise|platforms?)[:\s]*([^]*?)(?:\n\n|\n[A-Z]{2,}|$)/gi,
+    
+    // Inline mentions
+    /(?:proficient in|experience with|expertise in|knowledge of|skilled in|familiar with)[:\s]*(.+?)(?:\n|$)/gi,
     /(?:programming languages?|frameworks?|libraries?)[:\s]*(.+?)(?:\n|$)/gi,
+    
+    // Bullet points and lists
+    /[•●○◦▪▫■□\-\*]\s*([^•●○◦▪▫■□\-\*\n]+)/gi,
   ];
  
   skillPatterns.forEach(pattern => {
     const matches = text.match(pattern);
     if (matches) {
       matches.forEach(match => {
-        // Extract the content after the colon
-        const content = match.split(/[:\s]/).slice(1).join(' ').trim();
+        // Extract the content after the delimiter
+        const content = match.replace(/^[^:]*:\s*/, '').trim();
         if (content) {
           // Split by common separators and clean up
-          const skills = content.split(/[,;|•\-\n]/)
+          const skills = content.split(/[,;|•●○◦▪▫■□\-\n]/)
             .map(s => s.trim())
             .filter(s => s.length > 1 && s.length < 50);
          
           // Try to match these with our skill database
           skills.forEach(skillText => {
-            const matchedSkill = skillsDatabase.find(skill =>
-              skill.name.toLowerCase().includes(skillText.toLowerCase()) ||
-              skillText.toLowerCase().includes(skill.name.toLowerCase())
-            );
-            if (matchedSkill && !foundSkills.includes(matchedSkill.id)) {
-              foundSkills.push(matchedSkill.id);
-            }
+            const skillTextLower = skillText.toLowerCase();
+            
+            // Fuzzy matching - check if extracted text contains or is contained by skill name
+            const matchedSkills = skillsDatabase.filter(skill => {
+              const skillLower = skill.name.toLowerCase();
+              const idLower = skill.id.toLowerCase();
+              
+              return skillLower.includes(skillTextLower) ||
+                     skillTextLower.includes(skillLower) ||
+                     idLower.includes(skillTextLower) ||
+                     skillTextLower.includes(idLower);
+            });
+            
+            matchedSkills.forEach(skill => {
+              if (!foundSkills.includes(skill.id)) {
+                foundSkills.push(skill.id);
+              }
+            });
           });
         }
       });
@@ -236,29 +304,79 @@ const extractSkillsFallback = (text: string): string[] => {
   const foundSkills: string[] = [];
   const textLower = text.toLowerCase();
  
-  // Simple keyword matching for common tech terms
+  // Expanded keyword matching for common tech terms
   const techKeywords = [
-    'javascript', 'js', 'typescript', 'ts', 'python', 'py', 'java', 'c++', 'cpp',
-    'react', 'vue', 'angular', 'node', 'nodejs', 'express', 'django', 'flask',
-    'html', 'css', 'bootstrap', 'tailwind', 'sass', 'scss',
-    'sql', 'mysql', 'postgresql', 'mongodb', 'redis',
-    'aws', 'azure', 'docker', 'kubernetes', 'git', 'github',
-    'agile', 'scrum', 'kanban', 'jira', 'confluence'
+    // Programming Languages
+    'javascript', 'js', 'typescript', 'ts', 'python', 'py', 'java', 'c++', 'cpp', 'c#', 'csharp',
+    'ruby', 'php', 'swift', 'kotlin', 'go', 'golang', 'rust', 'scala', 'perl', 'r', 'matlab',
+    
+    // Frontend
+    'react', 'vue', 'angular', 'svelte', 'nextjs', 'next.js', 'nuxt', 'gatsby',
+    'html', 'html5', 'css', 'css3', 'sass', 'scss', 'less', 'tailwind', 'bootstrap',
+    'jquery', 'webpack', 'vite', 'babel', 'redux', 'mobx', 'recoil',
+    
+    // Backend
+    'node', 'nodejs', 'node.js', 'express', 'expressjs', 'nestjs', 'fastify',
+    'django', 'flask', 'fastapi', 'spring', 'springboot', 'laravel', 'symfony',
+    'rails', 'asp.net', '.net', 'dotnet',
+    
+    // Databases
+    'sql', 'mysql', 'postgresql', 'postgres', 'sqlite', 'mongodb', 'mongo',
+    'redis', 'elasticsearch', 'cassandra', 'dynamodb', 'firebase', 'supabase',
+    'oracle', 'mssql', 'mariadb',
+    
+    // Cloud & DevOps
+    'aws', 'azure', 'gcp', 'google cloud', 'docker', 'kubernetes', 'k8s',
+    'jenkins', 'gitlab', 'github', 'bitbucket', 'circleci', 'travis',
+    'terraform', 'ansible', 'puppet', 'chef', 'vagrant',
+    
+    // Tools & Methodologies
+    'git', 'agile', 'scrum', 'kanban', 'jira', 'confluence', 'slack', 'trello',
+    'rest', 'restful', 'api', 'graphql', 'grpc', 'soap', 'microservices',
+    'tdd', 'bdd', 'ci/cd', 'continuous integration', 'continuous deployment',
+    
+    // Data & AI
+    'machine learning', 'ml', 'ai', 'artificial intelligence', 'deep learning',
+    'tensorflow', 'pytorch', 'keras', 'scikit-learn', 'pandas', 'numpy',
+    'data science', 'data analysis', 'data analytics', 'big data', 'hadoop', 'spark',
+    
+    // Mobile
+    'react native', 'flutter', 'ionic', 'xamarin', 'android', 'ios',
+    
+    // Design
+    'figma', 'sketch', 'adobe xd', 'photoshop', 'illustrator', 'indesign',
+    'ui', 'ux', 'ui/ux', 'user interface', 'user experience',
+    
+    // Testing
+    'jest', 'mocha', 'chai', 'cypress', 'selenium', 'playwright', 'junit', 'pytest',
+    
+    // Soft Skills
+    'leadership', 'communication', 'teamwork', 'problem solving', 'project management',
+    'time management', 'critical thinking', 'analytical', 'creative', 'adaptable',
+    
+    // Business Tools
+    'excel', 'powerpoint', 'word', 'google sheets', 'tableau', 'power bi',
+    'salesforce', 'sap', 'erp', 'crm'
   ];
  
   techKeywords.forEach(keyword => {
-    if (textLower.includes(keyword)) {
+    // Use word boundary regex for more accurate matching
+    const pattern = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    
+    if (pattern.test(textLower)) {
       // Try to find matching skill in database
-      const matchingSkill = skillsDatabase.find(skill =>
+      const matchingSkills = skillsDatabase.filter(skill =>
         skill.name.toLowerCase().includes(keyword) ||
         skill.id.toLowerCase().includes(keyword) ||
         keyword.includes(skill.name.toLowerCase()) ||
         keyword.includes(skill.id.toLowerCase())
       );
      
-      if (matchingSkill) {
-        foundSkills.push(matchingSkill.id);
-      }
+      matchingSkills.forEach(skill => {
+        if (!foundSkills.includes(skill.id)) {
+          foundSkills.push(skill.id);
+        }
+      });
     }
   });
  

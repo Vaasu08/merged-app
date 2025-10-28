@@ -101,9 +101,10 @@ export default function RoadmapOnboarding() {
             </span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2">
+            {/* eslint-disable-next-line react/no-unknown-property */}
             <div
               className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              style={{ width: `${Math.round((currentStep / totalSteps) * 100)}%` }}
             />
           </div>
         </div>

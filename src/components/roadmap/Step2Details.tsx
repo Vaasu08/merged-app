@@ -31,10 +31,9 @@ export default function Step2Details() {
           max={90}
           value={responses.days}
           onChange={(e) => setResponse('days', Number(e.target.value))}
-          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-          style={{
-            background: `linear-gradient(to right, #9333ea 0%, #ec4899 ${((responses.days - 30) / 60) * 100}%, #374151 ${((responses.days - 30) / 60) * 100}%, #374151 100%)`
-          }}
+          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-0"
+          aria-label="Days ready to commit"
+          title="Select number of days"
         />
         <div className="flex justify-between text-sm text-gray-400 mt-2">
           <span>30 days</span>

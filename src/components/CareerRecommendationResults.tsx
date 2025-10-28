@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Award, ArrowRight, CheckCircle } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, Award, ArrowRight, CheckCircle, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,22 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
   return (
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Exit Button */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex justify-end mb-4"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.location.href = '/'}
+            className="rounded-full hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -83,7 +99,7 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
                       Why This Career Fits You
                     </h4>
                     <ul className="space-y-1">
-                      {job.reasons.map((reason, idx) => (
+                      {job.reasons.slice(0, 2).map((reason, idx) => (
                         <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                           <span className="text-primary mt-1">•</span>
                           <span>{reason}</span>

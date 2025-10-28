@@ -106,9 +106,8 @@ export const HorizonLogo = ({
             HORIZON
           </span>
           {/* Compass dot in the second O */}
-          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className={`${currentSize.dot} ${currentColors.dot} rounded-full bg-current`} 
-                 style={{ marginLeft: '0.4em' }} />
+          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ml-[0.4em]">
+            <div className={`${currentSize.dot} ${currentColors.dot} rounded-full bg-current`} />
           </span>
         </div>
         {showTagline && (

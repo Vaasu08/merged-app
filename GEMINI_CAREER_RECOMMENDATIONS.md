@@ -89,7 +89,7 @@ Updated three `onComplete` handlers to use async Gemini calls:
 **Environment Variable:**
 
 ```env
-VITE_GEMINI_API_KEY=AIzaSyCk1oorWS5rwYKY486JBltdrLhZH88sWvc
+VITE_GEMINI_API_KEY=your_api_key_here
 ```
 
 **API Endpoint:**

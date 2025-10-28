@@ -33,13 +33,13 @@ const InterviewWelcome = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             Welcome, {userName}! 👋
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 dark:text-gray-300">
             Let's set up your personalized interview experience
           </p>
         </div>
@@ -93,7 +93,7 @@ const InterviewWelcome = () => {
                   <span className="text-2xl mr-3">{mode.icon}</span>
                   <div className="text-left">
                     <div className="font-medium">{mode.label}</div>
-                    <div className="text-sm text-gray-500">{mode.description}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{mode.description}</div>
                   </div>
                 </Button>
               ))}
@@ -105,7 +105,7 @@ const InterviewWelcome = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
-            className="text-gray-500"
+            className="text-gray-500 dark:text-gray-400"
           >
             ← Back to Home
           </Button>

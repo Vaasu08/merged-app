@@ -20,9 +20,9 @@ const InterviewFeedback = () => {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 70) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 80) return "text-green-600 dark:text-green-400";
+    if (score >= 70) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
   };
 
   const getScoreLabel = (score: number) => {
@@ -34,13 +34,13 @@ const InterviewFeedback = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             Interview Feedback
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 dark:text-gray-300">
             Great job, {userName}! Here's your detailed performance analysis
           </p>
         </div>
@@ -136,14 +136,14 @@ const InterviewFeedback = () => {
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-green-600">Strengths</CardTitle>
+              <CardTitle className="text-green-600 dark:text-green-400">Strengths</CardTitle>
               <CardDescription>What you did well</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
                 {feedback.strengths.map((strength, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <span className="text-green-600 text-xl">✓</span>
+                    <span className="text-green-600 dark:text-green-400 text-xl">✓</span>
                     <span>{strength}</span>
                   </li>
                 ))}
@@ -153,14 +153,14 @@ const InterviewFeedback = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-orange-600">Areas for Improvement</CardTitle>
+              <CardTitle className="text-orange-600 dark:text-orange-400">Areas for Improvement</CardTitle>
               <CardDescription>Where you can grow</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
                 {feedback.improvements.map((improvement, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <span className="text-orange-600 text-xl">•</span>
+                    <span className="text-orange-600 dark:text-orange-400 text-xl">•</span>
                     <span>{improvement}</span>
                   </li>
                 ))}
@@ -176,7 +176,7 @@ const InterviewFeedback = () => {
             <CardDescription>Comprehensive analysis of your interview performance</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               {feedback.detailedReview}
             </p>
           </CardContent>

@@ -22,9 +22,9 @@ interface ATSScoreDisplayProps {
 
 export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDisplayProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 65) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 65) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
 
@@ -49,9 +49,9 @@ export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDis
           <div className="flex items-center justify-between">
             <CardTitle>ATS Score</CardTitle>
             {score >= 80 ? (
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             ) : (
-              <AlertCircle className="w-8 h-8 text-yellow-600" />
+              <AlertCircle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
             )}
           </div>
         </CardHeader>
@@ -60,7 +60,7 @@ export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDis
             <div className={`text-6xl font-bold ${getScoreColor(score)}`}>
               {score}
             </div>
-            <div className="text-gray-500 mt-2">out of 100</div>
+            <div className="text-gray-500 dark:text-gray-400 mt-2">out of 100</div>
             <div className={`text-3xl font-bold mt-4 ${getScoreColor(score)}`}>
               Grade: {grade}
             </div>
@@ -82,7 +82,7 @@ export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDis
               <div key={key}>
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">
-                    {label} <span className="text-xs text-gray-500">({weight})</span>
+                    {label} <span className="text-xs text-gray-500 dark:text-gray-400">({weight})</span>
                   </span>
                   <span className="font-semibold">
                     {breakdown[key as keyof typeof breakdown]?.toFixed(1)}%

@@ -280,7 +280,7 @@ const InterviewSession = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -302,7 +302,7 @@ const InterviewSession = () => {
                   {audioEnabled ? <Volume2 /> : <VolumeX />}
                 </Button>
                 {isSpeaking && (
-                  <span className="ml-2 text-sm text-blue-600 animate-pulse">
+                  <span className="ml-2 text-sm text-blue-600 dark:text-blue-400 animate-pulse">
                     Speaking...
                   </span>
                 )}
@@ -318,7 +318,7 @@ const InterviewSession = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6 mb-6">
           <div className="flex items-start space-x-4">
             <Avatar className="h-12 w-12">
               <AvatarImage src="/placeholder.svg" alt="Interviewer" />
@@ -326,14 +326,14 @@ const InterviewSession = () => {
             </Avatar>
             
             <div className="flex-1">
-              <p className="font-semibold text-gray-700">AI Interviewer</p>
-              <div className="mt-2 p-3 bg-gray-100 rounded-lg">
-                <p className="text-gray-800">{questions[currentQuestionIndex]}</p>
+              <p className="font-semibold text-gray-700 dark:text-gray-300">AI Interviewer</p>
+              <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <p className="text-gray-800 dark:text-gray-200">{questions[currentQuestionIndex]}</p>
               </div>
               
               {(interviewMode === "audio" || interviewMode === "video") && (
                 <button 
-                  className="mt-2 text-sm text-blue-600 flex items-center"
+                  className="mt-2 text-sm text-blue-600 dark:text-blue-400 flex items-center"
                   onClick={() => speakQuestion(questions[currentQuestionIndex])}
                 >
                   <Volume className="h-4 w-4 mr-1" />
@@ -363,14 +363,14 @@ const InterviewSession = () => {
           </div>
         )}
         
-        <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
           <div className="flex items-start space-x-4">
             <Avatar className="h-12 w-12">
               <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
             </Avatar>
             
             <div className="flex-1">
-              <p className="font-semibold text-gray-700">{userName}</p>
+              <p className="font-semibold text-gray-700 dark:text-gray-300">{userName}</p>
               
               {interviewMode === "text" ? (
                 <div className="mt-2">
@@ -384,8 +384,8 @@ const InterviewSession = () => {
                 </div>
               ) : (
                 <div className="mt-2">
-                  <div className="p-3 bg-gray-100 rounded-lg min-h-32">
-                    <p className="text-gray-800">{currentResponse || "Your response will appear here as you speak..."}</p>
+                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg min-h-32">
+                    <p className="text-gray-800 dark:text-gray-200">{currentResponse || "Your response will appear here as you speak..."}</p>
                   </div>
                   
                   <div className="mt-4 flex justify-between items-center">
@@ -408,7 +408,7 @@ const InterviewSession = () => {
                     </Button>
                     
                     {isListening && (
-                      <span className="text-blue-600 animate-pulse">
+                      <span className="text-blue-600 dark:text-blue-400 animate-pulse">
                         Listening...
                       </span>
                     )}
@@ -426,7 +426,7 @@ const InterviewSession = () => {
           </div>
         </div>
         
-        <div className="mt-6 text-center text-gray-600">
+        <div className="mt-6 text-center text-gray-600 dark:text-gray-400">
           <p>Question {currentQuestionIndex + 1} of {questions.length}</p>
         </div>
       </div>

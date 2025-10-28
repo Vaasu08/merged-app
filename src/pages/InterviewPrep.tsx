@@ -44,13 +44,13 @@ const InterviewPrep = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             Interview Preparation
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 dark:text-gray-300">
             Review your settings and get ready for your interview
           </p>
         </div>
@@ -91,19 +91,19 @@ const InterviewPrep = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3">
-                <span className="text-blue-600">💡</span>
+                <span className="text-blue-600 dark:text-blue-400">💡</span>
                 <p className="text-sm">Take your time to think before answering</p>
               </div>
               <div className="flex items-start gap-3">
-                <span className="text-blue-600">📝</span>
+                <span className="text-blue-600 dark:text-blue-400">📝</span>
                 <p className="text-sm">Use specific examples from your experience</p>
               </div>
               <div className="flex items-start gap-3">
-                <span className="text-blue-600">🎯</span>
+                <span className="text-blue-600 dark:text-blue-400">🎯</span>
                 <p className="text-sm">Be clear and concise in your responses</p>
               </div>
               <div className="flex items-start gap-3">
-                <span className="text-blue-600">🤝</span>
+                <span className="text-blue-600 dark:text-blue-400">🤝</span>
                 <p className="text-sm">Show enthusiasm and engagement</p>
               </div>
             </CardContent>
@@ -121,7 +121,7 @@ const InterviewPrep = () => {
             <Button
               variant="ghost"
               onClick={() => navigate("/interview-welcome")}
-              className="text-gray-500"
+              className="text-gray-500 dark:text-gray-400"
             >
               ← Back to Setup
             </Button>

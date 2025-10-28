@@ -273,9 +273,9 @@ const ResumeBuilder = () => {
 
   // Get score color
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 65) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 65) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
 
@@ -283,9 +283,9 @@ const ResumeBuilder = () => {
 
   // Get score background
   const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-50 border-green-200';
-    if (score >= 65) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (score >= 80) return 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800';
+    if (score >= 65) return 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800';
+    return 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800';
   };
 
 
@@ -781,11 +781,11 @@ const ResumeBuilder = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-lg">
+                  <div className="p-2 bg-white dark:bg-gray-800 rounded-lg">
                     {atsScore >= 80 ? (
-                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                     ) : (
-                      <AlertCircle className="w-6 h-6 text-yellow-600" />
+                      <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                     )}
                   </div>
                   <div>
@@ -862,10 +862,10 @@ const ResumeBuilder = () => {
                         key={idx}
                         className={`p-3 rounded-lg text-sm ${
                           suggestion.priority === 'high'
-                            ? 'bg-red-100 border border-red-200'
+                            ? 'bg-red-100 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
                             : suggestion.priority === 'medium'
-                            ? 'bg-yellow-100 border border-yellow-200'
-                            : 'bg-blue-100 border border-blue-200'
+                            ? 'bg-yellow-100 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800'
+                            : 'bg-blue-100 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800'
                         }`}
                       >
                         <div className="flex items-start gap-2">

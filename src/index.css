@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap');
 
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 /* Modern Web3 Font Styles */
 .font-inter {
@@ -172,6 +174,7 @@ All colors MUST be HSL.
   }
 }
 
+/* stylelint-disable at-rule-no-unknown */
 @layer base {
   * {
     @apply border-border;
@@ -181,6 +184,8 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* stylelint-enable at-rule-no-unknown */
 
 /* Advanced Animations */
 @keyframes float {
@@ -512,4 +517,10 @@ All colors MUST be HSL.
 
 .staggered-fade-in:nth-child(4) {
   animation-delay: 0.4s;
+}
+
+/* Resume display styles */
+.resume-container-shadow {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.1));
 }

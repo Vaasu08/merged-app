@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Briefcase, TrendingUp, DollarSign, Award, ArrowRight, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,8 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
   recommendations,
   onClose
 }) => {
+  const navigate = useNavigate();
+  
   return (
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -128,15 +131,24 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
                     <div className="text-sm">{job.workEnvironment}</div>
                   </div>
 
-                  {/* Learn More Button */}
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-4"
-                    onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(job.title + ' career path')}`, '_blank')}
-                  >
-                    Learn More
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-3 border-t">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(job.title + ' career path')}`, '_blank')}
+                    >
+                      Learn More
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+                      onClick={() => navigate('/job-listings', { state: { careerTitle: job.title } })}
+                    >
+                      View Jobs
+                      <Briefcase className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

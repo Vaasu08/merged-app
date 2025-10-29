@@ -117,11 +117,11 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
         portfolio_url: portfolioUrl,
         current_position: currentPosition,
         current_company: currentCompany,
-        experience_level: experienceLevel as any,
-        availability: availability as any,
+        experience_level: experienceLevel,
+        availability: availability,
         salary_expectation: salaryExpectation ? parseFloat(salaryExpectation) : undefined,
         currency,
-        work_preference: workPreference as any,
+        work_preference: workPreference,
         education,
         experience,
         certifications,
@@ -152,7 +152,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }]);
   };
 
-  const updateEducation = (index: number, field: keyof Education, value: any) => {
+  const updateEducation = (index: number, field: keyof Education, value: string | boolean | number | undefined) => {
     const updated = [...education];
     updated[index] = { ...updated[index], [field]: value };
     setEducation(updated);
@@ -173,7 +173,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }]);
   };
 
-  const updateExperience = (index: number, field: keyof Experience, value: any) => {
+  const updateExperience = (index: number, field: keyof Experience, value: string | boolean) => {
     const updated = [...experience];
     updated[index] = { ...updated[index], [field]: value };
     setExperience(updated);
@@ -191,7 +191,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }]);
   };
 
-  const updateCertification = (index: number, field: keyof Certification, value: any) => {
+  const updateCertification = (index: number, field: keyof Certification, value: string) => {
     const updated = [...certifications];
     updated[index] = { ...updated[index], [field]: value };
     setCertifications(updated);
@@ -208,7 +208,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     }]);
   };
 
-  const updateLanguage = (index: number, field: keyof Language, value: any) => {
+  const updateLanguage = (index: number, field: keyof Language, value: string) => {
     const updated = [...languages];
     updated[index] = { ...updated[index], [field]: value };
     setLanguages(updated);
@@ -393,7 +393,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="experienceLevel">Experience Level</Label>
-                  <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                  <Select value={experienceLevel} onValueChange={(value) => setExperienceLevel(value as typeof experienceLevel)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select experience level" />
                     </SelectTrigger>
@@ -408,7 +408,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="availability">Availability</Label>
-                  <Select value={availability} onValueChange={setAvailability}>
+                  <Select value={availability} onValueChange={(value) => setAvailability(value as typeof availability)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select availability" />
                     </SelectTrigger>
@@ -444,7 +444,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="workPreference">Work Preference</Label>
-                  <Select value={workPreference} onValueChange={setWorkPreference}>
+                  <Select value={workPreference} onValueChange={(value) => setWorkPreference(value as typeof workPreference)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select work preference" />
                     </SelectTrigger>
@@ -544,14 +544,18 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                         />
                       </div>
                     </div>
+                    {/* Template literal creates unique IDs at runtime */}
                     <div className="flex items-center space-x-2 mt-4">
                       <input
+                        key={`edu-current-${index}`}
                         type="checkbox"
-                        id={`current-${index}`}
+                        id={`current-education-${index}`}
                         checked={edu.is_current}
                         onChange={(e) => updateEducation(index, 'is_current', e.target.checked)}
+                        className="h-4 w-4"
+                        aria-label="Currently studying"
                       />
-                      <Label htmlFor={`current-${index}`}>Currently studying</Label>
+                      <Label htmlFor={`current-education-${index}`}>Currently studying</Label>
                     </div>
                     <div className="space-y-2 mt-4">
                       <Label>Description</Label>
@@ -655,6 +659,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                         id={`current-exp-${index}`}
                         checked={exp.is_current}
                         onChange={(e) => updateExperience(index, 'is_current', e.target.checked)}
+                        className="h-4 w-4"
+                        aria-label="Currently working here"
                       />
                       <Label htmlFor={`current-exp-${index}`}>Currently working here</Label>
                     </div>
@@ -857,6 +863,8 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                     <button
                       onClick={() => removeInterest(interest)}
                       className="ml-1 hover:text-destructive"
+                      aria-label={`Remove ${interest}`}
+                      title={`Remove ${interest}`}
                     >
                       <X className="w-3 h-3" />
                     </button>

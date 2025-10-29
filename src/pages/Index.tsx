@@ -382,7 +382,7 @@ const Index = () => {
                   >
                     <h1 className="text-6xl sm:text-7xl lg:text-8xl xl:text-9xl font-black leading-none relative z-10">
                   <motion.span
-                        className="bg-gradient-to-r from-cyan-400 via-blue-500 via-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent"
+                        className="bg-gradient-to-r from-cyan-400 via-purple-500 to-red-500 bg-clip-text text-transparent"
                         animate={{
                           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                         }}
@@ -401,7 +401,7 @@ const Index = () => {
                     
                     {/* Multiple animated gradient background effects */}
                     <motion.div
-                      className="absolute -z-10 w-full h-32 bg-gradient-to-r from-cyan-400/30 via-blue-500/30 via-purple-500/30 via-pink-500/30 to-red-500/30 blur-3xl"
+                      className="absolute -z-10 w-full h-32 bg-gradient-to-r from-cyan-400/30 via-purple-500/30 to-red-500/30 blur-3xl"
                       animate={{
                         scale: [1, 1.2, 1],
                         opacity: [0.4, 0.8, 0.4],
@@ -414,7 +414,7 @@ const Index = () => {
                       }}
                     />
                     <motion.div
-                      className="absolute -z-20 w-full h-40 bg-gradient-to-r from-pink-400/20 via-purple-500/20 via-blue-500/20 via-cyan-400/20 to-green-400/20 blur-2xl"
+                      className="absolute -z-20 w-full h-40 bg-gradient-to-r from-pink-400/20 via-blue-500/20 to-green-400/20 blur-2xl"
                       animate={{
                         scale: [1.1, 0.9, 1.1],
                         opacity: [0.2, 0.6, 0.2],
@@ -536,11 +536,7 @@ const Index = () => {
                   >
                     {/* Resume Container */}
                     <div 
-                      className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden"
-                      style={{
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-                        filter: 'drop-shadow(0 0 30px rgba(255,255,255,0.1))'
-                      }}
+                      className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden resume-container-shadow"
                     >
                       {/* Resume Content */}
                       <div className="p-4 h-full overflow-y-auto text-xs">

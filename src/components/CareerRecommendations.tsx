@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CareerPath } from '@/types/career';
-import { TrendingUp, DollarSign, Users, ChevronRight, CheckCircle2, Clock, ExternalLink, AlertTriangle, Target, Download, FileText } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, ChevronRight, CheckCircle2, Clock, ExternalLink, AlertTriangle, Target, Download, FileText, Briefcase } from 'lucide-react';
 import { skillsDatabase } from '@/data/careerData';
 import { generateCareerPlanPDF, generateCareerPlanText, ExportData } from '@/lib/pdfExporter';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export const CareerRecommendations = ({
   userSkills,
   onAddSkills
 }: CareerRecommendationsProps) => {
+  const navigate = useNavigate();
   const [checkedSkills, setCheckedSkills] = useState<string[]>([]);
   const [showOnlyHighPriority, setShowOnlyHighPriority] = useState(false);
 
@@ -432,7 +434,7 @@ export const CareerRecommendations = ({
             </div>
             
             {/* Export Buttons */}
-            <div className="flex gap-2 justify-end">
+            <div className="flex flex-wrap gap-2 justify-end">
               <Button 
                 onClick={handleExportPDF}
                 variant="outline"
@@ -450,6 +452,14 @@ export const CareerRecommendations = ({
               >
                 <FileText className="h-4 w-4" />
                 Export Text
+              </Button>
+              <Button 
+                onClick={() => navigate('/job-listings', { state: { careerTitle: selectedCareer.title } })}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+                size="sm"
+              >
+                <Briefcase className="h-4 w-4" />
+                View Job Opportunities
               </Button>
             </div>
           </CardHeader>

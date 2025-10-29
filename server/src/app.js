@@ -47,8 +47,21 @@ const openai = OPENAI_API_KEY ? new OpenAI({
 
 // ==================== EXPRESS APP ====================
 const app = express();
+
+// Enable CORS
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true }));
+
+// Parse JSON with size limit
 app.use(express.json({ limit: '2mb' }));
+
+// Add response compression (lightweight, built-in optimization)
+app.set('json spaces', 0); // Minimize JSON whitespace
+
+// Request timeout middleware
+app.use((req, res, next) => {
+  req.setTimeout(15000); // 15 second timeout
+  next();
+});
 
 // ==================== VALIDATION SCHEMAS ====================
 const QueryBodySchema = z.object({
@@ -82,10 +95,62 @@ const QuizBodySchema = z.object({
   duration: z.number().min(5).max(120),
 });
 
+const JobSearchSchema = z.object({
+  what: z.string().min(1),
+  where: z.string().optional(),
+  results_per_page: z.number().optional(),
+  page: z.number().optional(),
+  sort_by: z.enum(['relevance', 'date', 'salary']).optional(),
+  salary_min: z.number().optional(),
+  max_days_old: z.number().optional(),
+  country: z.string().optional(),
+});
+
+// ==================== CACHING ====================
+const jobCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 100;
+let cacheHits = 0;
+let cacheMisses = 0;
+
+function getCacheKey(params) {
+  // Normalize and create compact cache key
+  const normalized = {
+    q: (params.what || '').toLowerCase().trim(),
+    l: (params.where || '').toLowerCase().trim(),
+    p: params.page || 1,
+    d: params.max_days_old || 30
+  };
+  return `${normalized.q}|${normalized.l}|${normalized.p}|${normalized.d}`;
+}
+
+function pruneCache() {
+  // Remove oldest entries when cache is full
+  if (jobCache.size >= MAX_CACHE_SIZE) {
+    const entriesToRemove = Math.floor(MAX_CACHE_SIZE * 0.2); // Remove 20%
+    const keys = Array.from(jobCache.keys());
+    for (let i = 0; i < entriesToRemove; i++) {
+      jobCache.delete(keys[i]);
+    }
+    console.log(`🧹 Pruned ${entriesToRemove} cache entries (${jobCache.size} remaining)`);
+  }
+}
+
+function getCacheStats() {
+  const total = cacheHits + cacheMisses;
+  const hitRate = total > 0 ? ((cacheHits / total) * 100).toFixed(1) : 0;
+  return { hits: cacheHits, misses: cacheMisses, hitRate: `${hitRate}%`, size: jobCache.size };
+}
+
 // ==================== ROUTES ====================
 
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true }));
+
+// Cache statistics endpoint
+app.get('/api/cache/stats', (_req, res) => {
+  res.json(getCacheStats());
+});
 
 // ==================== EXISTING GEMINI QUERY ROUTE ====================
 app.post('/api/query', async (req, res) => {
@@ -625,13 +690,153 @@ Make sure:
   }
 });
 
+// ==================== ADZUNA JOB SEARCH PROXY ====================
+app.post('/api/jobs/search', async (req, res) => {
+  const startTime = Date.now();
+  const parse = JobSearchSchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+  }
+
+  const {
+    what,
+    where = '',
+    results_per_page = 20,
+    page = 1,
+    sort_by = 'relevance',
+    salary_min,
+    max_days_old = 30,
+    country = 'us'
+  } = parse.data;
+
+  // Check cache first
+  const cacheKey = getCacheKey({ what, where, page, max_days_old });
+  const cached = jobCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    cacheHits++;
+    const age = Math.round((Date.now() - cached.timestamp) / 1000);
+    console.log(`📦 Cache hit (${age}s old) | Stats:`, getCacheStats());
+    return res.status(200).json(cached.data);
+  }
+
+  cacheMisses++;
+
+  try {
+    // RapidAPI credentials
+    const RAPIDAPI_KEY = 'c5b9bfa7fbmshf020f8d59db3005p1d3fabjsn350c18b182ae';
+    const RAPIDAPI_HOST = 'jsearch.p.rapidapi.com';
+    
+    // Build query parameters for JSearch API
+    const queryParams = new URLSearchParams({
+      query: `${what} ${where}`.trim(),
+      page: page.toString(),
+      num_pages: '1',
+      date_posted: max_days_old <= 7 ? 'week' : max_days_old <= 30 ? 'month' : 'all'
+    });
+
+    const url = `https://${RAPIDAPI_HOST}/search?${queryParams.toString()}`;
+    
+    console.log('🔍 Fetching from RapidAPI:', { what, where, page });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': RAPIDAPI_HOST,
+        'Accept': 'application/json',
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ RapidAPI error:', errorText);
+      throw new Error(`RapidAPI error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Transform JSearch response to match our expected format (optimized)
+    const transformedResults = (data.data || [])
+      .slice(0, results_per_page)
+      .map(job => ({
+        id: job.job_id || `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: job.job_title || 'N/A',
+        company: job.employer_name || 'N/A',
+        location: {
+          display_name: [job.job_city, job.job_state, job.job_country]
+            .filter(Boolean)
+            .join(', ') || 'Remote',
+          area: [job.job_country, job.job_state, job.job_city].filter(Boolean)
+        },
+        description: job.job_description || 'No description available',
+        salary_min: job.job_min_salary,
+        salary_max: job.job_max_salary,
+        salary_is_predicted: !job.job_salary_currency,
+        contract_type: job.job_employment_type,
+        contract_time: job.job_is_remote ? 'remote' : 'full_time',
+        category: {
+          label: job.job_occupation || 'General',
+          tag: (job.job_occupation || 'general').toLowerCase().replace(/\s+/g, '-')
+        },
+        created: job.job_posted_at_datetime_utc || new Date().toISOString(),
+        redirect_url: job.job_apply_link || job.job_google_link || '#'
+      }));
+    
+    const result = {
+      success: true,
+      results: transformedResults,
+      count: transformedResults.length,
+      mean: 0
+    };
+
+    // Cache the result
+    pruneCache();
+    jobCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    });
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Fetched ${transformedResults.length} jobs (${duration}ms) | Stats:`, getCacheStats());
+    
+    return res.status(200).json(result);
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    if (error.name === 'AbortError') {
+      console.error(`⏱️ Request timeout after ${duration}ms`);
+      return res.status(504).json({
+        success: false,
+        error: 'Request timeout - please try again'
+      });
+    }
+    
+    console.error(`❌ Error after ${duration}ms:`, error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch jobs'
+    });
+  }
+});
+
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`✅ Server listening on :${PORT}`);
   console.log(`📡 Available endpoints:`);
   console.log(`   GET  /health`);
+  console.log(`   GET  /api/cache/stats`);
   console.log(`   POST /api/query (Gemini OCR Q&A)`);
   console.log(`   POST /api/roadmap/generate (OpenAI)`);
   console.log(`   POST /api/roadmap/generate-gemini (Gemini - Free)`);
   console.log(`   POST /api/quiz/generate (Gemini Quiz Generation)`);
+  console.log(`   POST /api/jobs/search (RapidAPI JSearch Proxy - Cached)`);
+  console.log(`\n💾 Cache: ${MAX_CACHE_SIZE} entries max, ${CACHE_DURATION / 60000} min TTL`);
 });

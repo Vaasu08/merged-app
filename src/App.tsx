@@ -32,6 +32,9 @@ import RoadmapView from "@/pages/RoadmapView";
 import ATSAssessment from "@/pages/ATSAssessment";
 import ATSResults from "@/pages/ATSResults";
 
+// --- Job Listings ---
+import JobListings from "@/pages/JobListings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -58,6 +61,9 @@ const App = () => (
                     {/* ATS Resume Assessment */}
                     <Route path="/ats-assessment" element={<ATSAssessment />} />
                     <Route path="/ats-results" element={<ATSResults />} />
+
+                    {/* Job Listings */}
+                    <Route path="/job-listings" element={<JobListings />} />
 
                     {/* Protected Profile/Resume */}
                     <Route path="/profile" element={

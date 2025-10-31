@@ -35,6 +35,12 @@ import ATSResults from "@/pages/ATSResults";
 // --- Job Listings ---
 import JobListings from "@/pages/JobListings";
 
+// --- Skill Graph ---
+import SkillGraph from "@/pages/SkillGraph";
+
+// --- AI Career Agent Swarm ---
+import AgentSwarm from "@/pages/AgentSwarm";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -64,6 +70,16 @@ const App = () => (
 
                     {/* Job Listings */}
                     <Route path="/job-listings" element={<JobListings />} />
+
+                    {/* Skill Graph Visualizer */}
+                    <Route path="/skill-graph" element={<SkillGraph />} />
+
+                    {/* AI Career Agent Swarm */}
+                    <Route path="/agent-swarm" element={
+                      <AuthGuard>
+                        <AgentSwarm />
+                      </AuthGuard>
+                    } />
 
                     {/* Protected Profile/Resume */}
                     <Route path="/profile" element={

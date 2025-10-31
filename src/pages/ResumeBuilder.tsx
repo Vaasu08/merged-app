@@ -9,10 +9,11 @@ import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserProfile, getUserSkills } from '@/lib/profile';
 import { skillsDatabase } from '@/data/careerData';
-import { FileText, Download, Eye, ArrowLeft, User, GraduationCap, Briefcase, Award, Globe, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { FileText, Download, Eye, ArrowLeft, User, GraduationCap, Briefcase, Award, Globe, AlertCircle, CheckCircle, Sparkles, Wand2, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { ATSScorer } from '@/lib/atsScorer';
 import type { ParsedCV } from '@/lib/cvParser';
+import { aiResumeEnhancer, type EnhancedResume } from '@/lib/aiResumeEnhancer';
 
 
 
@@ -72,7 +73,9 @@ const ResumeBuilder = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [enhancedResume, setEnhancedResume] = useState<EnhancedResume | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'classic'>('modern');
   const [showPreview, setShowPreview] = useState(false);
  
@@ -206,6 +209,37 @@ const ResumeBuilder = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeData]);
+
+  const enhanceResumeWithAI = async () => {
+    if (!resumeData) {
+      toast.error('No resume data available');
+      return;
+    }
+    
+    console.log('Starting AI enhancement...');
+    setIsEnhancing(true);
+    const toastId = toast.loading('🤖 AI is enhancing your resume...');
+    
+    try {
+      const enhanced = await aiResumeEnhancer.enhanceCompleteResume({
+        personalInfo: resumeData.personalInfo,
+        skills: resumeData.skills,
+        experience: resumeData.experience,
+        education: resumeData.education,
+        targetRole: resumeData.experience[0]?.position || 'Professional'
+      });
+      
+      console.log('Enhancement complete!', enhanced);
+      setEnhancedResume(enhanced);
+      toast.success('✨ Resume enhanced successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Enhancement error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed: ${errorMsg}`, { id: toastId });
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   useEffect(() => {
     loadResumeData();
@@ -954,6 +988,24 @@ const ResumeBuilder = () => {
           >
             <Eye className="w-5 h-5 mr-2" />
             {showPreview ? 'Hide Preview' : 'Preview Resume'}
+          </Button>
+          <Button
+            size="lg"
+            variant={enhancedResume ? "default" : "outline"}
+            onClick={enhanceResumeWithAI}
+            disabled={!resumeData || isEnhancing}
+          >
+            {isEnhancing ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enhancing...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-5 h-5 mr-2" />
+                {enhancedResume ? '✨ Enhanced' : 'Enhance with AI'}
+              </>
+            )}
           </Button>
           <Button
             size="lg"

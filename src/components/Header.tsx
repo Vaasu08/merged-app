@@ -68,6 +68,12 @@ export const Header = ({ showBackButton = true, className = '' }: HeaderProps) =
                 Roadmap Builder
               </Button>
             </Link>
+            <Link to="/skill-graph">
+              <Button variant="ghost" className="text-foreground hover:text-primary">
+                <Target className="w-4 h-4 mr-2" />
+                Skill Graph
+              </Button>
+            </Link>
           </nav>
           
           <div className="flex items-center gap-2">

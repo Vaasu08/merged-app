@@ -26,6 +26,7 @@ import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
 import Community from "./pages/Community";
 import RoadmapOnboarding from "@/components/RoadmapOnboarding";
+import SkillGraph from "./pages/SkillGraph";
 import RoadmapView from "@/pages/RoadmapView";
 
 // --- ATS Resume Assessment Imports ---
@@ -92,6 +93,9 @@ const App = () => (
                         <RoadmapView />
                       </AuthGuard>
                     } />
+
+                    {/* Skill Graph */}
+                    <Route path="/skill-graph" element={<SkillGraph />} />
 
                     {/* 404 Fallback */}
                     <Route path="*" element={<NotFound />} />

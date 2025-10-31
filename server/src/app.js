@@ -4,6 +4,9 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import OpenAI from 'openai'; // Modern OpenAI import (v4+)
+import { ChatOpenAI } from '@langchain/openai';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+
 
 // ==================== ENV SETUP ====================
 const PORT = process.env.PORT || 4000;
@@ -106,6 +109,15 @@ const JobSearchSchema = z.object({
   country: z.string().optional(),
 });
 
+const SkillGraphBodySchema = z.object({
+  text: z.string().min(1),
+});
+
+const SkillGraphSchema = z.object({
+  nodes: z.array(z.object({ id: z.string(), group: z.string() })),
+  links: z.array(z.object({ source: z.string(), target: z.string() })),
+});
+
 // ==================== CACHING ====================
 const jobCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -194,23 +206,27 @@ Answer:`;
     const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     if (!answer) throw new Error('Empty answer from Gemini');
 
-    // Persist to Supabase
-    const { error: insertError, data: inserted } = await supabase
-      .from('gemini_responses')
-      .insert({
-        user_id: userId,
-        question,
-        ocr_text: ocrText,
-        answer,
-        metadata,
-      })
-      .select('*')
-      .limit(1)
-      .maybeSingle();
+    // Persist to Supabase if configured; otherwise skip persistence
+    if (supabase) {
+      const { error: insertError, data: inserted } = await supabase
+        .from('gemini_responses')
+        .insert({
+          user_id: userId,
+          question,
+          ocr_text: ocrText,
+          answer,
+          metadata,
+        })
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-    if (insertError) throw insertError;
+      if (insertError) throw insertError;
 
-    return res.status(200).json({ answer, id: inserted?.id });
+      return res.status(200).json({ answer, id: inserted?.id });
+    }
+
+    return res.status(200).json({ answer });
   } catch (err) {
     console.error('Query handler error:', err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -723,9 +739,12 @@ app.post('/api/jobs/search', async (req, res) => {
   cacheMisses++;
 
   try {
-    // RapidAPI credentials
-    const RAPIDAPI_KEY = 'c5b9bfa7fbmshf020f8d59db3005p1d3fabjsn350c18b182ae';
-    const RAPIDAPI_HOST = 'jsearch.p.rapidapi.com';
+    // RapidAPI credentials from environment
+    const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+    const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'jsearch.p.rapidapi.com';
+    if (!RAPIDAPI_KEY) {
+      return res.status(503).json({ success: false, error: 'RapidAPI service not configured', message: 'Please set RAPIDAPI_KEY environment variable' });
+    }
     
     // Build query parameters for JSearch API
     const queryParams = new URLSearchParams({
@@ -827,6 +846,40 @@ app.post('/api/jobs/search', async (req, res) => {
   }
 });
 
+// ==================== SKILL GRAPH ROUTE ====================
+app.post('/api/skill-graph', async (req, res) => {
+  const parse = SkillGraphBodySchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+  }
+
+  const { text } = parse.data;
+
+  try {
+    if (!OPENAI_API_KEY) {
+      return res.status(503).json({ error: 'OpenAI service not configured', message: 'Please set OPENAI_API_KEY environment variable' });
+    }
+    const prompt = ChatPromptTemplate.fromMessages([
+      ['system', 'You are a helpful assistant that extracts skills and their relationships from a given text and returns a skill graph in JSON format.'],
+      ['human', 'Please extract the skills and their relationships from the following text:\n\n{text}\n\nReturn the skill graph in the format specified by the following JSON schema:\n\n{schema}'],
+    ]);
+
+    const llm = new ChatOpenAI({ model: 'gpt-4-turbo-preview', temperature: 0 });
+
+    const structuredLLM = llm.withStructuredOutput(SkillGraphSchema);
+
+    const skillGraph = await structuredLLM.invoke({
+      text,
+      schema: JSON.stringify(SkillGraphSchema.shape, null, 2),
+    });
+
+    return res.status(200).json(skillGraph);
+  } catch (error) {
+    console.error('Error generating skill graph:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
   console.log(`✅ Server listening on :${PORT}`);
@@ -838,5 +891,6 @@ app.listen(PORT, () => {
   console.log(`   POST /api/roadmap/generate-gemini (Gemini - Free)`);
   console.log(`   POST /api/quiz/generate (Gemini Quiz Generation)`);
   console.log(`   POST /api/jobs/search (RapidAPI JSearch Proxy - Cached)`);
+  console.log(`   POST /api/skill-graph (Skill Graph Generation)`);
   console.log(`\n💾 Cache: ${MAX_CACHE_SIZE} entries max, ${CACHE_DURATION / 60000} min TTL`);
 });

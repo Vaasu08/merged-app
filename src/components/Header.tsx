@@ -44,6 +44,22 @@ export const Header = ({ showBackButton = true, className = '' }: HeaderProps) =
             >
               ATS Assessment
             </Link>
+            {/* === Add Skill Graph Link === */}
+            <Link 
+              to="/skill-graph"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+            >
+              🗺️ Skill Graph
+            </Link>
+            {/* === AI Career Agents === */}
+            {user && (
+              <Link 
+                to="/agent-swarm"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+              >
+                🤖 AI Agents
+              </Link>
+            )}
             {/* === Add Resume Builder Link (optional, usually for authenticated users) === */}
             {user && (
               <>

@@ -25,6 +25,7 @@ import InterviewPrep from "./pages/InterviewPrep";
 import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
 import Community from "./pages/Community";
+import Blog from "./pages/Blog";
 import RoadmapOnboarding from "@/components/RoadmapOnboarding";
 import RoadmapView from "@/pages/RoadmapView";
 
@@ -34,6 +35,12 @@ import ATSResults from "@/pages/ATSResults";
 
 // --- Job Listings ---
 import JobListings from "@/pages/JobListings";
+
+// --- Skill Graph ---
+import SkillGraph from "@/pages/SkillGraph";
+
+// --- AI Career Agent Swarm ---
+import AgentSwarm from "@/pages/AgentSwarm";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +60,7 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/community" element={<Community />} />
+                    <Route path="/blog" element={<Blog />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/terms" element={<Terms />} />
@@ -64,6 +72,16 @@ const App = () => (
 
                     {/* Job Listings */}
                     <Route path="/job-listings" element={<JobListings />} />
+
+                    {/* Skill Graph Visualizer */}
+                    <Route path="/skill-graph" element={<SkillGraph />} />
+
+                    {/* AI Career Agent Swarm */}
+                    <Route path="/agent-swarm" element={
+                      <AuthGuard>
+                        <AgentSwarm />
+                      </AuthGuard>
+                    } />
 
                     {/* Protected Profile/Resume */}
                     <Route path="/profile" element={

@@ -23,7 +23,7 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
     <div className="fixed inset-0 z-[100] overflow-y-auto bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
@@ -59,7 +59,7 @@ export const CareerRecommendationResults: React.FC<CareerRecommendationResultsPr
                         <Briefcase className="h-5 w-5 text-primary" />
                         <CardTitle className="text-xl">{job.title}</CardTitle>
                       </div>
-                      <CardDescription className="text-sm">
+                      <CardDescription className="text-sm">code --log debug
                         {job.description}
                       </CardDescription>
                     </div>

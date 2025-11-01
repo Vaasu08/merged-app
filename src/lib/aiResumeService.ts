@@ -1,12 +1,89 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+interface EnhancedExperience {
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  isCurrent: boolean;
+  bulletPoints: string[];
+  impactMetrics?: string;
+}
 
+interface EnhancedEducation {
+  institution: string;
+  degree: string;
+  fieldOfStudy: string;
+  startDate: string;
+  endDate: string;
+  gpa: number | null;
+  isCurrent: boolean;
+  relevantCoursework?: string[];
+  achievements?: string[];
+}
+
+interface PersonalInfo {
+  name: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  linkedin?: string;
+  website?: string;
+}
+
+interface Experience {
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  isCurrent?: boolean;
+  description?: string;
+  achievements?: string[];
+}
+
+interface Education {
+  institution: string;
+  degree: string;
+  fieldOfStudy: string;
+  startDate: string;
+  endDate?: string;
+  gpa?: number;
+  isCurrent?: boolean;
+}
+
+interface Certification {
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+}
+
+interface ResumeEnhancementInput {
+  personalInfo: PersonalInfo;
+  summary?: string;
+  skills: string[];
+  experience: Experience[];
+  education: Education[];
+  certifications: Certification[];
+  targetRole?: string;
+  targetIndustry?: string;
+}
+
+
+interface UserData extends PersonalInfo {
+  skills?: string[];
+  experience?: Experience[];
+  targetRole?: string;
+  experienceYears?: number;
+}
 
 export class AIResumeService {
   static async generateSummary(
-    userData: any,
+    userData: UserData,
     jobDescription: string
   ): Promise<string> {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -40,7 +117,7 @@ Return ONLY the summary text.`;
 
 
   static async generateBulletPoints(
-    roleData: any,
+    roleData: { title?: string; company?: string; description?: string; achievements?: string[] },
     jobDescription: string
   ): Promise<string[]> {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });

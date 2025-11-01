@@ -1529,8 +1529,57 @@ class CareerAgentSwarm {
       const coachMsg = await this.coachAgent.generateMessage(currentProgress, motivation);
       conversation.push(coachMsg);
 
+      // Phase 5: Research Agent analyzes market trends (runs in parallel with networking)
+      console.log('🔍 Phase 5: Research & Networking Agents...');
+      const [industryTrends, networkingPlan] = await Promise.all([
+        this.researchAgent.analyzeTrends(
+          profile.preferences?.industries?.[0] || 'Technology',
+          profile.targetRole || profile.currentRole || 'Professional'
+        ),
+        this.networkingAgent.generateNetworkingPlan(profile)
+      ]);
+      
+      const researchMsg = await this.researchAgent.generateMessage('market-trends', {
+        trends: industryTrends.currentTrends,
+        emergingSkills: industryTrends.emergingSkills,
+        marketDemand: industryTrends.marketDemand
+      });
+      conversation.push(researchMsg);
+
+      const networkMsg = await this.networkingAgent.generateMessage('networking-plan', {
+        weeklyGoals: networkingPlan.weeklyGoals,
+        targetGroups: networkingPlan.targetGroups
+      });
+      conversation.push(networkMsg);
+
+      // Phase 6: Branding Agent analyzes personal brand
+      console.log('🎨 Phase 6: Branding Agent optimizing profile...');
+      const brandAnalysis = await this.brandingAgent.analyzePersonalBrand(profile);
+      const brandMsg = await this.brandingAgent.generateMessage('brand-analysis', {
+        currentBrand: brandAnalysis.currentBrand,
+        strengths: brandAnalysis.strengths,
+        gaps: brandAnalysis.gaps,
+        actionPlan: brandAnalysis.actionPlan
+      });
+      conversation.push(brandMsg);
+
+      // Phase 7: Negotiation Agent prepares strategy (if applicable)
+      if (currentProgress.interviewsCompleted > 0) {
+        console.log('💰 Phase 7: Negotiation Agent preparing strategy...');
+        const negotiationStrategy = await this.negotiationAgent.generateNegotiationStrategy(
+          profile,
+          currentProgress.interviewsCompleted > 2 ? 'offer-received' : 'pre-offer'
+        );
+        const negotiationMsg = await this.negotiationAgent.generateMessage({
+          stage: negotiationStrategy.stage,
+          keyPoints: negotiationStrategy.keyPoints,
+          preparedness: 'ready'
+        });
+        conversation.push(negotiationMsg);
+      }
+
       const endTime = Date.now();
-      console.log(`✅ Swarm completed in ${endTime - startTime}ms`);
+      console.log(`✅ Enhanced Swarm completed in ${endTime - startTime}ms with ${conversation.length} agent insights`);
 
       return {
         userId: profile.fullName,

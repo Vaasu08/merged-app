@@ -41,14 +41,30 @@ interface GeminiATSAnalysis {
 }
 
 export class ATSScorerAI {
+  private apiKey: string | null;
+
   constructor() {
-    console.log('ATSScorerAI initialized with optimized Gemini service');
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn('⚠️ VITE_GEMINI_API_KEY is missing. AI-powered ATS scoring will use fallback scoring.');
+    }
+    this.apiKey = apiKey || null;
+  }
+
+  private hasApiKey(): boolean {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   async calculateScore(
     resumeData: ParsedCV,
     jobDescription?: string
   ): Promise<ATSScores> {
+    // If no API key, use fallback scorer
+    if (!this.hasApiKey()) {
+      console.warn('⚠️ API key not available, falling back to rule-based scoring');
+      return ATSScorerFallback.calculateScore(resumeData, jobDescription);
+    }
+
     try {
       console.log('🤖 Using Gemini AI for ATS scoring...');
       
@@ -74,7 +90,9 @@ export class ATSScorerAI {
       };
     } catch (error) {
       console.error('Gemini ATS scoring failed:', error);
-      throw new Error('AI-powered ATS scoring is currently unavailable. Please try again later.');
+      // Fall back to rule-based scoring instead of throwing
+      console.warn('⚠️ Falling back to rule-based scoring');
+      return ATSScorerFallback.calculateScore(resumeData, jobDescription);
     }
   }
 
@@ -82,12 +100,17 @@ export class ATSScorerAI {
     resumeData: ParsedCV,
     jobDescription?: string
   ): Promise<GeminiATSAnalysis> {
-    const prompt = this.buildAnalysisPrompt(resumeData, jobDescription);
-
+    if (!this.apiKey) {
+      throw new Error('API key is required');
+    }
+    
     // Use optimized Gemini service with caching and retry logic
     const response = await geminiService.generateJSON<GeminiATSAnalysis>(prompt, {
       temperature: 0.2, // Lowered from 0.3 for more consistent scoring
       maxOutputTokens: 4096, // Increased from 3072 for MORE detailed suggestions (6-10 items)
+    const response = await geminiService.generateJSON<GeminiATSAnalysis>(this.buildAnalysisPrompt(resumeData, jobDescription), {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
       useCache: true,
     });
 
@@ -289,6 +312,9 @@ QUALITY STANDARDS:
 
   // Test method to validate API connection
   async testConnection(): Promise<boolean> {
+    if (!this.hasApiKey()) {
+      return false;
+    }
     try {
       await geminiService.generateText('Test connection', {
         maxOutputTokens: 10,
@@ -456,13 +482,7 @@ export class ATSScorerFallback {
     return Math.max(20, Math.min(95, score)); // Cap between 20-95
   }
 
-  private static calculateOverall(scores: {
-    keywordMatch: number;
-    skillsMatch: number;
-    experience: number;
-    education: number;
-    formatting: number;
-  }): number {
+  private static calculateOverall(scores: any): number {
     const WEIGHTS = {
       keywordMatch: 0.40,
       skillsMatch: 0.25,
@@ -505,13 +525,7 @@ export class ATSScorerFallback {
     return { matched, missing };
   }
 
-  private static generateSuggestions(scores: {
-    keywordMatch: number;
-    skillsMatch: number;
-    experience: number;
-    education: number;
-    formatting: number;
-  }, resume: ParsedCV): Suggestion[] {
+  private static generateSuggestions(scores: any, resume: ParsedCV): Suggestion[] {
     const suggestions: Suggestion[] = [];
     const text = resume.text.toLowerCase();
     

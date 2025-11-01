@@ -8,7 +8,10 @@ import { ChatbotProvider } from "@/components/ChatbotProvider";
 import { Chatbot } from "@/components/Chatbot";
 import { InterviewProvider } from "@/contexts/InterviewContext";
 import { RoadmapProvider } from "@/contexts/RoadmapContext";
-import Index from "./pages/Index";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import IndexWrapper from "./components/IndexWrapper";
+import { AppDebugger } from "@/components/AppDebugger";
+import { MinimalTest } from "@/components/MinimalTest";
 import NotFound from "./pages/NotFound";
 import Insights from "./pages/Insights";
 import Signup from "./pages/Signup";
@@ -26,6 +29,7 @@ import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
 import Community from "./pages/Community";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 import RoadmapOnboarding from "@/components/RoadmapOnboarding";
 import RoadmapView from "@/pages/RoadmapView";
 
@@ -42,25 +46,40 @@ import SkillGraph from "@/pages/SkillGraph";
 // --- AI Career Agent Swarm ---
 import AgentSwarm from "@/pages/AgentSwarm";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
-          <ChatbotProvider>
-            <InterviewProvider>
-              <RoadmapProvider>
-                <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-                  <Routes>
+const App = () => {
+  // Debug logging
+  console.log('🚀 App component rendering...');
+  
+  return (
+    <ErrorBoundary>
+      <AppDebugger />
+      <MinimalTest />
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AuthProvider>
+              <ChatbotProvider>
+                <InterviewProvider>
+                  <RoadmapProvider>
+                    <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+                      <Routes>
                     {/* Home and Info */}
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<IndexWrapper />} />
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/community" element={<Community />} />
                     <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:id" element={<BlogDetail />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/terms" element={<Terms />} />
@@ -123,6 +142,8 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  </ErrorBoundary>
+  );
+};
 
 export default App;

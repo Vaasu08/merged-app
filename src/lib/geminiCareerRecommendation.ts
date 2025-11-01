@@ -1,5 +1,4 @@
 // Gemini-powered Career Recommendation Service
-import geminiService from './geminiService';
 
 export interface JobRecommendation {
   id: string;
@@ -14,11 +13,27 @@ export interface JobRecommendation {
 }
 
 export class GeminiCareerRecommendationService {
+  private apiKey: string | null;
+
   constructor() {
-    console.log('GeminiCareerRecommendationService initialized with optimized service');
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn('⚠️ VITE_GEMINI_API_KEY is missing. Gemini AI features will use fallback recommendations.');
+    }
+    this.apiKey = apiKey || null;
+  }
+
+  private hasApiKey(): boolean {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   async generateRecommendations(answers: Record<number, string>): Promise<JobRecommendation[]> {
+    // If no API key, return fallback recommendations immediately
+    if (!this.hasApiKey()) {
+      console.warn('⚠️ Gemini API key not available, using fallback recommendations');
+      return this.getFallbackRecommendations(answers);
+    }
+
     try {
       console.log('🎯 Generating ADVANCED career recommendations with Gemini AI...');
       console.log('📊 Deep analyzing', Object.keys(answers).length, 'assessment responses');
@@ -28,23 +43,51 @@ export class GeminiCareerRecommendationService {
       const prompt = this.buildPrompt(answers);
       console.log('📝 Prompt length:', prompt.length, 'characters');
       
-      // Use optimized Gemini service with caching and retry logic
-      const response = await geminiService.generateText(prompt, {
-        temperature: 0.9, // Higher for maximum creativity and personalization
-        topK: 64, // Higher for more diverse token selection
-        topP: 0.98, // Higher for more varied outputs
-        maxOutputTokens: 8192, // Doubled for comprehensive responses
-        useCache: true,
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.9, // Higher for maximum creativity and personalization
+              topK: 64, // Higher for more diverse token selection
+              topP: 0.98, // Higher for more varied outputs
+              maxOutputTokens: 8192, // Doubled for comprehensive responses
+              candidateCount: 1,
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          })
+        }
+      );
 
-      const textResponse = response.data;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Gemini API error:', errorText);
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Gemini response received successfully');
       
+      // Extract the text response
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!textResponse) {
+        console.error('❌ No text in Gemini response:', JSON.stringify(data, null, 2));
         throw new Error('No response text from Gemini - response may have been blocked');
       }
 
-      console.log('📝 Response length:', textResponse.length, 'characters', response.cached ? '(cached)' : '');
-      console.log('⚡ Response time:', response.duration, 'ms');
+      console.log('📝 Response length:', textResponse.length, 'characters');
       
       // Parse the JSON response
       const recommendations = this.parseRecommendations(textResponse);
@@ -53,8 +96,10 @@ export class GeminiCareerRecommendationService {
       return recommendations;
 
     } catch (error) {
-      console.error('Error generating recommendations:', error);
-      throw error;
+      console.error('❌ Error generating recommendations with Gemini:', error);
+      console.log('⚠️ Falling back to default recommendations');
+      // Return fallback instead of throwing
+      return this.getFallbackRecommendations(answers);
     }
   }
 
@@ -321,28 +366,28 @@ Now analyze deeply and generate the 6 transformative career recommendations:`;
     } catch (error) {
       console.error('Error parsing recommendations:', error);
       console.error('Raw text:', text);
-      throw new Error('Failed to parse career recommendations from Gemini response');
+      // Return empty array instead of throwing - caller will handle fallback
+      console.warn('⚠️ Returning empty recommendations, fallback will be used');
+      return [];
     }
   }
-}
 
-// Export a singleton instance
-export const geminiCareerService = new GeminiCareerRecommendationService();
+  // Fallback recommendations when API is unavailable
+  private getFallbackRecommendations(answers: Record<number, string>): JobRecommendation[] {
+    console.log('📋 Generating fallback recommendations based on assessment answers');
+    // Analyze answers to provide better fallbacks
+    const answerValues = Object.values(answers);
+    const hasTechKeywords = answerValues.some(a => 
+      /tech|code|programming|software|computer|data|algorithm/i.test(a)
+    );
+    const hasCreativeKeywords = answerValues.some(a => 
+      /creative|design|art|visual|write|content/i.test(a)
+    );
+    const hasBusinessKeywords = answerValues.some(a => 
+      /business|manage|lead|team|strategy|market/i.test(a)
+    );
 
-// Main function to analyze assessment answers and return recommendations
-export async function analyzeAssessmentAnswersWithGemini(
-  answers: Record<number, string>
-): Promise<JobRecommendation[]> {
-  try {
-    const service = new GeminiCareerRecommendationService();
-    const recommendations = await service.generateRecommendations(answers);
-    return recommendations;
-  } catch (error) {
-    console.error('❌ Error analyzing assessment with Gemini:', error);
-    
-    // Enhanced fallback recommendations based on common assessment patterns
-    console.log('⚠️ Using enhanced fallback recommendations');
-    
+    // Select relevant fallbacks based on answers
     return [
       {
         id: 'fallback-1',
@@ -442,4 +487,15 @@ export async function analyzeAssessmentAnswersWithGemini(
       }
     ];
   }
+}
+
+// Export a safe singleton instance (won't throw if API key is missing)
+export const geminiCareerService = new GeminiCareerRecommendationService();
+
+// Main function to analyze assessment answers and return recommendations
+export async function analyzeAssessmentAnswersWithGemini(
+  answers: Record<number, string>
+): Promise<JobRecommendation[]> {
+  // Use the singleton service - it already handles API key checks and fallbacks
+  return geminiCareerService.generateRecommendations(answers);
 }

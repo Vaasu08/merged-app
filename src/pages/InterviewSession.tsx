@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Video, VideoOff, Send, Volume, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
+import { BackButton } from "@/components/BackButton";
 
 // Define TypeScript interfaces for speech recognition
 interface SpeechRecognitionEvent extends Event {
@@ -282,6 +283,9 @@ const InterviewSession = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <BackButton to="/interview-home" label="Back to Interview Home" />
+        </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             {interviewMode === "text" ? "Text" : 

@@ -9,6 +9,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -118,6 +119,9 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
       <div className="absolute top-4 right-4">
         <ModeToggle />
+      </div>
+      <div className="absolute top-4 left-4">
+        <BackButton to="/" label="Home" />
       </div>
       <div className="w-full max-w-md space-y-6">
         {/* Header */}

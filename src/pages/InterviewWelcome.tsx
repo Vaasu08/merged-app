@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInterview } from "@/contexts/InterviewContext";
 
@@ -35,6 +36,9 @@ const InterviewWelcome = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <BackButton to="/interview-home" label="Back to Interview Home" />
+        </div>
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             Welcome, {userName}! 👋

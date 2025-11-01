@@ -21,13 +21,18 @@ import {
 import { toast } from 'sonner';
 import { motion, useScroll, useTransform, useInView, useAnimation } from 'framer-motion';
 import { useInView as useIntersectionObserver } from 'react-intersection-observer';
+// Import image - using dynamic import would work but static import is simpler
 import careerHeroImage from '@/assets/career-hero.jpg';
 import GlitchText from '@/components/GlitchText'
 import HowItWorks from '@/components/HowItWorks'
 
 
 const Index = () => {
-  const { user } = useAuth();
+  // useAuth hook MUST be called unconditionally (React Rules of Hooks)
+  // If it throws, wrap the entire component usage or handle it differently
+  const authContext = useAuth();
+  const user = authContext?.user ?? null;
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState<'welcome' | 'skills' | 'recommendations'>('welcome');
@@ -109,7 +114,8 @@ const Index = () => {
         }
         // If no skills, stay on welcome screen
       } catch (e) {
-        console.warn('Failed to load user skills', e);
+        console.warn('Failed to load user skills (non-fatal):', e);
+        // Don't block app from rendering if skills loading fails
       } finally {
         skillsLoadedRef.current = true;
         setInitialLoadComplete(true);
@@ -213,6 +219,19 @@ const Index = () => {
     setSelectedCareer(undefined);
     setCompletedSteps([]);
   };
+
+  // Safety timeout to prevent infinite loading state
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!initialLoadComplete) {
+        console.warn('⚠️ Initial load timeout - forcing completion');
+        setInitialLoadComplete(true);
+      }
+    }, 3000); // 3 second safety timeout
+    
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Show loading while initial data is being loaded
   if (!initialLoadComplete) {

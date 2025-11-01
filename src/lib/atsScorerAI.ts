@@ -33,8 +33,10 @@ interface GeminiATSAnalysis {
   missing_keywords: string[];
   suggestions: Array<{
     type: string;
-    priority: 'high' | 'medium' | 'low';
+    priority: 'critical' | 'high' | 'medium' | 'low';
     message: string;
+    impact: string;
+    action: string;
   }>;
 }
 
@@ -79,7 +81,7 @@ export class ATSScorerAI {
     // Use optimized Gemini service with caching and retry logic
     const response = await geminiService.generateJSON<GeminiATSAnalysis>(prompt, {
       temperature: 0.2, // Lowered from 0.3 for more consistent scoring
-      maxOutputTokens: 3072, // Increased from 2048 for detailed suggestions
+      maxOutputTokens: 4096, // Increased from 3072 for MORE detailed suggestions (6-10 items)
       useCache: true,
     });
 
@@ -196,43 +198,77 @@ Return ONLY valid JSON (no markdown, no commentary):
     {
       "type": "keywords",
       "priority": "critical",
-      "message": "URGENT: Add 'TypeScript' and 'CI/CD' to skills - both are must-have requirements for this role"
+      "message": "URGENT: Add 'TypeScript' and 'CI/CD' to skills - both are must-have requirements for this role",
+      "impact": "+20-25 points overall",
+      "action": "Add these exact keywords to your Skills section AND mention them in context in 2-3 experience bullets (e.g., 'Built CI/CD pipeline using Jenkins...')"
     },
     {
       "type": "experience",
       "priority": "high",
-      "message": "Quantify ALL achievements with specific metrics. Example: 'Improved API performance' → 'Reduced API latency by 60% (from 500ms to 200ms), serving 2M daily requests'"
+      "message": "Quantify ALL achievements with specific metrics - currently only 20% of bullets have numbers",
+      "impact": "+15-20 points",
+      "action": "Add metrics to EVERY bullet: percentages ('+40% efficiency'), dollar amounts ('saved $200K'), numbers ('team of 8', 'processed 10M records'), timeframes ('reduced from 4hrs to 30min')"
     },
     {
       "type": "skills",
       "priority": "high",
-      "message": "Add 'Kubernetes' and 'GraphQL' - mentioned 3x in job description as key technologies"
+      "message": "Add 'Kubernetes' and 'GraphQL' - mentioned 3x in job description as key technologies",
+      "impact": "+12-18 points",
+      "action": "Add to Technical Skills section. If you have experience, add bullets like: 'Deployed 15+ microservices to Kubernetes clusters' or 'Built GraphQL API serving 50K requests/day'"
     },
     {
       "type": "formatting",
       "priority": "medium",
-      "message": "Use standard headers: 'Professional Summary', 'Experience', 'Education', 'Skills' for optimal ATS parsing"
+      "message": "Use standard section headers for optimal ATS parsing",
+      "impact": "+8-12 points",
+      "action": "Rename sections to exact ATS-friendly names: 'Professional Summary', 'Work Experience', 'Education', 'Technical Skills', 'Certifications'. Avoid creative names like 'My Journey' or 'What I Do'"
     },
     {
       "type": "keywords",
+      "priority": "medium",
+      "message": "Missing industry-standard terms that recruiters search for",
+      "impact": "+10-15 points",
+      "action": "Add 5-7 more relevant keywords: 'Agile/Scrum', 'RESTful APIs', 'unit testing', 'code review', 'Git/GitHub', 'cloud architecture'. Use naturally in experience bullets"
+    },
+    {
+      "type": "experience",
+      "priority": "high",
+      "message": "Weak action verbs detected - use powerful, specific verbs to show impact",
+      "impact": "+8-10 points",
+      "action": "Replace weak verbs: 'Worked on' → 'Architected/Engineered', 'Responsible for' → 'Led/Managed', 'Helped with' → 'Drove/Delivered'. Start EVERY bullet with a strong verb"
+    },
+    {
+      "type": "education",
       "priority": "low",
-      "message": "Consider adding industry buzzwords: 'microservices architecture', 'cloud-native' to match company tech stack"
+      "message": "Add relevant certifications to stand out",
+      "impact": "+5-8 points",
+      "action": "List any tech certifications: AWS Certified, Google Cloud, Microsoft Azure, PMI, Scrum Master, etc. Include certification year if recent (last 3 years)"
     }
   ]
 }
 
+CRITICAL INSTRUCTIONS FOR SUGGESTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 GENERATE 6-10 SUGGESTIONS (minimum 6, target 8-10)
+- Cover ALL weak areas (keyword, skills, experience, formatting, education)
+- Each suggestion MUST have: type, priority, message, impact (+X points), action (specific steps)
+- Be hyper-specific with examples and numbers
+- Mix priorities: 1-2 critical, 2-3 high, 2-3 medium, 1-2 low
+
 SUGGESTION PRIORITIES:
-- "critical": Must fix before applying (missing requirements)
-- "high": Strong recommendation (major improvement)
-- "medium": Should do (moderate improvement)
-- "low": Nice to have (minor polish)
+- "critical": Must fix before applying (missing requirements, deal-breakers)
+- "high": Strong recommendation (major improvement, obvious gaps)
+- "medium": Should do (moderate improvement, polish)
+- "low": Nice to have (minor optimizations, bonus points)
 
 QUALITY STANDARDS:
 ✅ BE SPECIFIC: Don't say "add more keywords" - say "Add TypeScript, AWS, Docker"
 ✅ BE QUANTIFIED: Reference actual gaps ("missing 3 of 5 must-have skills")
-✅ BE ACTIONABLE: Tell them WHERE and HOW to improve
+✅ BE ACTIONABLE: Tell them WHERE and HOW to improve with exact examples
 ✅ BE HONEST: Score fairly - don't inflate scores to make candidate feel good
-✅ BE RELEVANT: Every suggestion must directly improve ATS score or interview chances`;
+✅ BE RELEVANT: Every suggestion must directly improve ATS score or interview chances
+✅ SHOW IMPACT: Every suggestion needs "+X points" impact estimate
+✅ GIVE ACTIONS: Provide 1-2 sentence action plan with specific examples`;
   }
 
   private getGrade(score: number): string {

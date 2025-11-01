@@ -10,7 +10,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getUserSkills, saveUserSkills, getUserProfile, saveUserProfile, UserProfile } from '@/lib/profile';
 import { skillsDatabase } from '@/data/careerData';
 import { toast } from 'sonner';
-import { User, LogOut, Settings, Edit3, FileText, Globe, Linkedin, Github, Award, TrendingUp } from 'lucide-react';
+import { User, LogOut, Settings, Edit3, FileText, Globe, Linkedin, Github, Award, TrendingUp, Loader2 } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -19,6 +20,7 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const skillsLoadedRef = useRef(false);
 
   const handleSignOut = async () => {
@@ -66,6 +68,12 @@ const Profile = () => {
 
   const getSkillsByCategory = () => {
     const categorized: Record<string, string[]> = {};
+    
+    // Ensure selectedSkills is an array before iterating
+    if (!Array.isArray(selectedSkills)) {
+      return categorized;
+    }
+    
     selectedSkills.forEach(skillId => {
       const skill = skillsDatabase.find(s => s.id === skillId);
       if (skill) {
@@ -81,19 +89,21 @@ const Profile = () => {
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return;
+      
+      setIsInitialLoad(true);
       try {
         const [skills, profile] = await Promise.all([
           getUserSkills(user.id),
           getUserProfile(user.id)
         ]);
-        setSelectedSkills(skills);
+        setSelectedSkills(Array.isArray(skills) ? skills : []);
         setUserProfile(profile);
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('Failed to load user data', e);
         toast.error('Failed to load your profile data');
       } finally {
         skillsLoadedRef.current = true;
+        setIsInitialLoad(false);
       }
     };
     load();
@@ -109,21 +119,40 @@ const Profile = () => {
       try {
         await saveUserSkills(user.id, selectedSkills);
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn('Failed to save user skills', e);
       }
     };
     sync();
   }, [selectedSkills, user?.id]);
 
+  // Add loading state check
+  if (!user) {
+    return null; // AuthGuard will handle redirect
+  }
+
+  // Show loading spinner while initial data loads
+  if (isInitialLoad) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8 px-4">
       <div className="container mx-auto max-w-6xl space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground">Manage your skills and track your career progress</p>
+          <div className="flex items-center gap-4">
+            <BackButton to="/" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
+              <p className="text-muted-foreground">Manage your skills and track your career progress</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -138,7 +167,7 @@ const Profile = () => {
 
         {isEditingProfile ? (
           <ProfileForm
-            userId={user?.id || ''}
+            userId={user.id}
             initialProfile={userProfile}
             onSave={handleSaveProfile}
             onCancel={() => setIsEditingProfile(false)}
@@ -163,7 +192,7 @@ const Profile = () => {
                       </CardTitle>
                       <CardDescription>{userProfile?.email || user?.email}</CardDescription>
                       {userProfile?.location && (
-                        <CardDescription className="text-sm">{userProfile.location}</CardDescription>
+                        <CardDescription className="text-sm">{userProfile?.location}</CardDescription>
                       )}
                     </div>
                   </div>
@@ -186,7 +215,7 @@ const Profile = () => {
                           <span className="text-sm font-medium">Level</span>
                         </div>
                         <Badge variant="secondary" className="bg-success/10 text-success capitalize">
-                          {userProfile.experience_level}
+                          {userProfile?.experience_level}
                         </Badge>
                       </div>
                     )}
@@ -197,7 +226,7 @@ const Profile = () => {
                           <span className="text-sm font-medium">Position</span>
                         </div>
                         <Badge variant="secondary" className="bg-blue-600/10 text-blue-600">
-                          {userProfile.current_position}
+                          {userProfile?.current_position}
                         </Badge>
                       </div>
                     )}
@@ -248,30 +277,30 @@ const Profile = () => {
                     <CardDescription>Your complete profile information</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {userProfile.bio && (
+                    {userProfile?.bio && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Bio</h4>
-                        <p className="text-sm">{userProfile.bio}</p>
+                        <p className="text-sm">{userProfile?.bio}</p>
                       </div>
                     )}
                     
-                    {(userProfile.website || userProfile.linkedin_url || userProfile.github_url) && (
+                    {(userProfile?.website || userProfile?.linkedin_url || userProfile?.github_url) && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Links</h4>
                         <div className="flex flex-wrap gap-2">
-                          {userProfile.website && (
+                          {userProfile?.website && (
                             <Badge variant="outline" className="text-xs">
                               <Globe className="w-3 h-3 mr-1" />
                               Website
                             </Badge>
                           )}
-                          {userProfile.linkedin_url && (
+                          {userProfile?.linkedin_url && (
                             <Badge variant="outline" className="text-xs">
                               <Linkedin className="w-3 h-3 mr-1" />
                               LinkedIn
                             </Badge>
                           )}
-                          {userProfile.github_url && (
+                          {userProfile?.github_url && (
                             <Badge variant="outline" className="text-xs">
                               <Github className="w-3 h-3 mr-1" />
                               GitHub
@@ -281,7 +310,7 @@ const Profile = () => {
                       </div>
                     )}
 
-                    {userProfile.interests && userProfile.interests.length > 0 && (
+                    {userProfile?.interests && Array.isArray(userProfile.interests) && userProfile.interests.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Interests</h4>
                         <div className="flex flex-wrap gap-1">

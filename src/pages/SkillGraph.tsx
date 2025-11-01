@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BackButton } from '@/components/BackButton';
 
 export default function SkillGraph() {
   const { user } = useAuth();
@@ -74,6 +75,10 @@ export default function SkillGraph() {
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-6">
+          <BackButton to="/profile" label="Back to Profile" />
+        </div>
+        
         {/* Hero Section */}
         {!showGraph && (
           <motion.div

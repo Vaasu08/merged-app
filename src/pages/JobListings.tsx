@@ -26,6 +26,7 @@ import {
 } from '@/lib/adzunaService';
 import { toast } from 'sonner';
 import { Header } from '@/components/Header';
+import { BackButton } from '@/components/BackButton';
 
 const JobListings = () => {
   const location = useLocation();
@@ -115,14 +116,9 @@ const JobListings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-4 hover:bg-muted"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Career Plan
-          </Button>
+          <div className="mb-4">
+            <BackButton label="Back to Career Plan" className="hover:bg-muted" />
+          </div>
 
           <div className="flex items-center gap-3 mb-3">
             <Briefcase className="h-8 w-8 text-primary" />

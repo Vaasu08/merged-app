@@ -74,18 +74,37 @@ export type Language = {
 
 // Ensure a profile row exists for the given user id
 export async function ensureProfile(userId: string): Promise<void> {
-  // Try to fetch profile
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
+  try {
+    // Check if user_profiles entry exists
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
 
-  if (error) throw error;
-  if (profile) return; // already exists
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "not found" which is fine, other errors should be logged
+      console.warn('Error checking user profile:', error);
+    }
+    
+    if (profile) return; // already exists
 
-  const { error: insertError } = await supabase.from('profiles').insert({ id: userId });
-  if (insertError) throw insertError;
+    // Create a new user_profiles entry if it doesn't exist
+    const { error: insertError } = await supabase
+      .from('user_profiles')
+      .insert({ id: userId });
+    
+    if (insertError) {
+      // Ignore duplicate key errors (profile already created by another process)
+      if (insertError.code === '23505') {
+        return;
+      }
+      console.warn('Error creating user profile:', insertError);
+    }
+  } catch (e) {
+    // Non-fatal - profile might be created later or by trigger
+    console.warn('ensureProfile failed:', e);
+  }
 }
 
 // Get user's complete profile
@@ -103,14 +122,15 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     }
 
     if (data) {
-      // Parse JSON fields
+      // JSONB fields are already parsed by Supabase client
+      // Ensure all array fields are actually arrays
       return {
         ...data,
-        education: data.education ? JSON.parse(data.education) : [],
-        experience: data.experience ? JSON.parse(data.experience) : [],
-        certifications: data.certifications ? JSON.parse(data.certifications) : [],
-        languages: data.languages ? JSON.parse(data.languages) : [],
-        interests: data.interests ? JSON.parse(data.interests) : [],
+        education: Array.isArray(data.education) ? data.education : [],
+        experience: Array.isArray(data.experience) ? data.experience : [],
+        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+        languages: Array.isArray(data.languages) ? data.languages : [],
+        interests: Array.isArray(data.interests) ? data.interests : [],
       };
     }
 
@@ -119,42 +139,58 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     console.warn('Failed to get user profile, using localStorage fallback:', e);
     // Fallback to localStorage
     const stored = localStorage.getItem(`profile_${userId}`);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    
+    const parsed = JSON.parse(stored);
+    // Ensure array fields are actually arrays even from localStorage
+    return {
+      ...parsed,
+      education: Array.isArray(parsed.education) ? parsed.education : [],
+      experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+      certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
+      languages: Array.isArray(parsed.languages) ? parsed.languages : [],
+      interests: Array.isArray(parsed.interests) ? parsed.interests : [],
+    };
   }
 }
 
 // Save user's complete profile
 export async function saveUserProfile(userId: string, profile: Partial<UserProfile>): Promise<void> {
   try {
-    console.log(`Saving profile for user ${userId}`);
+    console.log(`Saving profile for user ${userId}`, profile);
     
     // Always save to localStorage immediately as backup
     localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
     
-    // Prepare data for Supabase (stringify JSON fields)
+    // Prepare data for Supabase
+    // JSONB columns accept arrays directly, no need to stringify
     const profileData = {
       ...profile,
-      education: profile.education ? JSON.stringify(profile.education) : null,
-      experience: profile.experience ? JSON.stringify(profile.experience) : null,
-      certifications: profile.certifications ? JSON.stringify(profile.certifications) : null,
-      languages: profile.languages ? JSON.stringify(profile.languages) : null,
-      interests: profile.interests ? JSON.stringify(profile.interests) : null,
+      id: userId, // Ensure ID is always set
+      education: profile.education || [],
+      experience: profile.experience || [],
+      certifications: profile.certifications || [],
+      languages: profile.languages || [],
+      interests: profile.interests || [],
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase
+    console.log('Upserting profile data to Supabase:', profileData);
+
+    const { data, error } = await supabase
       .from('user_profiles')
-      .upsert({ id: userId, ...profileData }, { onConflict: 'id' });
+      .upsert(profileData, { onConflict: 'id' })
+      .select();
 
     if (error) {
       console.error('Supabase error saving profile:', error);
       throw new Error(`Failed to save profile: ${error.message}`);
     }
 
-    console.log('Profile successfully saved to Supabase');
+    console.log('Profile successfully saved to Supabase:', data);
     
   } catch (e) {
-    console.warn('Failed to save profile to Supabase, localStorage backup saved:', e);
+    console.error('Failed to save profile to Supabase:', e);
     throw e;
   }
 }

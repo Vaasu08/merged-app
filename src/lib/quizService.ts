@@ -57,7 +57,8 @@ export const quizService = {
 
       const { topic, subtopic, difficulty, numQuestions, duration } = parse.data;
 
-      const response = await fetch('/api/quiz/generate', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/api/quiz/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +175,8 @@ export const quizService = {
   // Save quiz result to database
   async saveQuizResult(quizId: string, userId: string, result: QuizResult): Promise<void> {
     try {
-      const response = await fetch('/api/quiz/save-result', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/api/quiz/save-result`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +199,8 @@ export const quizService = {
   // Get user's quiz history
   async getUserQuizHistory(userId: string): Promise<QuizResult[]> {
     try {
-      const response = await fetch(`/api/quiz/history/${userId}`);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/api/quiz/history/${userId}`);
       
       if (!response.ok) {
         return [];

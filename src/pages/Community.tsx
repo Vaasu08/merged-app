@@ -8,6 +8,7 @@ import {
   Calendar, Filter, Search, ArrowLeft, Plus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BackButton } from '@/components/BackButton';
 
 const Community = () => {
   const navigate = useNavigate();
@@ -193,14 +194,7 @@ const Community = () => {
           className="text-center mb-12"
         >
           <div className="flex items-center justify-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              className="text-white/80 hover:text-white"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
+            <BackButton to="/" label="Back to Home" variant="ghost" className="text-white/80 hover:text-white" />
           </div>
           
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">

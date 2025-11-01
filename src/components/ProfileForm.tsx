@@ -549,13 +549,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                       <input
                         key={`edu-current-${index}`}
                         type="checkbox"
-                        id={`current-education-${index}`}
+                        id={`current-education-checkbox-${index}`}
                         checked={edu.is_current}
                         onChange={(e) => updateEducation(index, 'is_current', e.target.checked)}
                         className="h-4 w-4"
                         aria-label="Currently studying"
                       />
-                      <Label htmlFor={`current-education-${index}`}>Currently studying</Label>
+                      <Label htmlFor={`current-education-checkbox-${index}`}>Currently studying</Label>
                     </div>
                     <div className="space-y-2 mt-4">
                       <Label>Description</Label>
@@ -656,13 +656,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                     <div className="flex items-center space-x-2 mt-4">
                       <input
                         type="checkbox"
-                        id={`current-exp-${index}`}
+                        id={`current-exp-checkbox-${index}`}
                         checked={exp.is_current}
                         onChange={(e) => updateExperience(index, 'is_current', e.target.checked)}
                         className="h-4 w-4"
                         aria-label="Currently working here"
                       />
-                      <Label htmlFor={`current-exp-${index}`}>Currently working here</Label>
+                      <Label htmlFor={`current-exp-checkbox-${index}`}>Currently working here</Label>
                     </div>
                     <div className="space-y-2 mt-4">
                       <Label>Description</Label>

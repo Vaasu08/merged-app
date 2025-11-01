@@ -627,6 +627,67 @@ export class ATSScorerFallback {
       });
     }
     
-    return suggestions.slice(0, 8); // Return top 8 most critical suggestions
+    // Additional suggestions for comprehensive coverage
+    
+    // Professional summary
+    if (!/summary|objective|profile/i.test(text) || resume.text.length < 500) {
+      suggestions.push({
+        type: 'formatting',
+        priority: 'medium',
+        message: 'Missing professional summary or profile section',
+        impact: '+8-12 points',
+        action: 'Add a 3-4 sentence "Professional Summary" at the top highlighting: years of experience, key expertise areas, major achievements, and career focus. Example: "Senior Software Engineer with 5+ years building scalable web applications..."'
+      });
+    }
+    
+    // Industry keywords
+    if (scores.keywordMatch < 80 && resume.keywords.length < 25) {
+      suggestions.push({
+        type: 'keywords',
+        priority: 'medium',
+        message: 'Limited keyword diversity - add more industry-standard terms',
+        impact: '+8-12 points',
+        action: 'Incorporate 5-7 more professional keywords naturally: "cross-functional collaboration", "stakeholder management", "data-driven", "continuous improvement", "scalability", "performance optimization"'
+      });
+    }
+    
+    // Bullet point optimization
+    const bulletCount = (text.match(/\n[•\-*]/g) || []).length;
+    if (bulletCount < 10) {
+      suggestions.push({
+        type: 'experience',
+        priority: 'medium',
+        message: 'Too few bullet points - experience section needs more detail',
+        impact: '+10-15 points',
+        action: 'Expand to 3-5 bullet points per role. Each bullet should: start with action verb, describe WHAT you did, HOW you did it, and the IMPACT/RESULT. Aim for 15-20 total bullets across all roles'
+      });
+    }
+    
+    // LinkedIn/Portfolio
+    if (!resume.contactInfo?.linkedin && !/linkedin|portfolio|github/i.test(text)) {
+      suggestions.push({
+        type: 'formatting',
+        priority: 'low',
+        message: 'Missing LinkedIn profile or portfolio link',
+        impact: '+3-5 points',
+        action: 'Add LinkedIn URL to contact section. If applicable, also add: GitHub profile, personal website, or online portfolio. Format: linkedin.com/in/yourname'
+      });
+    }
+    
+    // Modern tech stack
+    const modernSkills = ['cloud', 'aws', 'azure', 'docker', 'kubernetes', 'react', 'python', 'typescript', 'api', 'agile'];
+    const hasModernSkills = modernSkills.some(skill => text.toLowerCase().includes(skill));
+    if (!hasModernSkills) {
+      suggestions.push({
+        type: 'skills',
+        priority: 'high',
+        message: 'Resume lacks modern, in-demand technology keywords',
+        impact: '+12-18 points',
+        action: 'If you have experience, add current technologies: Cloud platforms (AWS/Azure/GCP), Containers (Docker/Kubernetes), Modern frameworks (React/Angular/Vue), APIs (REST/GraphQL), Agile/Scrum methodologies'
+      });
+    }
+    
+    console.log(`✅ Generated ${suggestions.length} fallback suggestions`);
+    return suggestions.slice(0, 10); // Return top 10 most critical suggestions
   }
 }

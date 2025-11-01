@@ -55,12 +55,18 @@ export default function ATSAssessment() {
           console.warn('AI scoring failed, falling back to rule-based:', aiError);
           setAiAvailable(false);
           
+          // Check if it's a quota error
+          const errorMessage = aiError instanceof Error ? aiError.message : '';
+          const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('429');
+          
           // Fallback to rule-based scoring
           scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
           
           toast({
-            title: 'Analysis Complete',
-            description: 'Resume analyzed using standard scoring (AI temporarily unavailable)',
+            title: isQuotaError ? 'AI Quota Reached' : 'Using Standard Analysis',
+            description: isQuotaError 
+              ? 'AI quota exceeded. Using enhanced rule-based scoring with 10 detailed suggestions instead.'
+              : 'Resume analyzed using standard scoring (AI temporarily unavailable)',
             variant: 'default',
           });
         }

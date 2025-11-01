@@ -113,54 +113,6 @@ const Blog = () => {
       shares: 38,
       image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800"
     },
-    {
-      id: 7,
-      title: "Networking Strategies for Career Growth",
-      author: "Anna Martinez",
-      authorAvatar: "AM",
-      date: "Dec 9, 2024",
-      readTime: "7 min read",
-      excerpt: "Master the art of professional networking and learn how to build meaningful connections that advance your career.",
-      content: "Effective networking goes beyond collecting business cards...",
-      category: "Networking",
-      tags: ["Networking", "Career Growth", "Connections"],
-      likes: 165,
-      comments: 33,
-      shares: 49,
-      image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800"
-    },
-    {
-      id: 8,
-      title: "Switching Careers: A Step-by-Step Guide",
-      author: "Robert Taylor",
-      authorAvatar: "RT",
-      date: "Dec 8, 2024",
-      readTime: "11 min read",
-      excerpt: "Thinking about a career change? Learn the essential steps to successfully transition to a new field or industry.",
-      content: "Career transitions can be challenging but rewarding...",
-      category: "Career Change",
-      tags: ["Career Change", "Transition", "Guidance"],
-      likes: 178,
-      comments: 39,
-      shares: 56,
-      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800"
-    },
-    {
-      id: 9,
-      title: "Data Science Careers: Skills and Opportunities",
-      author: "Priya Patel",
-      authorAvatar: "PP",
-      date: "Dec 7, 2024",
-      readTime: "12 min read",
-      excerpt: "Discover the exciting world of data science and learn about the skills, opportunities, and career paths available in this rapidly growing field.",
-      content: "Data science is one of the most promising career fields...",
-      category: "Industry Insights",
-      tags: ["Data Science", "Technology", "Career Path"],
-      likes: 221,
-      comments: 48,
-      shares: 82,
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800"
-    }
   ];
 
   const categories = [

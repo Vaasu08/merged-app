@@ -29,6 +29,7 @@ import InterviewSession from "./pages/InterviewSession";
 import InterviewFeedback from "./pages/InterviewFeedback";
 import Community from "./pages/Community";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 import RoadmapOnboarding from "@/components/RoadmapOnboarding";
 import RoadmapView from "@/pages/RoadmapView";
 
@@ -78,6 +79,7 @@ const App = () => {
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/community" element={<Community />} />
                     <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:id" element={<BlogDetail />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/terms" element={<Terms />} />

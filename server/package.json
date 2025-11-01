@@ -14,6 +14,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "multer": "^2.0.2",
+    "nodeman": "^1.1.2",
     "openai": "^6.7.0",
     "pdf-parse": "^2.4.5",
     "tesseract.js": "^5.1.1",

@@ -537,22 +537,8 @@ const HowItWorks = () => {
             transition={{ duration: 0.8, delay: 3.2 }}
             className="text-center mt-12"
           >
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-white/10 rounded-3xl" />
-              <div className="relative z-10">
-                <h4 className="text-2xl font-bold mb-4">Ready to Build Your Career?</h4>
-                <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-                  Create your personalized profile and discover the perfect career path with AI-powered matching
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-white text-purple-600 font-semibold px-8 py-4 rounded-2xl hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  Start Your Journey →
-                </motion.button>
-              </div>
-            </div>
+            
+        
           </motion.div>
         </motion.div>
       </div>

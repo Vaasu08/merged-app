@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, req, res) => {
+            // Handle connection errors gracefully - services have fallbacks
+            // Return a proper error response instead of letting it propagate
+            if (res && !res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Backend server not available' }));
+            }
+          });
+        },
       },
     },
   },

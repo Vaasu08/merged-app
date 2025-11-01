@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Brain, Sparkles, AlertCircle } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 interface Suggestion {
   text: string;
@@ -48,6 +49,10 @@ export default function ATSResults() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
+      <div className="mb-6">
+        <BackButton to="/ats-assessment" label="Back to Assessment" />
+      </div>
+      
       <div className="flex justify-between items-center mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">

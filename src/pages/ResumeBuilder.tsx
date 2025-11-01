@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import { ATSScorer } from '@/lib/atsScorer';
 import type { ParsedCV } from '@/lib/cvParser';
 import { aiResumeEnhancer, type EnhancedResume } from '@/lib/aiResumeEnhancer';
+import { BackButton } from '@/components/BackButton';
 
 
 
@@ -76,7 +77,6 @@ const ResumeBuilder = () => {
   const [enhancedResume, setEnhancedResume] = useState<EnhancedResume | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<'modern' | 'classic'>('modern');
   const [showPreview, setShowPreview] = useState(false);
  
   // ATS Score state
@@ -337,392 +337,316 @@ const ResumeBuilder = () => {
   const generatePDF = () => {
     if (!resumeData) return;
 
-
-
-
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-     
-      let yPosition = 20;
-
-
-
-
-      // Modern Template
-      if (selectedTemplate === 'modern') {
-        // Header with background
-        pdf.setFillColor(41, 128, 185);
-        pdf.rect(0, 0, pageWidth, 35, 'F');
-       
-        // Name
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(24);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(resumeData.personalInfo.fullName, 20, 25);
-       
-        // Contact info
-        pdf.setFontSize(10);
+      
+      // Professional 2-Column Layout Constants
+      const sidebarWidth = 65;
+      const sidebarColor: [number, number, number] = [62, 74, 94]; // #3E4A5E - Professional dark blue
+      const accentColor: [number, number, number] = [41, 128, 185]; // #2980B9 - Blue accent
+      const margin = 15;
+      const mainContentX = sidebarWidth + margin;
+      const mainContentWidth = pageWidth - sidebarWidth - margin * 2;
+      
+      // Draw sidebar background
+      pdf.setFillColor(...sidebarColor);
+      pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+      
+      // === LEFT SIDEBAR ===
+      let sidebarY = 20;
+      
+      // Name in sidebar
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      const nameLines = pdf.splitTextToSize(resumeData.personalInfo.fullName, sidebarWidth - 10);
+      pdf.text(nameLines, 10, sidebarY);
+      sidebarY += nameLines.length * 7 + 5;
+      
+      // Target role/position from first experience
+      if (resumeData.experience.length > 0) {
+        pdf.setFontSize(11);
         pdf.setFont('helvetica', 'normal');
-        const contactInfo = [
-          resumeData.personalInfo.email,
-          resumeData.personalInfo.phone,
-          resumeData.personalInfo.location,
-          resumeData.personalInfo.website,
-          resumeData.personalInfo.linkedin,
-          resumeData.personalInfo.github
-        ].filter(Boolean).join(' | ');
-       
-        if (contactInfo) {
-          pdf.text(contactInfo, 20, 32);
-        }
-
-
-
-
-        yPosition = 50;
-
-
-
-
-        // Summary
-        if (resumeData.summary) {
-          pdf.setTextColor(0, 0, 0);
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('SUMMARY', 20, yPosition);
-          yPosition += 8;
-         
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          const summaryLines = pdf.splitTextToSize(resumeData.summary, pageWidth - 40);
-          pdf.text(summaryLines, 20, yPosition);
-          yPosition += summaryLines.length * 4 + 10;
-        }
-
-
-
-
-        // Skills
-        if (resumeData.skills.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('SKILLS', 20, yPosition);
-          yPosition += 8;
-         
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          const skillsText = resumeData.skills.join(' • ');
-          const skillsLines = pdf.splitTextToSize(skillsText, pageWidth - 40);
-          pdf.text(skillsLines, 20, yPosition);
-          yPosition += skillsLines.length * 4 + 10;
-        }
-
-
-
-
-        // Experience
-        if (resumeData.experience.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('EXPERIENCE', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.experience.forEach((exp, index) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(exp.position, 20, yPosition);
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            const companyAndLocation = [exp.company, exp.location].filter(Boolean).join(', ');
-            pdf.text(companyAndLocation, 20, yPosition + 5);
-           
-            const dateRange = `${formatDate(exp.startDate)} - ${exp.isCurrent ? 'Present' : formatDate(exp.endDate)}`;
-            pdf.text(dateRange, pageWidth - 80, yPosition + 5);
-           
-            yPosition += 12;
-           
-            if (exp.description) {
-              const descLines = pdf.splitTextToSize(exp.description, pageWidth - 40);
-              pdf.text(descLines, 20, yPosition);
-              yPosition += descLines.length * 4 + 5;
-            }
-           
-            if (index < resumeData.experience.length - 1) {
-              yPosition += 3;
-            }
-          });
-         
-          yPosition += 10;
-        }
-
-
-
-
-        // Education
-        if (resumeData.education.length > 0) {
-          if (yPosition > pageHeight - 30) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-         
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('EDUCATION', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.education.forEach((edu) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(edu.degree, 20, yPosition);
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            const institutionAndField = [edu.institution, edu.fieldOfStudy].filter(Boolean).join(', ');
-            pdf.text(institutionAndField, 20, yPosition + 5);
-           
-            const dateRange = `${formatDate(edu.startDate)} - ${edu.isCurrent ? 'Present' : formatDate(edu.endDate)}`;
-            pdf.text(dateRange, pageWidth - 80, yPosition + 5);
-           
-            if (edu.gpa) {
-              pdf.text(`GPA: ${edu.gpa}`, 20, yPosition + 10);
-              yPosition += 15;
-            } else {
-              yPosition += 12;
-            }
-          });
-         
-          yPosition += 10;
-        }
-
-
-
-
-        // Certifications
-        if (resumeData.certifications.length > 0) {
-          if (yPosition > pageHeight - 30) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-         
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('CERTIFICATIONS', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.certifications.forEach((cert) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(cert.name, 20, yPosition);
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            pdf.text(cert.issuer, 20, yPosition + 5);
-           
-            const issueDate = formatDate(cert.issueDate);
-            pdf.text(issueDate, pageWidth - 80, yPosition + 5);
-           
-            yPosition += 12;
-          });
-        }
-      } else if (selectedTemplate === 'classic') {
-        // Classic Template - Traditional, simple, single-column format
-       
-        // Header - Name and Contact Info
-        pdf.setTextColor(0, 0, 0);
-        pdf.setFontSize(18);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(resumeData.personalInfo.fullName, 20, yPosition);
-        yPosition += 8;
-       
-        // Contact info in a simple format
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        const contactInfo = [
-          resumeData.personalInfo.email,
-          resumeData.personalInfo.phone,
-          resumeData.personalInfo.location,
-          resumeData.personalInfo.website,
-          resumeData.personalInfo.linkedin,
-          resumeData.personalInfo.github
-        ].filter(Boolean).join(' | ');
-       
-        if (contactInfo) {
-          pdf.text(contactInfo, 20, yPosition);
-        }
-       
-        yPosition += 15;
-
-
-
-
-        // Summary/Objective
-        if (resumeData.summary) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('OBJECTIVE', 20, yPosition);
-          yPosition += 8;
-         
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          const summaryLines = pdf.splitTextToSize(resumeData.summary, pageWidth - 40);
-          pdf.text(summaryLines, 20, yPosition);
-          yPosition += summaryLines.length * 4 + 10;
-        }
-
-
-
-
-        // Education (Classic format puts education before experience)
-        if (resumeData.education.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('EDUCATION', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.education.forEach((edu) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(edu.degree, 20, yPosition);
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            const institutionAndField = [edu.institution, edu.fieldOfStudy].filter(Boolean).join(', ');
-            pdf.text(institutionAndField, 20, yPosition + 5);
-           
-            const dateRange = `${formatDate(edu.startDate)} - ${edu.isCurrent ? 'Present' : formatDate(edu.endDate)}`;
-            pdf.text(dateRange, pageWidth - 80, yPosition + 5);
-           
-            if (edu.gpa) {
-              pdf.text(`GPA: ${edu.gpa}`, 20, yPosition + 10);
-              yPosition += 15;
-            } else {
-              yPosition += 12;
-            }
-          });
-         
-          yPosition += 10;
-        }
-
-
-
-
-        // Work Experience
-        if (resumeData.experience.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('EXPERIENCE', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.experience.forEach((exp, index) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(exp.position, 20, yPosition);
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            const companyAndLocation = [exp.company, exp.location].filter(Boolean).join(', ');
-            pdf.text(companyAndLocation, 20, yPosition + 5);
-           
-            const dateRange = `${formatDate(exp.startDate)} - ${exp.isCurrent ? 'Present' : formatDate(exp.endDate)}`;
-            pdf.text(dateRange, pageWidth - 80, yPosition + 5);
-           
-            yPosition += 12;
-           
-            if (exp.description) {
-              const descLines = pdf.splitTextToSize(exp.description, pageWidth - 40);
-              pdf.text(descLines, 20, yPosition);
-              yPosition += descLines.length * 4 + 5;
-            }
-           
-            if (index < resumeData.experience.length - 1) {
-              yPosition += 3;
-            }
-          });
-         
-          yPosition += 10;
-        }
-
-
-
-
-        // Skills
-        if (resumeData.skills.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('SKILLS', 20, yPosition);
-          yPosition += 8;
-         
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-          const skillsText = resumeData.skills.join(' • ');
-          const skillsLines = pdf.splitTextToSize(skillsText, pageWidth - 40);
-          pdf.text(skillsLines, 20, yPosition);
-          yPosition += skillsLines.length * 4 + 10;
-        }
-
-
-
-
-        // Certifications
-        if (resumeData.certifications.length > 0) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('CERTIFICATIONS', 20, yPosition);
-          yPosition += 8;
-         
-          resumeData.certifications.forEach((cert) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-           
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
-            pdf.text(cert.name, 20, yPosition);
-           
-            const dateRange = `${formatDate(cert.issueDate)}${cert.expiryDate ? ` - ${formatDate(cert.expiryDate)}` : ''}`;
-            pdf.text(dateRange, pageWidth - 80, yPosition);
-           
-            yPosition += 8;
-          });
-        }
+        const roleLines = pdf.splitTextToSize(resumeData.experience[0].position, sidebarWidth - 10);
+        pdf.text(roleLines, 10, sidebarY);
+        sidebarY += roleLines.length * 5 + 10;
       }
-
-
-
+      
+      // Contact Information
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONTACT', 10, sidebarY);
+      sidebarY += 6;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      
+      const contactItems = [
+        { icon: '✉', text: resumeData.personalInfo.email },
+        { icon: '☎', text: resumeData.personalInfo.phone },
+        { icon: '📍', text: resumeData.personalInfo.location },
+        { icon: '🌐', text: resumeData.personalInfo.website },
+        { icon: 'in', text: resumeData.personalInfo.linkedin },
+        { icon: 'git', text: resumeData.personalInfo.github }
+      ].filter(item => item.text);
+      
+      contactItems.forEach(item => {
+        const lines = pdf.splitTextToSize(item.text, sidebarWidth - 15);
+        pdf.text(lines, 10, sidebarY);
+        sidebarY += lines.length * 4.5 + 1;
+      });
+      
+      sidebarY += 8;
+      
+      // Professional Summary in sidebar
+      const summaryText = enhancedResume?.professionalSummary || resumeData.summary;
+      if (summaryText) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('PROFESSIONAL SUMMARY', 10, sidebarY);
+        sidebarY += 6;
+        
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        const summaryLines = pdf.splitTextToSize(summaryText, sidebarWidth - 10);
+        pdf.text(summaryLines, 10, sidebarY);
+        sidebarY += summaryLines.length * 4 + 8;
+      }
+      
+      // Key Skills in sidebar
+      if (resumeData.skills.length > 0) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('KEY SKILLS', 10, sidebarY);
+        sidebarY += 6;
+        
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        
+        // Display skills with bullet points
+        const skillsToDisplay = enhancedResume?.coreCompetencies || resumeData.skills;
+        skillsToDisplay.slice(0, 12).forEach(skill => {
+          if (sidebarY > pageHeight - 15) return;
+          pdf.text('• ' + skill, 12, sidebarY);
+          sidebarY += 4.5;
+        });
+      }
+      
+      // === MAIN CONTENT (RIGHT SIDE) ===
+      let mainY = 20;
+      
+      pdf.setTextColor(0, 0, 0);
+      
+      // Professional Experience Section
+      if (resumeData.experience.length > 0) {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...accentColor);
+        pdf.text('PROFESSIONAL EXPERIENCE', mainContentX, mainY);
+        mainY += 8;
+        
+        // Draw separator line
+        pdf.setDrawColor(...accentColor);
+        pdf.setLineWidth(0.5);
+        pdf.line(mainContentX, mainY - 2, pageWidth - margin, mainY - 2);
+        mainY += 3;
+        
+        pdf.setTextColor(0, 0, 0);
+        
+        resumeData.experience.forEach((exp, index) => {
+          if (mainY > pageHeight - 40) {
+            pdf.addPage();
+            
+            // Redraw sidebar on new page
+            pdf.setFillColor(...sidebarColor);
+            pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+            
+            mainY = 20;
+          }
+          
+          // Company name in blue
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...accentColor);
+          pdf.text(exp.company, mainContentX, mainY);
+          mainY += 5;
+          
+          // Position title
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(10);
+          pdf.text(exp.position, mainContentX, mainY);
+          mainY += 5;
+          
+          // Date range and location in italics
+          pdf.setFont('helvetica', 'italic');
+          pdf.setFontSize(9);
+          const dateRange = `${formatDate(exp.startDate)} - ${exp.isCurrent ? 'Present' : formatDate(exp.endDate)}`;
+          const locationText = exp.location ? ` | ${exp.location}` : '';
+          pdf.text(dateRange + locationText, mainContentX, mainY);
+          mainY += 6;
+          
+          // Enhanced bullet points or regular description
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          
+          const enhancedExp = enhancedResume?.experience?.find(
+            e => e.company === exp.company && e.position === exp.position
+          );
+          
+          if (enhancedExp?.bulletPoints && enhancedExp.bulletPoints.length > 0) {
+            // Use AI-enhanced bullet points with metrics
+            enhancedExp.bulletPoints.forEach(bullet => {
+              if (mainY > pageHeight - 20) {
+                pdf.addPage();
+                pdf.setFillColor(...sidebarColor);
+                pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+                mainY = 20;
+              }
+              
+              const bulletLines = pdf.splitTextToSize('• ' + bullet, mainContentWidth);
+              pdf.text(bulletLines, mainContentX, mainY);
+              mainY += bulletLines.length * 4 + 1;
+            });
+          } else if (exp.description) {
+            // Fallback to regular description
+            const descLines = pdf.splitTextToSize('• ' + exp.description, mainContentWidth);
+            pdf.text(descLines, mainContentX, mainY);
+            mainY += descLines.length * 4 + 1;
+          }
+          
+          mainY += 5; // Space between experiences
+        });
+        
+        mainY += 5;
+      }
+      
+      // Education Section
+      if (resumeData.education.length > 0) {
+        if (mainY > pageHeight - 40) {
+          pdf.addPage();
+          pdf.setFillColor(...sidebarColor);
+          pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+          mainY = 20;
+        }
+        
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...accentColor);
+        pdf.text('EDUCATION', mainContentX, mainY);
+        mainY += 8;
+        
+        pdf.setDrawColor(...accentColor);
+        pdf.setLineWidth(0.5);
+        pdf.line(mainContentX, mainY - 2, pageWidth - margin, mainY - 2);
+        mainY += 3;
+        
+        pdf.setTextColor(0, 0, 0);
+        
+        resumeData.education.forEach((edu) => {
+          if (mainY > pageHeight - 30) {
+            pdf.addPage();
+            pdf.setFillColor(...sidebarColor);
+            pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+            mainY = 20;
+          }
+          
+          // Institution in blue
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...accentColor);
+          pdf.text(edu.institution, mainContentX, mainY);
+          mainY += 5;
+          
+          // Degree
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFontSize(10);
+          const degreeText = `${edu.degree}${edu.fieldOfStudy ? ' in ' + edu.fieldOfStudy : ''}`;
+          pdf.text(degreeText, mainContentX, mainY);
+          mainY += 5;
+          
+          // Date range
+          pdf.setFont('helvetica', 'italic');
+          pdf.setFontSize(9);
+          const eduDateRange = `${formatDate(edu.startDate)} - ${edu.isCurrent ? 'Present' : formatDate(edu.endDate)}`;
+          pdf.text(eduDateRange, mainContentX, mainY);
+          
+          // GPA on same line
+          if (edu.gpa) {
+            pdf.text(`GPA: ${edu.gpa}`, mainContentX + 50, mainY);
+          }
+          
+          mainY += 6;
+          
+          // Enhanced coursework if available
+          const enhancedEdu = enhancedResume?.education?.find(
+            e => e.institution === edu.institution && e.degree === edu.degree
+          );
+          
+          if (enhancedEdu?.relevantCoursework && enhancedEdu.relevantCoursework.length > 0) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(9);
+            const coursework = 'Coursework: ' + enhancedEdu.relevantCoursework.join(', ');
+            const courseworkLines = pdf.splitTextToSize(coursework, mainContentWidth);
+            pdf.text(courseworkLines, mainContentX, mainY);
+            mainY += courseworkLines.length * 4;
+          }
+          
+          mainY += 5;
+        });
+        
+        mainY += 5;
+      }
+      
+      // Certifications Section
+      if (resumeData.certifications.length > 0) {
+        if (mainY > pageHeight - 30) {
+          pdf.addPage();
+          pdf.setFillColor(...sidebarColor);
+          pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+          mainY = 20;
+        }
+        
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...accentColor);
+        pdf.text('CERTIFICATIONS', mainContentX, mainY);
+        mainY += 8;
+        
+        pdf.setDrawColor(...accentColor);
+        pdf.setLineWidth(0.5);
+        pdf.line(mainContentX, mainY - 2, pageWidth - margin, mainY - 2);
+        mainY += 3;
+        
+        pdf.setTextColor(0, 0, 0);
+        
+        resumeData.certifications.forEach((cert) => {
+          if (mainY > pageHeight - 20) {
+            pdf.addPage();
+            pdf.setFillColor(...sidebarColor);
+            pdf.rect(0, 0, sidebarWidth, pageHeight, 'F');
+            mainY = 20;
+          }
+          
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(cert.name, mainContentX, mainY);
+          mainY += 5;
+          
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          const certLine = `${cert.issuer} | ${formatDate(cert.issueDate)}${cert.expiryDate ? ' - ' + formatDate(cert.expiryDate) : ''}`;
+          pdf.text(certLine, mainContentX, mainY);
+          mainY += 6;
+        });
+      }
 
       // Save the PDF
       const fileName = `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`;
       pdf.save(fileName);
-     
+      
       toast.success('Resume downloaded successfully!');
     } catch (error) {
       console.error('PDF generation error:', error);
@@ -787,9 +711,12 @@ const ResumeBuilder = () => {
       <div className="container mx-auto max-w-6xl space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Resume Builder</h1>
-            <p className="text-muted-foreground">Generate your professional resume from your profile data</p>
+          <div className="flex items-center gap-4">
+            <BackButton to="/profile" label="Back to Profile" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Resume Builder</h1>
+              <p className="text-muted-foreground">Generate your professional resume from your profile data</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -926,58 +853,64 @@ const ResumeBuilder = () => {
           </Card>
         )}
 
-
-
-
-        {/* Template Selection */}
+        {/* AI Enhancement Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Choose Template</CardTitle>
-            <CardDescription>Select a professional template for your resume</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              AI Resume Enhancement
+            </CardTitle>
+            <CardDescription>
+              {enhancedResume 
+                ? '✨ Your resume has been enhanced with AI-powered professional summaries, quantified achievements, and optimized bullet points.' 
+                : 'Use AI to transform your resume with compelling professional summaries, impact-driven bullet points, and quantified achievements.'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedTemplate === 'modern'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-                onClick={() => setSelectedTemplate('modern')}
-              >
-                <div className="text-center">
-                  <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-blue-700 rounded mb-3 flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-white" />
+            <div className="space-y-4">
+              {enhancedResume && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
+                    <div className="space-y-2">
+                      <p className="font-medium">Enhancement Complete!</p>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li>• Professional summary optimized</li>
+                        <li>• {enhancedResume.experience?.reduce((sum, exp) => sum + (exp.bulletPoints?.length || 0), 0)} achievement-focused bullet points generated</li>
+                        <li>• Core competencies extracted and highlighted</li>
+                        <li>• Quantified metrics and impact statements added</li>
+                      </ul>
+                    </div>
                   </div>
-                  <h3 className="font-semibold">Modern</h3>
-                  <p className="text-sm text-muted-foreground">Clean, professional design with blue accent</p>
-                  <Badge variant="outline" className="mt-2">ATS Score: 95/100</Badge>
                 </div>
-              </div>
-             
-              <div
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedTemplate === 'classic'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
-                }`}
-                onClick={() => setSelectedTemplate('classic')}
+              )}
+              <Button
+                size="lg"
+                className="w-full"
+                variant={enhancedResume ? "outline" : "default"}
+                onClick={enhanceResumeWithAI}
+                disabled={!resumeData || isEnhancing}
               >
-                <div className="text-center">
-                  <div className="w-full h-32 bg-gradient-to-br from-gray-600 to-gray-800 rounded mb-3 flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold">Classic</h3>
-                  <p className="text-sm text-muted-foreground">Traditional, timeless design</p>
-                  <Badge variant="outline" className="mt-2">ATS Score: 100/100</Badge>
-                </div>
-              </div>
+                {isEnhancing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    AI is analyzing and enhancing your resume...
+                  </>
+                ) : enhancedResume ? (
+                  <>
+                    <Wand2 className="w-5 h-5 mr-2" />
+                    Regenerate AI Enhancement
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-5 h-5 mr-2" />
+                    Enhance with AI
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
-
-
-
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-center">
@@ -988,24 +921,6 @@ const ResumeBuilder = () => {
           >
             <Eye className="w-5 h-5 mr-2" />
             {showPreview ? 'Hide Preview' : 'Preview Resume'}
-          </Button>
-          <Button
-            size="lg"
-            variant={enhancedResume ? "default" : "outline"}
-            onClick={enhanceResumeWithAI}
-            disabled={!resumeData || isEnhancing}
-          >
-            {isEnhancing ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Enhancing...
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-5 h-5 mr-2" />
-                {enhancedResume ? '✨ Enhanced' : 'Enhance with AI'}
-              </>
-            )}
           </Button>
           <Button
             size="lg"
@@ -1027,226 +942,135 @@ const ResumeBuilder = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Resume Preview</CardTitle>
-                  <Badge variant="outline">{selectedTemplate === 'modern' ? 'Modern' : 'Classic'} Template</Badge>
+                  <Badge variant="outline">Professional 2-Column Template</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden max-w-4xl mx-auto">
-                  {/* Modern Template Preview */}
-                  {selectedTemplate === 'modern' ? (
-                    <div className="p-8 space-y-6">
-                      {/* Header */}
-                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg -m-8 mb-4">
-                        <h1 className="text-3xl font-bold mb-2">{resumeData.personalInfo.fullName}</h1>
-                        <div className="flex flex-wrap gap-2 text-sm">
-                          {resumeData.personalInfo.email && <span>{resumeData.personalInfo.email}</span>}
-                          {resumeData.personalInfo.phone && <span>• {resumeData.personalInfo.phone}</span>}
-                          {resumeData.personalInfo.location && <span>• {resumeData.personalInfo.location}</span>}
-                          {resumeData.personalInfo.website && <span>• {resumeData.personalInfo.website}</span>}
-                          {resumeData.personalInfo.linkedin && <span>• LinkedIn: {resumeData.personalInfo.linkedin}</span>}
-                          {resumeData.personalInfo.github && <span>• GitHub: {resumeData.personalInfo.github}</span>}
-                        </div>
+                  {/* Professional 2-Column Preview */}
+                  <div className="flex">
+                    {/* Left Sidebar */}
+                    <div className="w-1/3 bg-[#3E4A5E] text-white p-6 space-y-6">
+                      {/* Name and Title */}
+                      <div>
+                        <h1 className="text-xl font-bold mb-2">{resumeData.personalInfo.fullName}</h1>
+                        {resumeData.experience.length > 0 && (
+                          <p className="text-sm opacity-90">{resumeData.experience[0].position}</p>
+                        )}
                       </div>
 
+                      {/* Contact */}
+                      <div>
+                        <h3 className="text-sm font-bold mb-2">CONTACT</h3>
+                        <div className="text-xs space-y-1.5">
+                          {resumeData.personalInfo.email && <p>{resumeData.personalInfo.email}</p>}
+                          {resumeData.personalInfo.phone && <p>{resumeData.personalInfo.phone}</p>}
+                          {resumeData.personalInfo.location && <p>{resumeData.personalInfo.location}</p>}
+                          {resumeData.personalInfo.linkedin && <p className="break-words">{resumeData.personalInfo.linkedin}</p>}
+                        </div>
+                      </div>
 
                       {/* Summary */}
-                      {resumeData.summary && (
+                      {(enhancedResume?.professionalSummary || resumeData.summary) && (
                         <div>
-                          <h2 className="text-xl font-bold mb-2 text-gray-800">SUMMARY</h2>
-                          <p className="text-gray-700">{resumeData.summary}</p>
+                          <h3 className="text-sm font-bold mb-2">SUMMARY</h3>
+                          <p className="text-xs leading-relaxed">{enhancedResume?.professionalSummary || resumeData.summary}</p>
                         </div>
                       )}
-
 
                       {/* Skills */}
                       {resumeData.skills.length > 0 && (
                         <div>
-                          <h2 className="text-xl font-bold mb-2 text-gray-800">SKILLS</h2>
-                          <div className="flex flex-wrap gap-2">
-                            {resumeData.skills.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-sm">{skill}</Badge>
+                          <h3 className="text-sm font-bold mb-2">KEY SKILLS</h3>
+                          <ul className="text-xs space-y-1">
+                            {(enhancedResume?.coreCompetencies || resumeData.skills).slice(0, 12).map((skill, index) => (
+                              <li key={index}>• {skill}</li>
                             ))}
-                          </div>
-                        </div>
-                      )}
-
-
-                      {/* Experience */}
-                      {resumeData.experience.length > 0 && (
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-gray-800">EXPERIENCE</h2>
-                          <div className="space-y-4">
-                            {resumeData.experience.map((exp, index) => (
-                              <div key={index}>
-                                <div className="flex justify-between items-start mb-1">
-                                  <div>
-                                    <h3 className="font-semibold text-lg">{exp.position}</h3>
-                                    <p className="text-blue-600">{exp.company}{exp.location && `, ${exp.location}`}</p>
-                                  </div>
-                                  <span className="text-sm text-gray-600">
-                                    {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : formatDate(exp.endDate)}
-                                  </span>
-                                </div>
-                                {exp.description && (
-                                  <p className="text-gray-700 mt-2">{exp.description}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-
-                      {/* Education */}
-                      {resumeData.education.length > 0 && (
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-gray-800">EDUCATION</h2>
-                          <div className="space-y-3">
-                            {resumeData.education.map((edu, index) => (
-                              <div key={index}>
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h3 className="font-semibold">{edu.degree}</h3>
-                                    <p className="text-gray-700">{edu.institution}{edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}</p>
-                                    {edu.gpa && <p className="text-sm text-gray-600">GPA: {edu.gpa}</p>}
-                                  </div>
-                                  <span className="text-sm text-gray-600">
-                                    {formatDate(edu.startDate)} - {edu.isCurrent ? 'Present' : formatDate(edu.endDate)}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-
-                      {/* Certifications */}
-                      {resumeData.certifications.length > 0 && (
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-gray-800">CERTIFICATIONS</h2>
-                          <div className="space-y-3">
-                            {resumeData.certifications.map((cert, index) => (
-                              <div key={index} className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-semibold">{cert.name}</h3>
-                                  <p className="text-gray-700">{cert.issuer}</p>
-                                </div>
-                                <span className="text-sm text-gray-600">{formatDate(cert.issueDate)}</span>
-                              </div>
-                            ))}
-                          </div>
+                          </ul>
                         </div>
                       )}
                     </div>
-                  ) : (
-                    /* Classic Template Preview */
-                    <div className="p-8 space-y-6">
-                      {/* Header */}
-                      <div className="text-center border-b-2 border-gray-300 pb-4">
-                        <h1 className="text-3xl font-bold mb-2">{resumeData.personalInfo.fullName}</h1>
-                        <div className="flex flex-wrap gap-2 text-sm justify-center text-gray-600">
-                          {resumeData.personalInfo.email && <span>{resumeData.personalInfo.email}</span>}
-                          {resumeData.personalInfo.phone && <span>| {resumeData.personalInfo.phone}</span>}
-                          {resumeData.personalInfo.location && <span>| {resumeData.personalInfo.location}</span>}
-                          {resumeData.personalInfo.website && <span>| {resumeData.personalInfo.website}</span>}
-                          {resumeData.personalInfo.linkedin && <span>| LinkedIn: {resumeData.personalInfo.linkedin}</span>}
-                          {resumeData.personalInfo.github && <span>| GitHub: {resumeData.personalInfo.github}</span>}
-                        </div>
-                      </div>
 
-
-                      {/* Summary/Objective */}
-                      {resumeData.summary && (
+                    {/* Right Main Content */}
+                    <div className="w-2/3 p-6 space-y-6">
+                      {/* Experience */}
+                      {resumeData.experience.length > 0 && (
                         <div>
-                          <h2 className="text-lg font-bold mb-2 text-gray-800 border-b border-gray-300 pb-1">OBJECTIVE</h2>
-                          <p className="text-gray-700">{resumeData.summary}</p>
+                          <h2 className="text-lg font-bold text-[#2980B9] mb-3 pb-1 border-b-2 border-[#2980B9]">PROFESSIONAL EXPERIENCE</h2>
+                          <div className="space-y-4">
+                            {resumeData.experience.map((exp, index) => {
+                              const enhancedExp = enhancedResume?.experience?.find(
+                                e => e.company === exp.company && e.position === exp.position
+                              );
+                              return (
+                                <div key={index}>
+                                  <h3 className="font-bold text-[#2980B9]">{exp.company}</h3>
+                                  <p className="font-semibold text-sm">{exp.position}</p>
+                                  <p className="text-xs italic text-gray-600 mb-2">
+                                    {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : formatDate(exp.endDate)}
+                                    {exp.location && ` | ${exp.location}`}
+                                  </p>
+                                  {enhancedExp?.bulletPoints && enhancedExp.bulletPoints.length > 0 ? (
+                                    <ul className="text-xs space-y-1 ml-4">
+                                      {enhancedExp.bulletPoints.map((bullet, i) => (
+                                        <li key={i} className="list-disc">{bullet}</li>
+                                      ))}
+                                    </ul>
+                                  ) : exp.description && (
+                                    <p className="text-xs text-gray-700">{exp.description}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
-
 
                       {/* Education */}
                       {resumeData.education.length > 0 && (
                         <div>
-                          <h2 className="text-lg font-bold mb-3 text-gray-800 border-b border-gray-300 pb-1">EDUCATION</h2>
+                          <h2 className="text-lg font-bold text-[#2980B9] mb-3 pb-1 border-b-2 border-[#2980B9]">EDUCATION</h2>
                           <div className="space-y-3">
-                            {resumeData.education.map((edu, index) => (
-                              <div key={index}>
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h3 className="font-semibold">{edu.degree}</h3>
-                                    <p className="text-gray-700">{edu.institution}{edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}</p>
-                                    {edu.gpa && <p className="text-sm text-gray-600">GPA: {edu.gpa}</p>}
-                                  </div>
-                                  <span className="text-sm text-gray-600">
+                            {resumeData.education.map((edu, index) => {
+                              const enhancedEdu = enhancedResume?.education?.find(
+                                e => e.institution === edu.institution && e.degree === edu.degree
+                              );
+                              return (
+                                <div key={index}>
+                                  <h3 className="font-bold text-[#2980B9]">{edu.institution}</h3>
+                                  <p className="text-sm">{edu.degree}{edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}</p>
+                                  <p className="text-xs italic text-gray-600">
                                     {formatDate(edu.startDate)} - {edu.isCurrent ? 'Present' : formatDate(edu.endDate)}
-                                  </span>
+                                    {edu.gpa && ` | GPA: ${edu.gpa}`}
+                                  </p>
+                                  {enhancedEdu?.relevantCoursework && enhancedEdu.relevantCoursework.length > 0 && (
+                                    <p className="text-xs text-gray-700 mt-1">
+                                      <span className="font-semibold">Coursework:</span> {enhancedEdu.relevantCoursework.join(', ')}
+                                    </p>
+                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
-
-
-                      {/* Experience */}
-                      {resumeData.experience.length > 0 && (
-                        <div>
-                          <h2 className="text-lg font-bold mb-3 text-gray-800 border-b border-gray-300 pb-1">EXPERIENCE</h2>
-                          <div className="space-y-4">
-                            {resumeData.experience.map((exp, index) => (
-                              <div key={index}>
-                                <div className="flex justify-between items-start mb-1">
-                                  <div>
-                                    <h3 className="font-semibold">{exp.position}</h3>
-                                    <p className="text-gray-700">{exp.company}{exp.location && `, ${exp.location}`}</p>
-                                  </div>
-                                  <span className="text-sm text-gray-600">
-                                    {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : formatDate(exp.endDate)}
-                                  </span>
-                                </div>
-                                {exp.description && (
-                                  <p className="text-gray-700 mt-2 text-sm">{exp.description}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-
-                      {/* Skills */}
-                      {resumeData.skills.length > 0 && (
-                        <div>
-                          <h2 className="text-lg font-bold mb-2 text-gray-800 border-b border-gray-300 pb-1">SKILLS</h2>
-                          <div className="flex flex-wrap gap-2">
-                            {resumeData.skills.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-sm">{skill}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
 
                       {/* Certifications */}
                       {resumeData.certifications.length > 0 && (
                         <div>
-                          <h2 className="text-lg font-bold mb-3 text-gray-800 border-b border-gray-300 pb-1">CERTIFICATIONS</h2>
+                          <h2 className="text-lg font-bold text-[#2980B9] mb-3 pb-1 border-b-2 border-[#2980B9]">CERTIFICATIONS</h2>
                           <div className="space-y-2">
                             {resumeData.certifications.map((cert, index) => (
-                              <div key={index} className="flex justify-between items-start">
-                                <div>
-                                  <p className="font-semibold">{cert.name}</p>
-                                  <p className="text-sm text-gray-600">{cert.issuer}</p>
-                                </div>
-                                <span className="text-sm text-gray-600">{formatDate(cert.issueDate)}</span>
+                              <div key={index}>
+                                <p className="font-semibold text-sm">{cert.name}</p>
+                                <p className="text-xs text-gray-700">{cert.issuer} | {formatDate(cert.issueDate)}</p>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1256,7 +1080,6 @@ const ResumeBuilder = () => {
     </div>
   );
 };
-
 
 export default ResumeBuilder;
 

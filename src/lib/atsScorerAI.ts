@@ -1,4 +1,5 @@
-import { ParsedResume } from './cvParser';
+import { ParsedCV } from './cvParser';
+import geminiService from './geminiService';
 
 interface ATSScores {
   overall: number;
@@ -51,14 +52,13 @@ export class ATSScorerAI {
   }
 
   async calculateScore(
-    resumeData: ParsedResume,
+    resumeData: ParsedCV,
     jobDescription?: string
   ): Promise<ATSScores> {
     // If no API key, use fallback scorer
     if (!this.hasApiKey()) {
       console.warn('⚠️ API key not available, falling back to rule-based scoring');
-      const fallbackScorer = new ATSScorerFallback();
-      return fallbackScorer.calculateScore(resumeData, jobDescription);
+      return ATSScorerFallback.calculateScore(resumeData, jobDescription);
     }
 
     try {
@@ -82,71 +82,29 @@ export class ATSScorerAI {
       console.error('Gemini ATS scoring failed:', error);
       // Fall back to rule-based scoring instead of throwing
       console.warn('⚠️ Falling back to rule-based scoring');
-      const fallbackScorer = new ATSScorerFallback();
-      return fallbackScorer.calculateScore(resumeData, jobDescription);
+      return ATSScorerFallback.calculateScore(resumeData, jobDescription);
     }
   }
 
   private async analyzeWithGemini(
-    resumeData: ParsedResume,
+    resumeData: ParsedCV,
     jobDescription?: string
   ): Promise<GeminiATSAnalysis> {
     if (!this.apiKey) {
       throw new Error('API key is required');
     }
     
-    const prompt = this.buildAnalysisPrompt(resumeData, jobDescription);
+    // Use optimized Gemini service with caching and retry logic
+    const response = await geminiService.generateJSON<GeminiATSAnalysis>(this.buildAnalysisPrompt(resumeData, jobDescription), {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
+      useCache: true,
+    });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            topP: 0.9,
-            maxOutputTokens: 2048,
-            responseMimeType: "application/json"
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
-    }
-
-    const data = await response.json();
-    const analysisText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!analysisText) {
-      throw new Error('No analysis returned from Gemini');
-    }
-
-    try {
-      // Clean up the response - remove markdown code blocks if present
-      let cleanAnalysisText = analysisText;
-      if (cleanAnalysisText.includes('```json')) {
-        cleanAnalysisText = cleanAnalysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      }
-      if (cleanAnalysisText.includes('```')) {
-        cleanAnalysisText = cleanAnalysisText.replace(/```\n?/g, '');
-      }
-
-      return JSON.parse(cleanAnalysisText);
-    } catch (parseError) {
-      console.error('Failed to parse Gemini response:', parseError);
-      console.error('Raw response:', analysisText);
-      throw new Error('Failed to parse AI analysis response');
-    }
+    return response.data;
   }
 
-  private buildAnalysisPrompt(resumeData: ParsedResume, jobDescription?: string): string {
+  private buildAnalysisPrompt(resumeData: ParsedCV, jobDescription?: string): string {
     const resumeText = resumeData.text;
     const skills = resumeData.skills.join(', ');
     const experienceYears = resumeData.experienceYears;
@@ -228,17 +186,11 @@ Be thorough but concise. Focus on actionable improvements.`;
       return false;
     }
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey!}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Test connection' }] }]
-          })
-        }
-      );
-      return response.ok;
+      await geminiService.generateText('Test connection', {
+        maxOutputTokens: 10,
+        useCache: false
+      });
+      return true;
     } catch (error) {
       console.error('Gemini connection test failed:', error);
       return false;
@@ -249,7 +201,7 @@ Be thorough but concise. Focus on actionable improvements.`;
 // Fallback to rule-based scoring if AI fails
 export class ATSScorerFallback {
   static calculateScore(
-    resumeData: ParsedResume,
+    resumeData: ParsedCV,
     jobDescription?: string
   ): ATSScores {
     console.log('📊 Using fallback rule-based ATS scoring...');
@@ -275,7 +227,7 @@ export class ATSScorerFallback {
     };
   }
 
-  private static scoreKeywords(resume: ParsedResume, jd?: string): number {
+  private static scoreKeywords(resume: ParsedCV, jd?: string): number {
     if (!jd) return 75;
     const resumeKeywords = new Set(resume.keywords.map(k => k.toLowerCase()));
     const jdKeywords = this.extractKeywords(jd);
@@ -284,7 +236,7 @@ export class ATSScorerFallback {
     return (matches.length / jdKeywords.length) * 100;
   }
 
-  private static scoreSkills(resume: ParsedResume): number {
+  private static scoreSkills(resume: ParsedCV): number {
     const skillCount = resume.skills.length;
     if (skillCount >= 10) return 100;
     if (skillCount >= 7) return 85;
@@ -293,7 +245,7 @@ export class ATSScorerFallback {
     return 40;
   }
 
-  private static scoreExperience(resume: ParsedResume): number {
+  private static scoreExperience(resume: ParsedCV): number {
     const years = resume.experienceYears;
     if (years >= 5) return 100;
     if (years >= 3) return 85;
@@ -301,7 +253,7 @@ export class ATSScorerFallback {
     return 50;
   }
 
-  private static scoreEducation(resume: ParsedResume): number {
+  private static scoreEducation(resume: ParsedCV): number {
     const edu = resume.education.join(' ').toLowerCase();
     if (edu.includes('phd') || edu.includes('doctor')) return 100;
     if (edu.includes('master') || edu.includes('m.')) return 90;
@@ -309,7 +261,7 @@ export class ATSScorerFallback {
     return 60;
   }
 
-  private static scoreFormatting(resume: ParsedResume): number {
+  private static scoreFormatting(resume: ParsedCV): number {
     let score = 100;
     if (resume.text.length < 200) score -= 20;
     if (resume.skills.length === 0) score -= 15;
@@ -350,7 +302,7 @@ export class ATSScorerFallback {
     return [...new Set(words.filter(w => w.length > 3 && !stopWords.has(w)))];
   }
 
-  private static analyzeKeywords(resume: ParsedResume, jd?: string) {
+  private static analyzeKeywords(resume: ParsedCV, jd?: string) {
     if (!jd) return { matched: [], missing: [] };
     const resumeKw = new Set(resume.keywords.map(k => k.toLowerCase()));
     const jdKw = this.extractKeywords(jd);
@@ -359,7 +311,7 @@ export class ATSScorerFallback {
     return { matched, missing };
   }
 
-  private static generateSuggestions(scores: any, resume: ParsedResume): Suggestion[] {
+  private static generateSuggestions(scores: any, resume: ParsedCV): Suggestion[] {
     const suggestions: Suggestion[] = [];
     if (scores.keywordMatch < 70) {
       suggestions.push({

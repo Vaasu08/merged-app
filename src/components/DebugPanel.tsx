@@ -57,11 +57,10 @@ const DebugPanel = () => {
 
       try {
         const textContent = generateCareerPlanText(testData);
-        console.log('PDF Export Test:', textContent.substring(0, 200) + '...');
         alert('PDF export test successful! Check console for details.');
       } catch (error) {
         console.error('PDF Export Error:', error);
-        alert('PDF export failed: ' + error.message);
+        alert('PDF export failed: ' + (error as Error).message);
       }
     });
   };

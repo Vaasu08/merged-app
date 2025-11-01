@@ -5,7 +5,7 @@
  * Requires minimum 5 skills for accurate AI analysis
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -16,7 +16,9 @@ import ReactFlow, {
   ConnectionMode,
   MarkerType,
   BackgroundVariant,
-  MiniMap
+  MiniMap,
+  useReactFlow,
+  ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,13 +46,39 @@ interface SkillGraphVisualizerProps {
   onClose?: () => void;
 }
 
-export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraphVisualizerProps) {
+// Inner component that uses ReactFlow hooks
+function SkillGraphVisualizerInner({ userSkills, onClose }: SkillGraphVisualizerProps) {
   const [loading, setLoading] = useState(true);
   const [graphData, setGraphData] = useState<SkillGraphData | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedRole, setSelectedRole] = useState<RoleProximity | null>(null);
   const [activeView, setActiveView] = useState<'graph' | 'list'>('graph');
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { fitView } = useReactFlow();
+
+  // Track window size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Regenerate graph when window size changes significantly
+  useEffect(() => {
+    if (graphData && nodes.length > 0) {
+      // Only regenerate if width changed by more than 100px (to avoid too many rerenders)
+      const shouldRegenerate = Math.abs(windowSize.width - window.innerWidth) > 100;
+      if (shouldRegenerate) {
+        generateGraph();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowSize.width]);
 
   // Generate skill graph on mount
   useEffect(() => {
@@ -58,22 +86,69 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSkills]);
 
+  // Fit view when nodes change or window resizes
+  useEffect(() => {
+    if (nodes.length > 0) {
+      setTimeout(() => {
+        fitView({ padding: 0.2, duration: 800 });
+      }, 100);
+    }
+  }, [nodes, fitView]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (nodes.length > 0) {
+        fitView({ padding: 0.2, duration: 300 });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [nodes, fitView]);
+
   const generateGraph = async () => {
     setLoading(true);
     try {
       const data = await skillGraphService.generateSkillGraph(userSkills);
       setGraphData(data);
       
-      // Convert to ReactFlow format
+      // Get container dimensions or use defaults
+      const containerWidth = containerRef.current?.clientWidth || window.innerWidth - 100;
+      const containerHeight = window.innerHeight < 800 ? 500 : 700;
+      
+      // Calculate center point
+      const centerX = containerWidth / 2;
+      const centerY = containerHeight / 2;
+      
+      // Calculate responsive radius based on container size and screen width
+      const isMobile = window.innerWidth < 768;
+      const baseRadius = Math.min(containerWidth, containerHeight) / (isMobile ? 3.5 : 3);
+      
+      // Convert to ReactFlow format with responsive positioning
       const flowNodes: Node[] = data.nodes.map((node, index) => {
         const isRole = node.type === 'role';
         const roleProximity = isRole 
           ? data.roleProximities.find(rp => `role-${rp.roleId}` === node.id)
           : null;
 
-        // Calculate positions in a circular layout
+        // Calculate positions in a circular layout with responsive radius
         const angle = (index / data.nodes.length) * 2 * Math.PI;
-        const radius = isRole ? 400 : 250;
+        const radius = isRole ? baseRadius * 1.5 : baseRadius * 0.8;
+        
+        // Use responsive positioning
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        // Responsive font and padding
+        const fontSize = isMobile 
+          ? (isRole ? 11 : 10)
+          : (isRole ? 14 : 13);
+        
+        const padding = isMobile ? '8px 12px' : '12px 20px';
+        const minWidth = isMobile 
+          ? (isRole ? 120 : 80)
+          : (isRole ? 180 : 120);
         
         return {
           id: node.id,
@@ -82,10 +157,7 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
             label: node.label,
             proximity: roleProximity?.proximity || 0
           },
-          position: { 
-            x: 500 + Math.cos(angle) * radius, 
-            y: 400 + Math.sin(angle) * radius 
-          },
+          position: { x, y },
           style: {
             background: isRole 
               ? roleProximity?.color || '#3b82f6'
@@ -93,30 +165,40 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
             color: '#fff',
             border: isRole ? '3px solid #fff' : '2px solid #fff',
             borderRadius: '12px',
-            padding: '12px 20px',
-            fontSize: isRole ? '14px' : '13px',
+            padding: padding,
+            fontSize: `${fontSize}px`,
             fontWeight: isRole ? '600' : '500',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            minWidth: isRole ? '180px' : '120px',
-            textAlign: 'center'
+            minWidth: `${minWidth}px`,
+            textAlign: 'center' as const,
+            whiteSpace: 'normal' as const,
+            wordBreak: 'break-word' as const,
+            maxWidth: isMobile ? '150px' : '220px'
           }
         };
       });
 
-      const flowEdges: Edge[] = data.edges.map(edge => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        animated: edge.strength > 0.5,
-        style: { 
-          stroke: edge.strength > 0.7 ? '#10b981' : edge.strength > 0.4 ? '#f59e0b' : '#94a3b8',
-          strokeWidth: 2 + edge.strength * 2
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: edge.strength > 0.7 ? '#10b981' : edge.strength > 0.4 ? '#f59e0b' : '#94a3b8',
-        }
-      }));
+      const flowEdges: Edge[] = data.edges.map(edge => {
+        const strokeWidth = isMobile ? 1.5 : (2 + edge.strength * 2);
+        const markerSize = isMobile ? 15 : 20;
+        
+        return {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          animated: edge.strength > 0.5,
+          style: { 
+            stroke: edge.strength > 0.7 ? '#10b981' : edge.strength > 0.4 ? '#f59e0b' : '#94a3b8',
+            strokeWidth: strokeWidth
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: edge.strength > 0.7 ? '#10b981' : edge.strength > 0.4 ? '#f59e0b' : '#94a3b8',
+            width: markerSize,
+            height: markerSize
+          }
+        };
+      });
 
       setNodes(flowNodes);
       setEdges(flowEdges);
@@ -162,18 +244,18 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
+          <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Sparkles className="h-6 md:h-8 w-6 md:w-8 text-primary" />
             AI Skill Graph Visualizer
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Interactive map showing your proximity to {graphData.roleProximities.length} career roles based on {userSkills.length} skills
           </p>
         </div>
         {onClose && (
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="w-full md:w-auto">
             Close
           </Button>
         )}
@@ -190,7 +272,10 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
         <TabsContent value="graph" className="space-y-4">
           <Card>
             <CardContent className="p-0">
-              <div className="h-[700px] w-full rounded-lg overflow-hidden border">
+              <div 
+                ref={containerRef}
+                className="w-full rounded-lg overflow-hidden border h-[500px] md:h-[700px]"
+              >
                 <ReactFlow
                   nodes={nodes}
                   edges={edges}
@@ -199,18 +284,29 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
                   onNodeClick={onNodeClick}
                   connectionMode={ConnectionMode.Loose}
                   fitView
-                  minZoom={0.2}
+                  minZoom={0.1}
                   maxZoom={2}
-                  defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                  attributionPosition="bottom-right"
+                  proOptions={{ hideAttribution: true }}
                 >
-                  <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-                  <Controls />
-                  <MiniMap 
-                    nodeColor={(node) => {
-                      return node.type === 'input' ? '#764ba2' : '#3b82f6';
-                    }}
-                    maskColor="rgba(0,0,0,0.1)"
+                  <Background 
+                    variant={BackgroundVariant.Dots} 
+                    gap={window.innerWidth < 768 ? 12 : 16} 
+                    size={1} 
                   />
+                  <Controls showInteractive={false} />
+                  {window.innerWidth >= 768 && (
+                    <MiniMap 
+                      nodeColor={(node) => {
+                        return node.type === 'input' ? '#764ba2' : '#3b82f6';
+                      }}
+                      maskColor="rgba(0,0,0,0.1)"
+                      style={{ 
+                        width: 120, 
+                        height: 80 
+                      }}
+                    />
+                  )}
                 </ReactFlow>
               </div>
             </CardContent>
@@ -350,43 +446,43 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-background rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-background rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
             >
-              <div className="p-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-2xl font-bold">{selectedRole.roleName}</h3>
-                    <p className="text-muted-foreground mt-1">Career Role Analysis</p>
+              <div className="p-4 md:p-6 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl md:text-2xl font-bold">{selectedRole.roleName}</h3>
+                    <p className="text-sm md:text-base text-muted-foreground mt-1">Career Role Analysis</p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => setSelectedRole(null)}>
                     ✕
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   <div className="flex-1">
                     <Progress value={selectedRole.proximity} className="h-3" />
                   </div>
-                  <Badge className="text-xl px-4 py-2" style={{ backgroundColor: selectedRole.color }}>
+                  <Badge className="text-lg md:text-xl px-4 py-2 justify-center" style={{ backgroundColor: selectedRole.color }}>
                     {selectedRole.proximity}%
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Skills Matched</CardTitle>
+                      <CardTitle className="text-xs md:text-sm">Skills Matched</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-3xl font-bold text-green-600">{selectedRole.matchedSkills.length}</p>
+                      <p className="text-2xl md:text-3xl font-bold text-green-600">{selectedRole.matchedSkills.length}</p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Skills Needed</CardTitle>
+                      <CardTitle className="text-xs md:text-sm">Skills Needed</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-3xl font-bold text-orange-600">{selectedRole.missingSkills.length}</p>
+                      <p className="text-2xl md:text-3xl font-bold text-orange-600">{selectedRole.missingSkills.length}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -441,5 +537,14 @@ export default function SkillGraphVisualizer({ userSkills, onClose }: SkillGraph
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// Wrapper component with ReactFlowProvider
+export default function SkillGraphVisualizer(props: SkillGraphVisualizerProps) {
+  return (
+    <ReactFlowProvider>
+      <SkillGraphVisualizerInner {...props} />
+    </ReactFlowProvider>
   );
 }

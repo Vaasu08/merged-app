@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { getUserProfile, getUserSkills } from '@/lib/profile';
 import { careerAgentSwarm, type SwarmState, type AgentMessage, type UserProfile } from '@/lib/careerAgentSwarm';
 import { Brain, Users, Target, TrendingUp, CheckCircle2, Clock, Sparkles, RefreshCw, MessageSquare, Briefcase, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 const AgentSwarmPage = () => {
   const { user } = useAuth();
@@ -31,22 +32,53 @@ const AgentSwarmPage = () => {
             ...msg,
             timestamp: new Date(msg.timestamp)
           }));
-          setSwarmState(parsed);
+          
+          // Check if data is older than 7 days (stale)
+          const daysSinceUpdate = (Date.now() - new Date(parsed.lastUpdated).getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (daysSinceUpdate < 7) {
+            setSwarmState(parsed);
+            setIsInitialLoad(false);
+          } else {
+            // Data is stale, auto-run agents
+            setIsInitialLoad(false);
+            setTimeout(() => runAgentSwarm(), 500); // Small delay to show UI first
+          }
+        } else {
+          // No saved state, auto-run agents for first time
+          setIsInitialLoad(false);
+          setTimeout(() => runAgentSwarm(), 500);
         }
-        setIsInitialLoad(false);
       };
       loadSwarmState();
     } else {
       setIsInitialLoad(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const saveSwarmState = (state: SwarmState) => {
+  const saveSwarmState = useCallback((state: SwarmState) => {
     localStorage.setItem(`swarm_state_${user?.id}`, JSON.stringify(state));
     setSwarmState(state);
+  }, [user?.id]);
+
+  const toggleTaskStatus = (taskId: string) => {
+    if (!swarmState) return;
+
+    const updatedState = { ...swarmState };
+    const currentPlan = updatedState.weeklyPlans[0];
+    
+    if (currentPlan) {
+      const task = currentPlan.tasks.find(t => t.id === taskId);
+      if (task) {
+        task.status = task.status === 'completed' ? 'pending' : 'completed';
+        saveSwarmState(updatedState);
+        toast.success(task.status === 'completed' ? '✅ Task marked as complete!' : '⏰ Task marked as pending');
+      }
+    }
   };
 
-  const runAgentSwarm = async () => {
+  const runAgentSwarm = useCallback(async () => {
     if (!user?.id) {
       toast.error('Please log in to use AI Career Agents');
       return;
@@ -99,7 +131,7 @@ const AgentSwarmPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, navigate, swarmState, saveSwarmState]);
 
   const currentPlan = swarmState?.weeklyPlans[0];
   const progress = swarmState?.userProgress;
@@ -115,6 +147,10 @@ const AgentSwarmPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8 px-4">
       <div className="container mx-auto max-w-7xl">
+        <div className="mb-6">
+          <BackButton to="/" />
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
@@ -339,30 +375,83 @@ const AgentSwarmPage = () => {
                   {/* Tasks */}
                   <div className="space-y-3">
                     <h4 className="font-semibold mb-3">Weekly Tasks</h4>
-                    {currentPlan.tasks.map((task) => (
-                      <div key={task.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex-shrink-0 mt-1">
-                          {task.status === 'completed' ? (
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <Clock className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-medium">{task.title}</h5>
-                            <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'} className="text-xs">
-                              {task.priority}
-                            </Badge>
+                    {currentPlan.tasks.map((task) => {
+                      // Determine navigation path based on task type
+                      const getTaskNavigation = () => {
+                        const titleLower = task.title.toLowerCase();
+                        const descLower = task.description.toLowerCase();
+                        
+                        // Application-related tasks
+                        if (titleLower.includes('apply') || descLower.includes('apply') || task.assignedAgent === 'recruiter') {
+                          return { path: '/job-listings', label: 'View Jobs', icon: Briefcase };
+                        }
+                        // Interview practice tasks
+                        if (titleLower.includes('interview') || titleLower.includes('mock') || descLower.includes('interview') || task.assignedAgent === 'interviewer') {
+                          return { path: '/interview-prep', label: 'Practice', icon: MessageSquare };
+                        }
+                        // Resume/ATS tasks
+                        if (titleLower.includes('resume') || titleLower.includes('ats') || descLower.includes('resume')) {
+                          return { path: '/ats-assessment', label: 'Optimize Resume', icon: Target };
+                        }
+                        // Skill development/learning tasks
+                        if (titleLower.includes('learn') || titleLower.includes('course') || titleLower.includes('skill') || descLower.includes('learn')) {
+                          return { path: '/roadmap', label: 'Learning Path', icon: TrendingUp };
+                        }
+                        // Networking/LinkedIn tasks
+                        if (titleLower.includes('linkedin') || titleLower.includes('network') || titleLower.includes('connect')) {
+                          return { path: '/profile', label: 'Update Profile', icon: Users };
+                        }
+                        // Default to profile
+                        return { path: '/profile', label: 'Go to Profile', icon: Users };
+                      };
+
+                      const nav = getTaskNavigation();
+                      const NavIcon = nav.icon;
+
+                      return (
+                        <div key={task.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <button
+                            onClick={() => toggleTaskStatus(task.id)}
+                            className="flex-shrink-0 mt-1 cursor-pointer hover:scale-110 transition-transform"
+                            aria-label={task.status === 'completed' ? 'Mark as incomplete' : 'Mark as complete'}
+                          >
+                            {task.status === 'completed' ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Clock className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                            )}
+                          </button>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className={`font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
+                                {task.title}
+                              </h5>
+                              <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'} className="text-xs">
+                                {task.priority}
+                              </Badge>
+                            </div>
+                            <p className={`text-sm text-muted-foreground mb-2 ${task.status === 'completed' ? 'line-through' : ''}`}>
+                              {task.description}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>Assigned to: {task.assignedAgent}</span>
+                                <span>Due: {task.dueDate}</span>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => navigate(nav.path)}
+                                className="ml-2"
+                              >
+                                <NavIcon className="w-3 h-3 mr-1" />
+                                {nav.label}
+                              </Button>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>Assigned to: {task.assignedAgent}</span>
-                            <span>Due: {task.dueDate}</span>
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Quick Actions */}

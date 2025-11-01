@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useInterview } from "@/contexts/InterviewContext";
+import { BackButton } from "@/components/BackButton";
 
 const InterviewPrep = () => {
   const { userName, jobField, interviewMode, questions } = useInterview();
@@ -46,6 +47,10 @@ const InterviewPrep = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <BackButton to="/interview-welcome" label="Back to Setup" />
+        </div>
+        
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             Interview Preparation

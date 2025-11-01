@@ -514,9 +514,7 @@ const Index = () => {
                       size="lg"
                       variant="outline"
                       onClick={() => {
-                        console.log('TEST: Opening modal, current state:', isAssessmentOpen);
                         setIsAssessmentOpen(true);
-                        console.log('TEST: After setState');
                       }}
                       className="bg-purple-600 text-white hover:bg-purple-700 font-medium px-8 py-4 rounded-2xl transition-all duration-300"
                     >

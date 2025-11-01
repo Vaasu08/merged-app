@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Scale } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 const Terms = () => {
   return (
@@ -9,12 +10,7 @@ const Terms = () => {
       <div className="container mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link to="/signup">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Sign Up
-            </Button>
-          </Link>
+          <BackButton to="/" label="Home" />
         </div>
 
         <Card className="bg-gradient-card border-border/50 shadow-large">

@@ -155,13 +155,19 @@ const Profile = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              onClick={() => navigate('/')} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Home
-            </Link>
+            </button>
             <span className="text-muted-foreground">•</span>
-            <Link to="/insights" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              onClick={() => navigate('/insights')} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Insights
-            </Link>
+            </button>
           </div>
         </div>
 

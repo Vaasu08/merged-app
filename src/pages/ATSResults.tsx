@@ -43,6 +43,11 @@ export default function ATSResults() {
   useEffect(() => {
     if (!scores) {
       navigate('/ats-assessment');
+    } else {
+      console.log('📋 ATSResults received:', {
+        suggestionCount: scores.suggestions?.length || 0,
+        suggestions: scores.suggestions
+      });
     }
   }, [scores, navigate]);
 

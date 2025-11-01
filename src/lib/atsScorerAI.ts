@@ -54,6 +54,12 @@ export class ATSScorerAI {
       
       const analysis = await this.analyzeWithGemini(resumeData, jobDescription);
       
+      console.log('📊 AI Analysis received:', {
+        overall: analysis.overall_score,
+        suggestionCount: analysis.suggestions.length,
+        suggestions: analysis.suggestions
+      });
+      
       return {
         overall: Math.round(analysis.overall_score),
         keywordMatch: Math.round(analysis.keyword_match_score),

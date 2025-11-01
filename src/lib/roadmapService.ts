@@ -62,8 +62,14 @@ export const roadmapService = {
   // Generate roadmap using Gemini API
   async generateRoadmap(request: RoadmapRequest, userId: string): Promise<Roadmap> {
     try {
-      // Use Gemini API for roadmap generation (free tier)
-      const response = await fetch('/api/roadmap/generate-gemini', {
+      console.log('🤖 Generating roadmap with Gemini API...');
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const endpoint = `${apiUrl}/api/roadmap/generate-gemini`;
+      
+      console.log('📍 API endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,28 +77,69 @@ export const roadmapService = {
         body: JSON.stringify(request),
       });
 
+      console.log('📡 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate roadmap');
+        // Try to get error text
+        const errorText = await response.text();
+        console.error('❌ API error response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          throw new Error(`API error ${response.status}: ${errorText.substring(0, 200)}`);
+        }
+        throw new Error(errorData.error || 'Gemini generation failed');
       }
 
-      const data = await response.json();
+      // Get response text first to debug
+      const responseText = await response.text();
+      console.log('📄 Response text length:', responseText.length);
+      
+      if (!responseText || responseText.trim() === '') {
+        throw new Error('Empty response from API');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ JSON parse error. First 500 chars:', responseText.substring(0, 500));
+        throw new Error('Invalid JSON response from API');
+      }
+
       const roadmap = data.roadmap;
 
-      // Save to database
+      if (!roadmap) {
+        throw new Error('No roadmap data in response');
+      }
+
+      console.log('✅ Roadmap generated successfully with Gemini');
+
+      // Save to database (optional - RLS policies may prevent this)
       try {
         await this.saveRoadmap(roadmap, userId, request.fields);
         await this.saveUserResponses(request, userId);
+        console.log('💾 Roadmap saved to database');
       } catch (dbError) {
-        console.warn('Database save failed (likely tables not created yet):', dbError);
+        // Database save is optional - suppress RLS and table not found errors
+        const errorCode = (dbError as { code?: string })?.code;
+        if (errorCode === '42501' || errorCode === '42P01') {
+          // 42501: RLS policy violation, 42P01: table doesn't exist
+          // These are expected and non-fatal
+        } else {
+          const errorMessage = (dbError as { message?: string })?.message || String(dbError);
+          console.warn('Database save failed:', errorMessage);
+        }
       }
 
       return roadmap;
     } catch (error) {
-      console.error('Error generating roadmap:', error);
+      console.error('❌ Gemini API failed:', error);
       
-      // Fallback to mock data if API fails
-      console.warn('Falling back to mock data due to API error');
+      // Fallback to mock data
+      console.warn('🎭 Using mock roadmap data');
       return this.generateMockRoadmap(request);
     }
   },

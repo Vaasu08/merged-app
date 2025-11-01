@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useInterview } from "@/contexts/InterviewContext";
+import { BackButton } from "@/components/BackButton";
 
 const InterviewHome = () => {
   const [name, setName] = useState("");
@@ -23,6 +24,9 @@ const InterviewHome = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 flex flex-col justify-center items-center p-4">
+      <div className="absolute top-4 left-4">
+        <BackButton to="/" />
+      </div>
       <div className="absolute top-4 right-4">
         <ModeToggle />
       </div>

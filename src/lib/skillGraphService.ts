@@ -5,8 +5,8 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import geminiService from './geminiService';
 
-// Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
 // Define career roles with their typical skill requirements

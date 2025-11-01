@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoadmap } from '@/contexts/RoadmapContext';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { CheckCircle2, Clock, BookOpen, Code, Target, ArrowLeft, Download, Share
 import { toast } from 'sonner';
 import QuizInterface from '@/components/QuizInterface';
 import { quizService, Quiz, QuizResult } from '@/lib/quizService';
+import { BackButton } from '@/components/BackButton';
 
 export default function RoadmapView() {
   const navigate = useNavigate();
@@ -19,8 +20,13 @@ export default function RoadmapView() {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
+  useEffect(() => {
+    if (!roadmap) {
+      navigate('/roadmap');
+    }
+  }, [roadmap, navigate]);
+
   if (!roadmap) {
-    navigate('/roadmap');
     return null;
   }
 
@@ -158,15 +164,7 @@ export default function RoadmapView() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/')}
-                className="text-gray-300 hover:text-white"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Home
-              </Button>
+              <BackButton to="/" label="Home" variant="ghost" className="text-gray-300 hover:text-white" />
               <div>
                 <h1 className="text-2xl font-bold text-white">{roadmap.title}</h1>
                 <p className="text-gray-400 text-sm">{roadmap.overview}</p>
@@ -353,7 +351,7 @@ export default function RoadmapView() {
                                 Estimated Time: {phase.checkpoint.estimated_time}
                               </div>
                               <Button
-                                onClick={() => generateCheckpointQuiz(phase.checkpoint.title, phase.checkpoint.topics_covered)}
+                                onClick={() => phase.checkpoint && generateCheckpointQuiz(phase.checkpoint.title, phase.checkpoint.topics_covered)}
                                 disabled={isGeneratingQuiz}
                                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
                                 size="sm"

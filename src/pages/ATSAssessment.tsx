@@ -12,6 +12,7 @@ import { ATSScorer } from '@/lib/atsScorer';
 import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
 import { Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BackButton } from '@/components/BackButton';
 
 
 export default function ATSAssessment() {
@@ -92,6 +93,9 @@ export default function ATSAssessment() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl relative">
+      <div className="mb-6">
+        <BackButton to="/resume" />
+      </div>
       <div className="absolute top-4 right-4">
         <ModeToggle />
       </div>

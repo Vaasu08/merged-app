@@ -8,6 +8,7 @@ import {
   Calendar, Filter, Search, ArrowLeft, Plus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BackButton } from '@/components/BackButton';
 
 const Community = () => {
   const navigate = useNavigate();
@@ -178,8 +179,7 @@ const Community = () => {
               loop
               muted
               playsInline
-              className="h-10 w-auto rounded-lg shadow-lg"
-              style={{ maxWidth: '150px' }}
+              className="h-10 w-auto rounded-lg shadow-lg max-w-[150px]"
             >
               <source src="/Duck_s_Resume_for_Career_Guidance.mp4" type="video/mp4" />
             </video>
@@ -217,12 +217,15 @@ const Community = () => {
       {/* Discord Community Section */}
       <div className="bg-gradient-to-br from-purple-950 via-black to-black py-16 px-6">
         <div className="container mx-auto">
+          <div className="mb-6 flex justify-center">
+            <BackButton to="/" label="Back to Home" variant="ghost" className="text-white/80 hover:text-white" />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
             {/* Left Side - Text Content */}
-        <motion.div
+            <motion.div
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
             >
               <p className="text-purple-400 text-xs uppercase tracking-widest mb-4 font-inter">DISCORD COMMUNITY</p>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
@@ -231,7 +234,7 @@ const Community = () => {
               <p className="text-lg text-white/90 mb-8 max-w-xl">
                 Join our network and connect with career-focused individuals, just like you.
               </p>
-            <Button
+              <Button
                 className="bg-white text-black hover:bg-gray-200 px-8 py-6 text-base font-medium mb-4"
                 onClick={() => window.open('https://discord.gg/Bmrm67r6', '_blank')}
               >
@@ -428,7 +431,7 @@ const Community = () => {
             ))}
           </div>
         </div>
-          </div>
+      </div>
           
       {/* How to Use Section */}
       <div className="bg-gray-50 py-20 px-6">

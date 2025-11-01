@@ -13,6 +13,7 @@ import { LineChart, Line, XAxis, YAxis, BarChart, Bar } from 'recharts';
 import { jobDemandTrends, skillTrends, salaryTrends, chartConfig } from '@/data/trendsData';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useInView as useIntersectionObserver } from 'react-intersection-observer';
+import { BackButton } from '@/components/BackButton';
 
 const Insights = () => {
   const topSkills = skillTrends
@@ -61,6 +62,10 @@ const Insights = () => {
 
       <div className="container mx-auto max-w-7xl space-y-12 py-8 px-4 relative z-10">
         <Header />
+        
+        <div className="mb-4">
+          <BackButton to="/" />
+        </div>
 
         {/* Header */}
         <motion.div

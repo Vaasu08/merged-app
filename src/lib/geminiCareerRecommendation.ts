@@ -1,4 +1,5 @@
 // Gemini-powered Career Recommendation Service
+import geminiService from './geminiService';
 
 export interface JobRecommendation {
   id: string;
@@ -13,14 +14,8 @@ export interface JobRecommendation {
 }
 
 export class GeminiCareerRecommendationService {
-  private apiKey: string;
-
   constructor() {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('VITE_GEMINI_API_KEY is required');
-    }
-    this.apiKey = apiKey;
+    console.log('GeminiCareerRecommendationService initialized with optimized service');
   }
 
   async generateRecommendations(answers: Record<number, string>): Promise<JobRecommendation[]> {
@@ -33,51 +28,23 @@ export class GeminiCareerRecommendationService {
       const prompt = this.buildPrompt(answers);
       console.log('📝 Prompt length:', prompt.length, 'characters');
       
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.9, // Higher for maximum creativity and personalization
-              topK: 64, // Higher for more diverse token selection
-              topP: 0.98, // Higher for more varied outputs
-              maxOutputTokens: 8192, // Doubled for comprehensive responses
-              candidateCount: 1,
-            },
-            safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-            ]
-          })
-        }
-      );
+      // Use optimized Gemini service with caching and retry logic
+      const response = await geminiService.generateText(prompt, {
+        temperature: 0.9, // Higher for maximum creativity and personalization
+        topK: 64, // Higher for more diverse token selection
+        topP: 0.98, // Higher for more varied outputs
+        maxOutputTokens: 8192, // Doubled for comprehensive responses
+        useCache: true,
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Gemini API error:', errorText);
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Gemini response received successfully');
+      const textResponse = response.data;
       
-      // Extract the text response
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!textResponse) {
-        console.error('❌ No text in Gemini response:', JSON.stringify(data, null, 2));
         throw new Error('No response text from Gemini - response may have been blocked');
       }
 
-      console.log('📝 Response length:', textResponse.length, 'characters');
+      console.log('📝 Response length:', textResponse.length, 'characters', response.cached ? '(cached)' : '');
+      console.log('⚡ Response time:', response.duration, 'ms');
       
       // Parse the JSON response
       const recommendations = this.parseRecommendations(textResponse);

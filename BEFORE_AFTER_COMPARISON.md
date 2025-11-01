@@ -5,6 +5,7 @@
 ### 🎯 ATS Scorer Suggestions
 
 #### BEFORE (Generic, unhelpful)
+
 ```json
 {
   "suggestions": [
@@ -23,6 +24,7 @@
 ```
 
 #### AFTER (Specific, actionable)
+
 ```json
 {
   "suggestions": [
@@ -57,26 +59,32 @@
 ### 📝 Resume Professional Summary
 
 #### BEFORE (Weak, generic)
+
 ```
-Motivated software developer with experience in programming. Team player 
-who works well with others and is passionate about technology. Looking 
+Motivated software developer with experience in programming. Team player
+who works well with others and is passionate about technology. Looking
 for new opportunities to grow my career.
 ```
-**Issues**: 
+
+**Issues**:
+
 - ❌ No keywords from job description
 - ❌ No metrics or achievements
 - ❌ Generic buzzwords (motivated, team player, passionate)
 - ❌ Doesn't match target role
 
 #### AFTER (Strong, keyword-rich)
+
 ```
-Full-Stack Engineer with 5+ years specializing in React, Node.js, and AWS 
-cloud architecture | Built and scaled microservices handling 10M+ daily 
-requests with 99.9% uptime | Expert in TypeScript, GraphQL, Docker, and 
-CI/CD pipelines | Seeking to leverage cloud-native expertise to accelerate 
+Full-Stack Engineer with 5+ years specializing in React, Node.js, and AWS
+cloud architecture | Built and scaled microservices handling 10M+ daily
+requests with 99.9% uptime | Expert in TypeScript, GraphQL, Docker, and
+CI/CD pipelines | Seeking to leverage cloud-native expertise to accelerate
 digital transformation at an enterprise SaaS platform.
 ```
+
 **Improvements**:
+
 - ✅ 12 job-specific keywords (React, Node.js, AWS, TypeScript, etc.)
 - ✅ Quantified achievements (10M+ requests, 99.9% uptime)
 - ✅ Technical depth (microservices, cloud-native)
@@ -87,36 +95,42 @@ digital transformation at an enterprise SaaS platform.
 ### 💼 Experience Bullet Points
 
 #### BEFORE (Weak bullets)
+
 ```
 • Worked on the backend system using various technologies
 • Responsible for code reviews and testing
 • Helped improve application performance
 • Participated in team meetings and agile ceremonies
 ```
+
 **Issues**:
+
 - ❌ Weak verbs (worked on, responsible for, helped)
 - ❌ No metrics or impact
 - ❌ Vague descriptions
 - ❌ Responsibilities, not achievements
 
 #### AFTER (Strong, impactful bullets)
+
 ```
-• Architected microservices platform using Node.js, Docker, and Kubernetes, 
-  reducing deployment time by 75% and enabling 50+ developers to ship 
+• Architected microservices platform using Node.js, Docker, and Kubernetes,
+  reducing deployment time by 75% and enabling 50+ developers to ship
   features 3x faster
 
-• Led cross-functional team of 8 engineers to migrate legacy monolith to 
-  AWS cloud infrastructure, completing 6-month project 20% under budget 
+• Led cross-functional team of 8 engineers to migrate legacy monolith to
+  AWS cloud infrastructure, completing 6-month project 20% under budget
   while maintaining zero downtime
 
-• Implemented CI/CD pipeline using Jenkins, Terraform, and AWS CodeDeploy, 
-  automating 90% of deployment process and reducing production incidents 
+• Implemented CI/CD pipeline using Jenkins, Terraform, and AWS CodeDeploy,
+  automating 90% of deployment process and reducing production incidents
   by 60%
 
-• Delivered customer-facing dashboard using React and GraphQL, increasing 
+• Delivered customer-facing dashboard using React and GraphQL, increasing
   user engagement by 45% and contributing to $2M ARR growth
 ```
+
 **Improvements**:
+
 - ✅ Power verbs (Architected, Led, Implemented, Delivered)
 - ✅ Every bullet has metrics (75%, 50+ developers, 20% under budget, $2M)
 - ✅ Specific technologies mentioned
@@ -127,31 +141,37 @@ digital transformation at an enterprise SaaS platform.
 ### 🛠️ Skills Section
 
 #### BEFORE (Unorganized, generic)
+
 ```
-Skills: javascript, react, some backend, databases, git, 
+Skills: javascript, react, some backend, databases, git,
 team player, fast learner, problem solver
 ```
+
 **Issues**:
+
 - ❌ Mixed technical and soft skills
 - ❌ Lowercase, inconsistent formatting
 - ❌ Vague terms (some backend, databases)
 - ❌ Soft skills that add no value
 
 #### AFTER (Strategic, ATS-optimized)
+
 ```
 TECHNICAL SKILLS
-TypeScript, JavaScript (ES6+), React.js, Node.js, Express.js, 
-RESTful APIs, GraphQL, HTML5/CSS3, PostgreSQL, MongoDB, Jest, 
+TypeScript, JavaScript (ES6+), React.js, Node.js, Express.js,
+RESTful APIs, GraphQL, HTML5/CSS3, PostgreSQL, MongoDB, Jest,
 React Testing Library
 
 TOOLS & PLATFORMS
-AWS (Lambda, S3, EC2, RDS), Docker, Kubernetes, Git/GitHub, 
+AWS (Lambda, S3, EC2, RDS), Docker, Kubernetes, Git/GitHub,
 CI/CD (Jenkins), Terraform, Webpack, VS Code, Postman
 
 SOFT SKILLS
 [Omitted - not required for this technical role]
 ```
+
 **Improvements**:
+
 - ✅ Strategic categorization (Technical, Tools, Soft)
 - ✅ Must-have keywords from job description listed first
 - ✅ Specific versions/services (AWS Lambda, not just AWS)
@@ -165,6 +185,7 @@ SOFT SKILLS
 ### Same Resume, Different Analysis
 
 #### BEFORE (Basic scoring)
+
 ```json
 {
   "overall": 72,
@@ -182,12 +203,15 @@ SOFT SKILLS
   ]
 }
 ```
-**Issues**: 
+
+**Issues**:
+
 - Generic suggestions
 - Missed semantic matches
 - Low keyword score (exact match only)
 
 #### AFTER (Intelligent scoring)
+
 ```json
 {
   "overall": 85,
@@ -198,8 +222,17 @@ SOFT SKILLS
   "formatting": 95,
   "grade": "A",
   "matchedKeywords": [
-    "JavaScript", "JS", "React", "React.js", "Node", "Node.js", 
-    "AWS", "Amazon Web Services", "Agile", "Scrum", "CI/CD", 
+    "JavaScript",
+    "JS",
+    "React",
+    "React.js",
+    "Node",
+    "Node.js",
+    "AWS",
+    "Amazon Web Services",
+    "Agile",
+    "Scrum",
+    "CI/CD",
     "Continuous Integration"
   ],
   "missingKeywords": ["Kubernetes", "GraphQL", "Terraform"],
@@ -222,7 +255,9 @@ SOFT SKILLS
   ]
 }
 ```
+
 **Improvements**:
+
 - Semantic matching finds JS = JavaScript, React.js = React
 - Higher scores due to proper credit for synonyms
 - Specific, prioritized suggestions
@@ -233,8 +268,9 @@ SOFT SKILLS
 ## 🎯 Real-World Example
 
 ### Job Description (Excerpt)
+
 ```
-We're seeking a Senior Full-Stack Engineer with 5+ years experience 
+We're seeking a Senior Full-Stack Engineer with 5+ years experience
 building scalable web applications. Must have:
 - React, TypeScript, Node.js
 - AWS (Lambda, S3, EC2)
@@ -246,6 +282,7 @@ building scalable web applications. Must have:
 ### Resume Analysis
 
 #### Old System Output
+
 ```
 Score: 68 (D+)
 Issues: Missing some keywords, could improve formatting
@@ -253,6 +290,7 @@ Suggestions: Add more skills from job description
 ```
 
 #### New System Output
+
 ```
 Score: 87 (A)
 
@@ -278,15 +316,15 @@ SUGGESTIONS:
 1. [CRITICAL] Add "Kubernetes" to skills section
    Why: Listed as must-have requirement, mentioned 4 times
    How: "Expert in Docker and Kubernetes orchestration"
-   
+
 2. [HIGH] Add "GraphQL" to technical skills
    Why: Preferred qualification that few candidates have
    How: Add to skills: "GraphQL, REST APIs"
-   
+
 3. [HIGH] Quantify your AWS experience
    Current: "Built serverless applications on AWS"
    Better: "Built serverless applications on AWS Lambda handling 1M+ daily requests with 99.9% uptime"
-   
+
 4. [MEDIUM] Add container orchestration to experience
    Current: "Deployed with Docker"
    Better: "Orchestrated 50+ microservices using Docker and Kubernetes"
@@ -298,23 +336,23 @@ SUGGESTIONS:
 
 ### User Success Rates
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| **Average ATS Score** | 68 (D+) | 85 (A) | +25% |
-| **Keyword Match Rate** | 60% | 90% | +50% |
-| **Users with Metrics in Bullets** | 20% | 95% | +375% |
-| **Actionable Suggestions** | 40% | 100% | +150% |
-| **User Satisfaction** | 6.5/10 | 9.2/10 | +42% |
+| Metric                            | Before  | After  | Change |
+| --------------------------------- | ------- | ------ | ------ |
+| **Average ATS Score**             | 68 (D+) | 85 (A) | +25%   |
+| **Keyword Match Rate**            | 60%     | 90%    | +50%   |
+| **Users with Metrics in Bullets** | 20%     | 95%    | +375%  |
+| **Actionable Suggestions**        | 40%     | 100%   | +150%  |
+| **User Satisfaction**             | 6.5/10  | 9.2/10 | +42%   |
 
 ### Technical Performance
 
-| Metric | Before | After |
-|--------|--------|-------|
-| **Prompt Token Count** | ~800 | ~4,500 |
-| **Output Token Limit** | 2,048 | 3,072 |
-| **Temperature (ATS)** | 0.3 | 0.2 |
-| **Response Quality** | 6/10 | 9/10 |
-| **Consistency** | ±15 pts | ±5 pts |
+| Metric                 | Before  | After  |
+| ---------------------- | ------- | ------ |
+| **Prompt Token Count** | ~800    | ~4,500 |
+| **Output Token Limit** | 2,048   | 3,072  |
+| **Temperature (ATS)**  | 0.3     | 0.2    |
+| **Response Quality**   | 6/10    | 9/10   |
+| **Consistency**        | ±15 pts | ±5 pts |
 
 ---
 
@@ -323,21 +361,25 @@ SUGGESTIONS:
 ### What Made the Difference?
 
 1. **5x Longer Prompts** = 10x Better Output
+
    - Detailed instructions beat short prompts
    - Examples teach AI quality standards
    - Context layering improves comprehension
 
 2. **Expert Persona**
+
    - "Elite recruiter with 15 years" > "helpful assistant"
    - AI adopts professional mindset
    - Output matches industry standards
 
 3. **Master Formulas**
+
    - Consistent structure = consistent quality
    - Quantified requirements = precise output
    - Quality gates = validated results
 
 4. **Semantic Intelligence**
+
    - Synonyms and context matter
    - "JavaScript" = "JS" = "ECMAScript"
    - Better than string matching
@@ -361,7 +403,7 @@ Test the improvements:
 // Before: "Add more keywords"
 // After: "Add 'Kubernetes' and 'GraphQL' - mentioned 3x in job description as key technologies"
 
-// Before: "Improve bullet points"  
+// Before: "Improve bullet points"
 // After: "Quantify achievement: 'Improved performance' → 'Reduced API latency by 60% (500ms → 200ms)'"
 ```
 

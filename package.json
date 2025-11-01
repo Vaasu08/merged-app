@@ -1,8 +1,9 @@
 {
   "name": "horizon-career-platform-with-interview-simulator",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered career development platform with interview simulation, resume optimization, and personalized roadmaps",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -16,7 +16,7 @@ import {
   Brain, Target, TrendingUp, Users, ArrowRight, Sparkles, 
   Zap, Star, Award, Globe, Code, BarChart3, Rocket, 
   CheckCircle, Play, Pause, Volume2, VolumeX, Maximize2, User,
-  Menu, X
+  Menu, X, MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, useScroll, useTransform, useInView, useAnimation } from 'framer-motion';
@@ -823,6 +823,21 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
               {[
                 {
+                  title: "AI Career Agent Swarm",
+                  description: "Your personal team of AI agents working together on weekly career plans",
+                  icon: Users,
+                  color: "from-cyan-500 to-blue-500",
+                  features: ["Weekly Goals", "Job Search", "Progress Tracking", "Mock Interviews"],
+                  status: "New 🚀",
+                  onClick: () => {
+                    if (user) {
+                      navigate('/agent-swarm');
+                    } else {
+                      navigate('/login');
+                    }
+                  }
+                },
+                {
                   title: "AI Career Matching",
                   description: "Advanced algorithms analyze your skills and match you with perfect career opportunities",
                   icon: Brain,
@@ -838,9 +853,18 @@ const Index = () => {
                   }
                 },
                 {
+                  title: "AI Skill Graph Visualizer",
+                  description: "See your entire skill ecosystem as a dynamic 3D map showing proximity to career roles",
+                  icon: Sparkles,
+                  color: "from-violet-500 to-fuchsia-500",
+                  features: ["3D Visualization", "Role Proximity", "AI Analysis", "Career Mapping"],
+                  status: "New 🚀",
+                  onClick: () => navigate('/skill-graph')
+                },
+                {
                   title: "Interview Simulator",
                   description: "Practice with AI-powered interview sessions and get detailed feedback",
-                  icon: Users,
+                  icon: MessageSquare,
                   color: "from-purple-500 to-pink-500",
                   features: ["AI Questions", "Real-time Feedback", "Performance Analytics", "Mock Interviews"],
                   status: "Live",

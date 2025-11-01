@@ -6,11 +6,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Brain, Sparkles, AlertCircle } from 'lucide-react';
 
+interface Suggestion {
+  text: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface ATSScores {
+  total?: number;
+  overall?: number;
+  grade?: string;
+  breakdown?: Record<string, number>;
+  suggestions: Suggestion[];
+  matchedKeywords?: string[];
+  missingKeywords?: string[];
+  keywordMatch?: number;
+  skillsMatch?: number;
+  experience?: number;
+  education?: number;
+  formatting?: number;
+}
 
 export default function ATSResults() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { scores, parsedData, usedAI } = location.state || {};
+  const { scores, parsedData, usedAI } = location.state as { 
+    scores: ATSScores; 
+    parsedData: unknown; 
+    usedAI: boolean 
+  } || {};
 
 
   useEffect(() => {
@@ -64,25 +87,25 @@ export default function ATSResults() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <ATSScoreDisplay
-            score={scores.overall}
-            grade={scores.grade}
+            score={scores.overall || 0}
+            grade={scores.grade || 'N/A'}
             breakdown={{
-              keywordMatch: scores.keywordMatch,
-              skillsMatch: scores.skillsMatch,
-              experience: scores.experience,
-              education: scores.education,
-              formatting: scores.formatting,
+              keywordMatch: scores.keywordMatch || 0,
+              skillsMatch: scores.skillsMatch || 0,
+              experience: scores.experience || 0,
+              education: scores.education || 0,
+              formatting: scores.formatting || 0,
             }}
           />
         </div>
 
 
         <div className="lg:col-span-2 space-y-6">
-          {/* Keywords */}
-          {scores.matchedKeywords?.length > 0 && (
+          {/* Matched Keywords */}
+          {scores.matchedKeywords && scores.matchedKeywords.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Matched Keywords</CardTitle>
+                <CardTitle>Matched Keywords ✓</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -96,10 +119,10 @@ export default function ATSResults() {
 
 
           {/* Missing Keywords */}
-          {scores.missingKeywords?.length > 0 && (
+          {scores.missingKeywords && scores.missingKeywords.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Missing Keywords</CardTitle>
+                <CardTitle>Missing Keywords ⚠️</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -119,7 +142,7 @@ export default function ATSResults() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {scores.suggestions.map((suggestion: any, idx: number) => (
+                {scores.suggestions.map((suggestion: Suggestion, idx: number) => (
                   <div
                     key={idx}
                     className={`p-4 rounded-lg border-l-4 ${
@@ -131,8 +154,8 @@ export default function ATSResults() {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <Badge variant="outline">{suggestion.type}</Badge>
-                      <p>{suggestion.message}</p>
+                      <Badge variant="outline">{suggestion.priority}</Badge>
+                      <p>{suggestion.text}</p>
                     </div>
                   </div>
                 ))}

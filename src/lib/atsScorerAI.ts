@@ -76,8 +76,8 @@ export class ATSScorerAI {
 
     // Use optimized Gemini service with caching and retry logic
     const response = await geminiService.generateJSON<GeminiATSAnalysis>(prompt, {
-      temperature: 0.3,
-      maxOutputTokens: 2048,
+      temperature: 0.2, // Lowered from 0.3 for more consistent scoring
+      maxOutputTokens: 3072, // Increased from 2048 for detailed suggestions
       useCache: true,
     });
 
@@ -85,69 +85,152 @@ export class ATSScorerAI {
   }
 
   private buildAnalysisPrompt(resumeData: ParsedCV, jobDescription?: string): string {
-    const resumeText = resumeData.text;
+    const resumeText = resumeData.text.slice(0, 3000); // Increased from 2000
     const skills = resumeData.skills.join(', ');
     const experienceYears = resumeData.experienceYears;
-    const education = resumeData.education.join(', ');
+    const education = resumeData.education.join('; ');
     const keywords = resumeData.keywords.join(', ');
-    const contactInfo = JSON.stringify(resumeData.contactInfo, null, 2);
+    const contactInfo = `${resumeData.contactInfo?.email || ''} | ${resumeData.contactInfo?.phone || ''} | ${resumeData.contactInfo?.location || ''}`.trim();
 
-    return `You are an expert ATS (Applicant Tracking System) analyst. Analyze this resume against the job description and provide detailed scoring.
+    return `You are an ELITE ATS (Applicant Tracking System) analyst and senior technical recruiter with 15+ years at Fortune 500 companies and top tech firms (Google, Amazon, Microsoft). You've reviewed 50,000+ resumes and know exactly what separates top 1% candidates.
 
-RESUME DATA:
-Text: ${resumeText}
-Skills: ${skills}
-Experience Years: ${experienceYears}
-Education: ${education}
-Keywords: ${keywords}
-Contact Info: ${contactInfo}
+🎯 YOUR MISSION: Provide brutally honest, data-driven ATS analysis that will genuinely help this candidate land interviews.
 
-${jobDescription ? `JOB DESCRIPTION:
-${jobDescription}` : 'No specific job description provided - analyze for general ATS compatibility.'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 RESUME DATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full Text: ${resumeText}
 
-ANALYSIS REQUIREMENTS:
-1. Score each category (0-100):
-   - keyword_match_score: How well resume keywords match job requirements
-   - skills_match_score: Relevance and completeness of technical skills
-   - experience_score: Years of experience and role relevance
-   - education_score: Educational background appropriateness
-   - formatting_score: Resume structure, clarity, and ATS-friendliness
+💼 Skills: ${skills || 'None listed'}
+⏱️ Experience: ${experienceYears} years
+🎓 Education: ${education || 'Not specified'}
+🔑 Keywords: ${keywords || 'None extracted'}
+📧 Contact: ${contactInfo || 'Incomplete'}
 
-2. Identify matched and missing keywords from job description
-3. Provide specific, actionable suggestions for improvement
+${jobDescription ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 TARGET JOB DESCRIPTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${jobDescription.slice(0, 2000)}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-SCORING CRITERIA:
-- keyword_match_score: Semantic matching, not just exact words (synonyms count)
-- skills_match_score: Consider skill relevance, depth, and modern technologies
-- experience_score: Years + role progression + achievements
-- education_score: Degree level + field relevance + certifications
-- formatting_score: Structure, readability, ATS parsing, contact info completeness
+CRITICAL MATCHING INSTRUCTIONS:
+1. Extract MUST-HAVE requirements (qualifications, years exp, specific tech)
+2. Extract NICE-TO-HAVE skills (preferred qualifications, soft skills)
+3. Identify exact keyword matches AND semantic equivalents
+   - Example: "JavaScript" matches "JS", "React.js" matches "React", "CI/CD" matches "continuous integration"
+4. Heavily penalize missing must-have requirements
+5. Award bonus points for exceeding requirements` : 
+`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  NO JOB DESCRIPTION PROVIDED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Analyze for GENERAL ATS best practices:
+- Tech industry standards
+- Professional formatting
+- Clear value proposition
+- Quantified achievements
+- Modern, in-demand skills`}
 
-Return ONLY valid JSON in this exact format:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 SCORING METHODOLOGY (0-100)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ KEYWORD MATCH (Weight: 40%)
+${jobDescription ? `
+   - Exact keyword matches: +10 points each (max 40 pts)
+   - Semantic matches (synonyms): +7 points each (max 30 pts)
+   - Context relevance: +20 points if keywords used properly
+   - Missing MUST-HAVE keywords: -15 points each
+   - Calculate: (matched_required / total_required) × 100
+` : `
+   - Industry-standard keywords present: 80+ points
+   - Some relevant keywords: 60-80 points
+   - Generic/outdated keywords: 40-60 points
+   - Few/no keywords: <40 points
+`}
+
+2️⃣ SKILLS MATCH (Weight: 25%)
+   - Required technical skills: +15 points each (max 60 pts)
+   - Bonus skills: +8 points each (max 25 pts)
+   - Skill depth indicators (years, projects): +15 points
+   - Modern/trending tech stack: +10 bonus
+   - Outdated-only skills: -20 penalty
+
+3️⃣ EXPERIENCE QUALITY (Weight: 20%)
+   - Years of experience adequacy: 30 points
+   - Quantified achievements (metrics, %): +40 points
+   - Leadership/impact indicators: +15 points
+   - Career progression shown: +10 points
+   - Generic descriptions only: -25 penalty
+
+4️⃣ EDUCATION & CERTIFICATIONS (Weight: 10%)
+   - Relevant degree field: 60 points
+   - Advanced degree bonus: +20 points
+   - Industry certifications: +15 points each
+   - Recent/active learning: +5 points
+
+5️⃣ ATS FORMATTING (Weight: 5%)
+   - Standard section headers: 20 points
+   - Contact info complete: 20 points
+   - Readable structure: 20 points
+   - No parsing errors: 20 points
+   - Proper dates/formatting: 20 points
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 OUTPUT REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return ONLY valid JSON (no markdown, no commentary):
+
 {
   "overall_score": 85,
   "keyword_match_score": 78,
   "skills_match_score": 92,
   "experience_score": 88,
   "education_score": 75,
-  "formatting_score": 82,
-  "matched_keywords": ["JavaScript", "React", "Node.js", "Agile"],
-  "missing_keywords": ["TypeScript", "AWS", "Docker", "CI/CD"],
+  "formatting_score": 95,
+  "matched_keywords": ["JavaScript", "React", "Node.js", "AWS", "Agile", "Docker"],
+  "missing_keywords": ["TypeScript", "Kubernetes", "CI/CD", "GraphQL"],
   "suggestions": [
     {
       "type": "keywords",
-      "priority": "high",
-      "message": "Add TypeScript and AWS to your skills section to match job requirements"
+      "priority": "critical",
+      "message": "URGENT: Add 'TypeScript' and 'CI/CD' to skills - both are must-have requirements for this role"
     },
     {
       "type": "experience",
-      "priority": "medium", 
-      "message": "Quantify your achievements with specific metrics (e.g., 'increased performance by 40%')"
+      "priority": "high",
+      "message": "Quantify ALL achievements with specific metrics. Example: 'Improved API performance' → 'Reduced API latency by 60% (from 500ms to 200ms), serving 2M daily requests'"
+    },
+    {
+      "type": "skills",
+      "priority": "high",
+      "message": "Add 'Kubernetes' and 'GraphQL' - mentioned 3x in job description as key technologies"
+    },
+    {
+      "type": "formatting",
+      "priority": "medium",
+      "message": "Use standard headers: 'Professional Summary', 'Experience', 'Education', 'Skills' for optimal ATS parsing"
+    },
+    {
+      "type": "keywords",
+      "priority": "low",
+      "message": "Consider adding industry buzzwords: 'microservices architecture', 'cloud-native' to match company tech stack"
     }
   ]
 }
 
-Be thorough but concise. Focus on actionable improvements.`;
+SUGGESTION PRIORITIES:
+- "critical": Must fix before applying (missing requirements)
+- "high": Strong recommendation (major improvement)
+- "medium": Should do (moderate improvement)
+- "low": Nice to have (minor polish)
+
+QUALITY STANDARDS:
+✅ BE SPECIFIC: Don't say "add more keywords" - say "Add TypeScript, AWS, Docker"
+✅ BE QUANTIFIED: Reference actual gaps ("missing 3 of 5 must-have skills")
+✅ BE ACTIONABLE: Tell them WHERE and HOW to improve
+✅ BE HONEST: Score fairly - don't inflate scores to make candidate feel good
+✅ BE RELEVANT: Every suggestion must directly improve ATS score or interview chances`;
   }
 
   private getGrade(score: number): string {

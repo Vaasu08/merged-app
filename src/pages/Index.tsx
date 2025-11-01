@@ -285,7 +285,7 @@ const Index = () => {
               <button onClick={scrollToFeatures} className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 FEATURES
               </button>
-              <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
+              <Link to='/blog' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
                 BLOGS
               </Link>
               <Link to='/insights' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
@@ -361,15 +361,15 @@ const Index = () => {
         </motion.nav>
 
         {/* Hero Section */}
-        <div className="relative z-10 min-h-screen flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 py-16 sm:py-20">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="relative z-10 min-h-screen flex items-stretch">
+          <div className="container mx-auto px-4 sm:px-6 pt-24 sm:pt-32 lg:pt-40 pb-16 sm:pb-20 w-full h-full flex items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch w-full h-full">
               {/* Left Content */}
               <motion.div
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-left space-y-6 sm:space-y-8"
+                className="text-left space-y-6 sm:space-y-8 flex flex-col justify-center"
               >
               {/* Main Heading */}
                 <div className="space-y-4">
@@ -508,122 +508,26 @@ const Index = () => {
                 </motion.div>
               </motion.div>
                 
-              {/* Right Content - 3D Resume Illustration */}
+              {/* Right Content - Duck Resume Video - Full Coverage */}
                 <motion.div
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="relative order-first lg:order-last"
+                className="relative order-first lg:order-last w-full h-full"
               >
-                <div className="relative w-full h-64 sm:h-80 lg:h-[500px] flex items-center justify-center">
-                  {/* 3D Resume */}
-                <motion.div
-                    className="relative w-80 h-96 sm:w-96 sm:h-[28rem] lg:w-[28rem] lg:h-[36rem]"
-                    animate={{
-                      rotateY: [0, 360],
-                      rotateX: [0, 15, 0],
-                      y: [0, -10, 0],
-                    }}
-                    transition={{
-                      duration: 25,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                    style={{
-                      transformStyle: 'preserve-3d',
-                      perspective: '1000px'
-                    }}
+                <div className="relative w-full h-full overflow-hidden">
+                  {/* Video - Full width and height, no borders, covering all space */}
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
                   >
-                    {/* Resume Container */}
-                    <div 
-                      className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden resume-container-shadow"
-                    >
-                      {/* Resume Content */}
-                      <div className="p-4 h-full overflow-y-auto text-xs">
-                        {/* Header */}
-                        <div className="flex items-start gap-3 mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            SR
-                          </div>
-                          <div className="flex-1">
-                            <h1 className="text-lg font-bold text-gray-900 mb-1">STACEY E. RODRIGUEZ</h1>
-                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                              <div>
-                                <p><strong>Address:</strong> 515 Roosevelt Wilson Lane, Plato, CA 92876</p>
-                                <p><strong>Phone:</strong> 133-456-7890</p>
-                              </div>
-                              <div>
-                                <p><strong>Email:</strong> hello@gmail.com</p>
-                                <p><strong>Website:</strong> linkedin.com/in/myname</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Summary */}
-                        <div className="mb-3">
-                          <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">SUMMARY</h2>
-                          <p className="text-xs text-gray-700 leading-relaxed">
-                            Innovative problem-solver and Six Sigma Black Belt adept at spearheading digital and business transformation. 
-                            Proven visionary catalyst, credited with exceeding $150M in sales pipeline, compliance, and cyber security.
-                          </p>
-                        </div>
-
-                        {/* Work Experience */}
-                        <div className="mb-3">
-                          <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">WORK EXPERIENCE</h2>
-                          <div className="space-y-2">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-xs">CHIEF INFORMATION OFFICER, Boretech Technica</h3>
-                              <p className="text-xs text-gray-600">Jan 2023 - Present</p>
-                              <ul className="text-xs text-gray-700 mt-1 space-y-0.5">
-                                <li>• Made a dynamic network of collaborators across diverse domains such as NexTech, AutoFashion, TechSphere, CognitiveWorks, ComplianceFirst, and SecureNet</li>
-                                <li>• Drove transformative growth by clinching a groundbreaking $40M tech solutions contract, spanning key industry sectors like finance, and education</li>
-                                <li>• Coordinated the expansion of a substantial $200M sales pipeline through strategic partnerships with Accenture, PwC, McKinsey, and other leading consultancy firms</li>
-                              </ul>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-xs">CHIEF OPERATING OFFICER, DocInc</h3>
-                              <p className="text-xs text-gray-600">Feb 2001 - Dec 2002</p>
-                              <ul className="text-xs text-gray-700 mt-1 space-y-0.5">
-                                <li>• Led strategic management of a dynamic $120M pipeline while nurturing and expanding partnerships with industry giants such as Apple, Oracle, VMware, SAP, Cisco, HP, and others</li>
-                                <li>• Spearheaded significant expansion within key sectors, including HHS, DOD, SEO, State Agencies, DOE, and private enterprises</li>
-                                <li>• Collaborated closely with the executive board to facilitate underprivileged students' access to vital scholarships, empowering them to pursue their career aspirations</li>
-                                <li>• Pioneered the establishment of an innovative overseas Center of Excellence focused on IoT/Smart Cities technology, catering specifically to the American market</li>
-                                <li>• Served as a thought leader in the industry, providing invaluable insights and training through the development of the company's third-party advisor portal, aimed at preparing stakeholders for future ISO compliance</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Education */}
-                        <div className="mb-3">
-                          <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">EDUCATION</h2>
-                          <div className="space-y-1">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-xs">M.S. Electrical & Computer Engineering</h3>
-                              <p className="text-xs text-gray-600">Boston University (Aug 2010 - Oct 2010)</p>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-xs">B.S. Computer Science</h3>
-                              <p className="text-xs text-gray-600">Georgia Institute of Technology (May 2014 - May 2016)</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Additional Information */}
-                        <div>
-                          <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">ADDITIONAL INFORMATION</h2>
-                          <div className="text-xs text-gray-700 space-y-1">
-                            <p><strong>Technical Skills:</strong> Change Management, Transition Management, IT Strategy & Service Product, Road-Mapping, Project Management, Revenue Management, Market Evaluation, Risk Management, DevOps, Agile, & Principal Vendor Management</p>
-                            <p><strong>Certifications:</strong> Professional Engineer (PE) License, Project Management Professional (PMP)</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-              </motion.div>
-              
-                  {/* Floating particles around resume */}
+                    <source src="/Duck_s_Resume_for_Career_Guidance.mp4" type="video/mp4" />
+                  </video>
+                  
+                  {/* Floating particles around video */}
                   {[...Array(6)].map((_, i) => (
                     <motion.div
                       key={i}
@@ -644,9 +548,6 @@ const Index = () => {
                       }}
                     />
                   ))}
-                  
-                  {/* Glow effect behind resume */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 rounded-full blur-3xl -z-10" />
                 </div>
               </motion.div>
             </div>
@@ -801,6 +702,94 @@ const Index = () => {
         {/* How It Works Flowchart Section */}
         <HowItWorks />
 
+        {/* Career Matching Discovery Section */}
+        <div className="relative bg-gradient-to-br from-teal-900 via-purple-900 to-indigo-900 py-20 sm:py-24 lg:py-28 overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-20 left-10 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+              {/* Left Content */}
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="space-y-6"
+              >
+                <h2 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight">
+                  Discover your top<br />
+                  career matches<br />
+                  and why they're<br />
+                  <span className="bg-gradient-to-r from-teal-400 to-purple-400 bg-clip-text text-transparent">
+                    right for you.
+                  </span>
+                </h2>
+                <p className="text-lg sm:text-xl text-white/80 leading-relaxed max-w-xl">
+                  Our AI analyzes your skills, interests, and career goals to match you with the perfect career paths. See your top matches with detailed ratings and explanations.
+                </p>
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      if (user) {
+                        navigate('/profile');
+                      } else {
+                        setCurrentStep('skills');
+                      }
+                    }}
+                    className="bg-white text-purple-600 hover:bg-gray-100 font-semibold px-8 py-6 text-base rounded-xl"
+                  >
+                    Get Your Matches
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => navigate('/skill-graph')}
+                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 font-semibold px-8 py-6 text-base rounded-xl"
+                  >
+                    Explore Skill Graph
+                  </Button>
+                </div>
+              </motion.div>
+
+              {/* Right Content - Career Match Card */}
+              <motion.div
+                initial={{ x: 50, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="relative bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
+                  {/* Background blur effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl -z-10"></div>
+                  
+                  {/* Main Card Content - Video covering entire card */}
+                  <div className="relative h-[500px] rounded-2xl overflow-hidden">
+                    {/* Video covering entire card area */}
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    >
+                      <source src="/Savage_Video_Generation_Request.mp4" type="video/mp4" />
+                    </video>
+                  </div>
+                </div>
+
+                {/* Decorative lines around card */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 via-purple-400 to-pink-400 rounded-3xl opacity-20 blur-sm -z-10"></div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
         {/* Dynamic Features Showcase */}
         <div id="features" className="relative bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 py-16 sm:py-20 lg:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -811,8 +800,8 @@ const Index = () => {
               viewport={{ once: true }}
               className="text-center mb-12 sm:mb-16"
             >
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6">
-                Features
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                FEATURES
               </h2>
               <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
                 Explore our comprehensive suite of AI-powered tools designed to accelerate your career journey
@@ -871,21 +860,6 @@ const Index = () => {
                   onClick: () => navigate('/interview')
                 },
                 {
-                  title: "Skill Gap Analysis",
-                  description: "Identify missing skills and get personalized learning recommendations",
-                  icon: Target,
-                  color: "from-green-500 to-emerald-500",
-                  features: ["Gap Detection", "Learning Paths", "Progress Tracking", "Certifications"],
-                  status: "Live",
-                  onClick: () => {
-                    if (user) {
-                      navigate('/profile');
-                    } else {
-                      setCurrentStep('skills');
-                    }
-                  }
-                },
-                {
                   title: "Resume Builder",
                   description: "Create professional resumes with AI-powered optimization and ATS compatibility",
                   icon: Code,
@@ -914,15 +888,6 @@ const Index = () => {
                       navigate('/login');
                     }
                   }
-                },
-                {
-                  title: "Community Network",
-                  description: "Connect with professionals, mentors, and industry experts",
-                  icon: Globe,
-                  color: "from-pink-500 to-rose-500",
-                  features: ["Professional Network", "Mentorship", "Industry Events", "Knowledge Sharing"],
-                  status: "Live",
-                  onClick: () => navigate('/community')
                 }
               ].map((feature, index) => (
                 <motion.div
@@ -1043,11 +1008,7 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6">
                 Our Mission
               </h2>
-              <p className="text-lg sm:text-xl text-white/80 max-w-4xl mx-auto leading-relaxed px-4">
-                Our mission is to help confused students find clarity, confidence, and direction in their career journey. Instead of running to multiple websites, counselors, and chatbots, we provide a one-stop AI-powered advisor that delivers everything in one place—career roadmaps, job trends, skill mapping, resume and LinkedIn support, higher studies guidance, and soft skills training.
 
-We aim to bridge the gap between students and the evolving job market by offering personalized, actionable, and future-ready guidance.
-              </p>
             </motion.div>
             
             {/* Mission Section in Geometric Format */}
@@ -1063,7 +1024,7 @@ We aim to bridge the gap between students and the evolving job market by offerin
                 >
                   <div className="w-0 h-0 border-l-[300px] border-r-[300px] border-b-[180px] border-l-transparent border-r-transparent border-b-red-500 mx-auto">
                     <div className="absolute top-12 left-1/2 transform -translate-x-1/2 text-white font-bold text-center px-8 w-96">
-                      <div className="font-bold text-lg">OUR MISSION</div>
+                      <div className="font-bold text-lg">Purpose :</div>
                       <div className="text-sm mt-2 opacity-90">Empowering Students' Career Journeys</div>
                     </div>
                   </div>

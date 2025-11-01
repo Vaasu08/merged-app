@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ModeToggle } from '@/components/mode-toggle';
 import { parseCV } from '@/lib/cvParser';
 import { ATSScorer } from '@/lib/atsScorer';
 import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
@@ -91,11 +92,13 @@ export default function ATSAssessment() {
 
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-4xl relative">
       <div className="mb-6">
         <BackButton to="/resume" />
       </div>
-      
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">ATS Resume Assessment</h1>
         <p className="text-lg text-muted-foreground">

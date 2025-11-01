@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ModeToggle } from "@/components/mode-toggle";
 import { useInterview } from "@/contexts/InterviewContext";
 import { BackButton } from "@/components/BackButton";
 
@@ -26,7 +27,9 @@ const InterviewHome = () => {
       <div className="absolute top-4 left-4">
         <BackButton to="/" />
       </div>
-      
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
       <div className="max-w-4xl w-full space-y-8 text-center">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

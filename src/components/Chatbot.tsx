@@ -99,6 +99,16 @@ export const Chatbot = ({ className }: ChatbotProps) => {
 
     try {
       const chatbotService = getChatbotService();
+      if (!chatbotService) {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "I'm sorry, but the chatbot service is currently unavailable. Please check your configuration.",
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+        return;
+      }
       const response = await chatbotService.processMessage(userMessage.text);
       
       const botMessage: Message = {

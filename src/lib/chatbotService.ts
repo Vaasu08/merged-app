@@ -124,19 +124,28 @@ Our mission is to help confused students find clarity, confidence, and direction
 `;
 
 export class ChatbotService {
-  private apiKey: string;
+  private apiKey: string | null;
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('VITE_GEMINI_API_KEY is required');
+      console.warn('⚠️ VITE_GEMINI_API_KEY is missing. Chatbot AI features will not work.');
     }
-    this.apiKey = apiKey;
-    console.log('ChatbotService initialized with API key:', apiKey.substring(0, 10) + '...');
+    this.apiKey = apiKey || null;
+    if (this.apiKey) {
+      console.log('ChatbotService initialized with API key:', this.apiKey.substring(0, 10) + '...');
+    }
+  }
+
+  private hasApiKey(): boolean {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   // Test API key validity
   async testApiKey(): Promise<boolean> {
+    if (!this.hasApiKey()) {
+      return false;
+    }
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
@@ -153,6 +162,25 @@ export class ChatbotService {
   }
 
   async processMessage(message: string): Promise<string> {
+    // If no API key, return a helpful message
+    if (!this.hasApiKey()) {
+      return `I'm sorry, but the AI chat feature requires an API key to be configured. However, I can still help you with basic information about Horizon:
+
+**How to get career recommendations:**
+- Input your skills on the home page and click "Analyze My Career Path"
+
+**Available career paths:**
+- We have 12 career paths including Full Stack Developer, Data Scientist, DevOps Engineer, Frontend Developer, Backend Developer, and more
+
+**Key features:**
+- AI-Powered Career Assessment
+- Skill-Based Career Discovery
+- Resume Builder
+- Industry Insights Dashboard
+
+Please configure VITE_GEMINI_API_KEY in your environment variables to enable full AI chat capabilities.`;
+    }
+
     try {
       console.log('🤖 Processing message:', message);
       console.log('🔑 API Key available:', !!this.apiKey);
@@ -276,9 +304,14 @@ ${message}
 // Create a singleton instance
 let chatbotService: ChatbotService | null = null;
 
-export const getChatbotService = (): ChatbotService => {
-  if (!chatbotService) {
-    chatbotService = new ChatbotService();
+export const getChatbotService = (): ChatbotService | null => {
+  try {
+    if (!chatbotService) {
+      chatbotService = new ChatbotService();
+    }
+    return chatbotService;
+  } catch (error) {
+    console.error('Failed to create ChatbotService:', error);
+    return null;
   }
-  return chatbotService;
 };

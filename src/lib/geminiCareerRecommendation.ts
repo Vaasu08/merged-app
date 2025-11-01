@@ -13,17 +13,27 @@ export interface JobRecommendation {
 }
 
 export class GeminiCareerRecommendationService {
-  private apiKey: string;
+  private apiKey: string | null;
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('VITE_GEMINI_API_KEY is required');
+      console.warn('⚠️ VITE_GEMINI_API_KEY is missing. Gemini AI features will use fallback recommendations.');
     }
-    this.apiKey = apiKey;
+    this.apiKey = apiKey || null;
+  }
+
+  private hasApiKey(): boolean {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   async generateRecommendations(answers: Record<number, string>): Promise<JobRecommendation[]> {
+    // If no API key, return fallback recommendations immediately
+    if (!this.hasApiKey()) {
+      console.warn('⚠️ Gemini API key not available, using fallback recommendations');
+      return this.getFallbackRecommendations(answers);
+    }
+
     try {
       console.log('🎯 Generating ADVANCED career recommendations with Gemini AI...');
       console.log('📊 Deep analyzing', Object.keys(answers).length, 'assessment responses');
@@ -86,8 +96,10 @@ export class GeminiCareerRecommendationService {
       return recommendations;
 
     } catch (error) {
-      console.error('Error generating recommendations:', error);
-      throw error;
+      console.error('❌ Error generating recommendations with Gemini:', error);
+      console.log('⚠️ Falling back to default recommendations');
+      // Return fallback instead of throwing
+      return this.getFallbackRecommendations(answers);
     }
   }
 
@@ -354,28 +366,28 @@ Now analyze deeply and generate the 6 transformative career recommendations:`;
     } catch (error) {
       console.error('Error parsing recommendations:', error);
       console.error('Raw text:', text);
-      throw new Error('Failed to parse career recommendations from Gemini response');
+      // Return empty array instead of throwing - caller will handle fallback
+      console.warn('⚠️ Returning empty recommendations, fallback will be used');
+      return [];
     }
   }
-}
 
-// Export a singleton instance
-export const geminiCareerService = new GeminiCareerRecommendationService();
+  // Fallback recommendations when API is unavailable
+  private getFallbackRecommendations(answers: Record<number, string>): JobRecommendation[] {
+    console.log('📋 Generating fallback recommendations based on assessment answers');
+    // Analyze answers to provide better fallbacks
+    const answerValues = Object.values(answers);
+    const hasTechKeywords = answerValues.some(a => 
+      /tech|code|programming|software|computer|data|algorithm/i.test(a)
+    );
+    const hasCreativeKeywords = answerValues.some(a => 
+      /creative|design|art|visual|write|content/i.test(a)
+    );
+    const hasBusinessKeywords = answerValues.some(a => 
+      /business|manage|lead|team|strategy|market/i.test(a)
+    );
 
-// Main function to analyze assessment answers and return recommendations
-export async function analyzeAssessmentAnswersWithGemini(
-  answers: Record<number, string>
-): Promise<JobRecommendation[]> {
-  try {
-    const service = new GeminiCareerRecommendationService();
-    const recommendations = await service.generateRecommendations(answers);
-    return recommendations;
-  } catch (error) {
-    console.error('❌ Error analyzing assessment with Gemini:', error);
-    
-    // Enhanced fallback recommendations based on common assessment patterns
-    console.log('⚠️ Using enhanced fallback recommendations');
-    
+    // Select relevant fallbacks based on answers
     return [
       {
         id: 'fallback-1',
@@ -475,4 +487,15 @@ export async function analyzeAssessmentAnswersWithGemini(
       }
     ];
   }
+}
+
+// Export a safe singleton instance (won't throw if API key is missing)
+export const geminiCareerService = new GeminiCareerRecommendationService();
+
+// Main function to analyze assessment answers and return recommendations
+export async function analyzeAssessmentAnswersWithGemini(
+  answers: Record<number, string>
+): Promise<JobRecommendation[]> {
+  // Use the singleton service - it already handles API key checks and fallbacks
+  return geminiCareerService.generateRecommendations(answers);
 }

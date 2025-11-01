@@ -36,20 +36,31 @@ interface GeminiATSAnalysis {
 }
 
 export class ATSScorerAI {
-  private apiKey: string;
+  private apiKey: string | null;
 
   constructor() {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('VITE_GEMINI_API_KEY is required for AI-powered ATS scoring');
+      console.warn('⚠️ VITE_GEMINI_API_KEY is missing. AI-powered ATS scoring will use fallback scoring.');
     }
-    this.apiKey = apiKey;
+    this.apiKey = apiKey || null;
+  }
+
+  private hasApiKey(): boolean {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   async calculateScore(
     resumeData: ParsedResume,
     jobDescription?: string
   ): Promise<ATSScores> {
+    // If no API key, use fallback scorer
+    if (!this.hasApiKey()) {
+      console.warn('⚠️ API key not available, falling back to rule-based scoring');
+      const fallbackScorer = new ATSScorerFallback();
+      return fallbackScorer.calculateScore(resumeData, jobDescription);
+    }
+
     try {
       console.log('🤖 Using Gemini AI for ATS scoring...');
       
@@ -69,7 +80,10 @@ export class ATSScorerAI {
       };
     } catch (error) {
       console.error('Gemini ATS scoring failed:', error);
-      throw new Error('AI-powered ATS scoring is currently unavailable. Please try again later.');
+      // Fall back to rule-based scoring instead of throwing
+      console.warn('⚠️ Falling back to rule-based scoring');
+      const fallbackScorer = new ATSScorerFallback();
+      return fallbackScorer.calculateScore(resumeData, jobDescription);
     }
   }
 
@@ -77,6 +91,10 @@ export class ATSScorerAI {
     resumeData: ParsedResume,
     jobDescription?: string
   ): Promise<GeminiATSAnalysis> {
+    if (!this.apiKey) {
+      throw new Error('API key is required');
+    }
+    
     const prompt = this.buildAnalysisPrompt(resumeData, jobDescription);
 
     const response = await fetch(
@@ -206,9 +224,12 @@ Be thorough but concise. Focus on actionable improvements.`;
 
   // Test method to validate API connection
   async testConnection(): Promise<boolean> {
+    if (!this.hasApiKey()) {
+      return false;
+    }
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey!}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

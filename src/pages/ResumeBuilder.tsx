@@ -11,7 +11,7 @@ import { getUserProfile, getUserSkills } from '@/lib/profile';
 import { skillsDatabase } from '@/data/careerData';
 import { FileText, Download, Eye, ArrowLeft, User, GraduationCap, Briefcase, Award, Globe, AlertCircle, CheckCircle, Sparkles, Wand2, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { ATSScorer } from '@/lib/atsScorer';
+import { ATSScorerAI } from '@/lib/atsScorerAI';
 import type { ParsedCV } from '@/lib/cvParser';
 import { aiResumeEnhancer, type EnhancedResume } from '@/lib/aiResumeEnhancer';
 import { BackButton } from '@/components/BackButton';
@@ -65,8 +65,10 @@ interface ATSDetails {
   education: number;
   formatting: number;
   suggestions: Array<{
-    priority: 'high' | 'medium' | 'low';
+    priority: 'critical' | 'high' | 'medium' | 'low';
     message: string;
+    impact?: string;
+    action?: string;
   }>;
 }
 
@@ -162,7 +164,7 @@ const ResumeBuilder = () => {
     }
   }, [user?.id, user?.email, user?.user_metadata?.full_name]);
 
-  const calculateATSScore = useCallback(() => {
+  const calculateATSScore = useCallback(async () => {
     if (!resumeData) return;
 
 
@@ -200,12 +202,14 @@ const ResumeBuilder = () => {
 
 
 
-      // Calculate score
-      const scores = ATSScorer.calculateScore(parsedResume);
+      // Calculate score with AI
+      const scorer = new ATSScorerAI();
+      const scores = await scorer.calculateScore(parsedResume);
       setATSScore(scores.overall);
       setATSDetails(scores);
     } catch (error) {
       console.error('ATS scoring error:', error);
+      toast.error('Failed to calculate ATS score. Please try again.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeData]);
@@ -822,18 +826,36 @@ const ResumeBuilder = () => {
                       <div
                         key={idx}
                         className={`p-3 rounded-lg text-sm ${
-                          suggestion.priority === 'high'
-                            ? 'bg-red-100 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
+                          suggestion.priority === 'critical'
+                            ? 'bg-red-100 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-700'
+                            : suggestion.priority === 'high'
+                            ? 'bg-orange-100 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800'
                             : suggestion.priority === 'medium'
                             ? 'bg-yellow-100 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800'
                             : 'bg-blue-100 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800'
                         }`}
                       >
                         <div className="flex items-start gap-2">
-                          <Badge variant="outline" className="mt-0.5">
+                          <Badge variant="outline" className="mt-0.5 uppercase text-xs">
                             {suggestion.priority}
                           </Badge>
-                          <p className="flex-1">{suggestion.message}</p>
+                          <div className="flex-1 space-y-2">
+                            <p className="font-medium">{suggestion.message}</p>
+                            {suggestion.impact && (
+                              <p className="text-xs text-green-700 dark:text-green-400 flex items-center gap-1">
+                                <Sparkles className="h-3 w-3" />
+                                <span className="font-semibold">Impact:</span> {suggestion.impact}
+                              </p>
+                            )}
+                            {suggestion.action && (
+                              <p className="text-xs text-blue-700 dark:text-blue-400 flex items-start gap-1">
+                                <CheckCircle className="h-3 w-3 mt-0.5" />
+                                <span>
+                                  <span className="font-semibold">Action:</span> {suggestion.action}
+                                </span>
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

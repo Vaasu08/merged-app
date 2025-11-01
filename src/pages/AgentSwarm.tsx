@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,20 +32,35 @@ const AgentSwarmPage = () => {
             ...msg,
             timestamp: new Date(msg.timestamp)
           }));
-          setSwarmState(parsed);
+          
+          // Check if data is older than 7 days (stale)
+          const daysSinceUpdate = (Date.now() - new Date(parsed.lastUpdated).getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (daysSinceUpdate < 7) {
+            setSwarmState(parsed);
+            setIsInitialLoad(false);
+          } else {
+            // Data is stale, auto-run agents
+            setIsInitialLoad(false);
+            setTimeout(() => runAgentSwarm(), 500); // Small delay to show UI first
+          }
+        } else {
+          // No saved state, auto-run agents for first time
+          setIsInitialLoad(false);
+          setTimeout(() => runAgentSwarm(), 500);
         }
-        setIsInitialLoad(false);
       };
       loadSwarmState();
     } else {
       setIsInitialLoad(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const saveSwarmState = (state: SwarmState) => {
+  const saveSwarmState = useCallback((state: SwarmState) => {
     localStorage.setItem(`swarm_state_${user?.id}`, JSON.stringify(state));
     setSwarmState(state);
-  };
+  }, [user?.id]);
 
   const toggleTaskStatus = (taskId: string) => {
     if (!swarmState) return;
@@ -63,7 +78,7 @@ const AgentSwarmPage = () => {
     }
   };
 
-  const runAgentSwarm = async () => {
+  const runAgentSwarm = useCallback(async () => {
     if (!user?.id) {
       toast.error('Please log in to use AI Career Agents');
       return;
@@ -116,7 +131,7 @@ const AgentSwarmPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, navigate, swarmState, saveSwarmState]);
 
   const currentPlan = swarmState?.weeklyPlans[0];
   const progress = swarmState?.userProgress;

@@ -106,14 +106,14 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 4. **Set up the database**
 
    Go to your Supabase dashboard → SQL Editor and run the entire `database-setup.sql` file. This creates:
-   
+
    - **User Management**: `user_profiles`, `user_skills`, `profiles`
    - **Resume System**: `user_resumes`, `ats_scores`
    - **Career Planning**: `roadmaps`, `roadmap_phases`
    - **Interview Prep**: `interview_sessions`, `interview_responses`
    - **Assessments**: `career_assessments`
    - **Job Tracking**: `job_applications`
-   
+
    All tables include RLS policies for security and proper indexing for performance.
 
 5. **Start the development servers**
@@ -245,25 +245,30 @@ Resume scoring across multiple dimensions:
 Production-ready PostgreSQL schema with 11 tables:
 
 **User Management**
+
 - `user_profiles` - Complete user information
 - `user_skills` - Skill tracking with many-to-many relationships
 - `profiles` - Auth integration
 
 **Resume & Career**
+
 - `user_resumes` - Version-controlled resume storage
 - `ats_scores` - ATS analysis with detailed feedback
 - `roadmaps` - Career planning and goals
 - `roadmap_phases` - Learning phase tracking
 
 **Interview & Assessment**
+
 - `interview_sessions` - Mock interview history
 - `interview_responses` - Q&A with AI feedback
 - `career_assessments` - Career test results
 
 **Job Search**
+
 - `job_applications` - Application tracking and status
 
 All tables include:
+
 - Row-Level Security (RLS) policies
 - Optimized indexes for query performance
 - Automatic timestamps (created_at, updated_at)

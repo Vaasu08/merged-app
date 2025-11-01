@@ -16,8 +16,10 @@ interface ATSScores {
 
 interface Suggestion {
   type: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: 'critical' | 'high' | 'medium' | 'low';
   message: string;
+  impact: string;
+  action: string;
 }
 
 interface GeminiATSAnalysis {
@@ -288,29 +290,90 @@ export class ATSScorerFallback {
   }
 
   private static scoreKeywords(resume: ParsedCV, jd?: string): number {
-    if (!jd) return 75;
+    if (!jd) {
+      // Without job description, score based on general keyword density
+      const keywordCount = resume.keywords.length;
+      if (keywordCount === 0) return 15; // CRITICAL - no keywords
+      if (keywordCount < 5) return 25; // VERY POOR
+      if (keywordCount < 10) return 40; // POOR
+      if (keywordCount < 15) return 55; // BELOW AVERAGE
+      if (keywordCount < 20) return 68; // AVERAGE
+      return 75; // GOOD (without JD, cap at 75)
+    }
+    
+    // With job description - much stricter
     const resumeKeywords = new Set(resume.keywords.map(k => k.toLowerCase()));
+    const resumeText = resume.text.toLowerCase();
     const jdKeywords = this.extractKeywords(jd);
-    if (jdKeywords.length === 0) return 75;
-    const matches = jdKeywords.filter(k => resumeKeywords.has(k.toLowerCase()));
-    return (matches.length / jdKeywords.length) * 100;
+    
+    if (jdKeywords.length === 0) return 50;
+    
+    // Check for exact and semantic matches
+    let exactMatches = 0;
+    let semanticMatches = 0;
+    
+    jdKeywords.forEach(keyword => {
+      if (resumeKeywords.has(keyword.toLowerCase())) {
+        exactMatches++;
+      } else if (resumeText.includes(keyword.toLowerCase())) {
+        semanticMatches++;
+      }
+    });
+    
+    const totalMatches = exactMatches + (semanticMatches * 0.5);
+    const matchPercentage = (totalMatches / jdKeywords.length);
+    
+    // STRICT REALISTIC SCORING
+    if (matchPercentage < 0.20) return Math.round(matchPercentage * 100); // 0-20%: 0-20 points
+    if (matchPercentage < 0.40) return Math.round(20 + (matchPercentage - 0.20) * 100); // 20-40%: 20-40 points
+    if (matchPercentage < 0.60) return Math.round(40 + (matchPercentage - 0.40) * 75); // 40-60%: 40-55 points
+    if (matchPercentage < 0.80) return Math.round(55 + (matchPercentage - 0.60) * 75); // 60-80%: 55-70 points
+    return Math.round(70 + (matchPercentage - 0.80) * 150); // 80-100%: 70-100 points
   }
 
   private static scoreSkills(resume: ParsedCV): number {
     const skillCount = resume.skills.length;
-    if (skillCount >= 10) return 100;
-    if (skillCount >= 7) return 85;
-    if (skillCount >= 5) return 70;
-    if (skillCount >= 3) return 55;
-    return 40;
+    const hasText = resume.text.length > 300;
+    
+    // REALISTIC ATS STANDARDS - Most resumes score 40-60
+    if (skillCount === 0) return 10; // CRITICAL FAILURE
+    if (skillCount < 4) return 25; // VERY POOR - instant rejection
+    if (skillCount < 7) return 40; // POOR - needs improvement
+    if (skillCount < 10) return 55; // BELOW AVERAGE
+    if (skillCount < 13) return 68; // AVERAGE
+    if (skillCount < 16) return 78; // GOOD
+    if (skillCount < 20) return 88; // VERY GOOD
+    
+    // Bonus for having good content + many skills
+    return hasText ? 95 : 90; // EXCELLENT
   }
 
   private static scoreExperience(resume: ParsedCV): number {
     const years = resume.experienceYears;
-    if (years >= 5) return 100;
-    if (years >= 3) return 85;
-    if (years >= 1) return 70;
-    return 50;
+    const text = resume.text.toLowerCase();
+    
+    // Check for quantified achievements (numbers, percentages, dollars)
+    const hasMetrics = /\d+%|\$\d+|\d+x|increased|decreased|reduced|improved|saved/.test(text);
+    const hasActionVerbs = /\b(led|managed|architected|built|designed|implemented|delivered|created)\b/i.test(text);
+    
+    let baseScore = 0;
+    
+    // Base score on experience years (realistic - most people score 40-65)
+    if (years === 0) baseScore = 20; // Entry level
+    else if (years < 2) baseScore = 35; // Junior
+    else if (years < 4) baseScore = 50; // Mid
+    else if (years < 7) baseScore = 62; // Senior
+    else if (years < 10) baseScore = 72; // Very Senior
+    else baseScore = 80; // Expert
+    
+    // Penalties and bonuses (realistic impact)
+    if (!hasMetrics) baseScore -= 15; // No quantified achievements = major penalty
+    if (!hasActionVerbs) baseScore -= 10; // Weak/passive language
+    if (resume.text.length < 300) baseScore -= 10; // Too short
+    
+    if (hasMetrics && hasActionVerbs) baseScore += 8; // Good combo
+    
+    return Math.max(15, Math.min(95, baseScore)); // Cap between 15-95
   }
 
   private static scoreEducation(resume: ParsedCV): number {
@@ -322,10 +385,33 @@ export class ATSScorerFallback {
   }
 
   private static scoreFormatting(resume: ParsedCV): number {
-    let score = 100;
-    if (resume.text.length < 200) score -= 20;
-    if (resume.skills.length === 0) score -= 15;
-    return Math.max(score, 60);
+    let score = 75; // Start at average, not perfect
+    const text = resume.text;
+    const textLength = text.length;
+    
+    // Length checks (realistic penalties)
+    if (textLength < 200) score -= 30; // Way too short
+    else if (textLength < 400) score -= 20; // Too short
+    else if (textLength > 4000) score -= 10; // Might be too long
+    
+    // Content checks
+    if (resume.skills.length === 0) score -= 25; // No skills section = major issue
+    if (!resume.contactInfo?.email) score -= 15; // No email = critical
+    if (!resume.contactInfo?.phone) score -= 10; // No phone
+    
+    // Structure checks
+    const hasStandardHeaders = /experience|education|skills|summary/i.test(text);
+    if (!hasStandardHeaders) score -= 15; // Non-standard format
+    
+    // Check for common ATS-breaking elements
+    if (/\t/.test(text)) score -= 8; // Tables detected
+    if (text.split('\n').length < 10) score -= 10; // Not enough structure
+    
+    // Bonus for good formatting
+    if (textLength > 600 && textLength < 2500) score += 10; // Good length
+    if (resume.contactInfo?.email && resume.contactInfo?.phone) score += 5; // Complete contact
+    
+    return Math.max(20, Math.min(95, score)); // Cap between 20-95
   }
 
   private static calculateOverall(scores: {
@@ -385,27 +471,120 @@ export class ATSScorerFallback {
     formatting: number;
   }, resume: ParsedCV): Suggestion[] {
     const suggestions: Suggestion[] = [];
-    if (scores.keywordMatch < 70) {
+    const text = resume.text.toLowerCase();
+    
+    // CRITICAL: Keyword Match
+    if (scores.keywordMatch < 50) {
+      suggestions.push({
+        type: 'keywords',
+        priority: 'critical',
+        message: `CRITICAL: Only ${scores.keywordMatch}% keyword match - ATS will likely reject`,
+        impact: '+20-30 points overall',
+        action: 'Add 8-12 job-specific keywords from the job description to your skills section AND mention them in context in your experience bullets'
+      });
+    } else if (scores.keywordMatch < 70) {
       suggestions.push({
         type: 'keywords',
         priority: 'high',
-        message: 'Add more keywords from the job description to improve match rate',
+        message: `${scores.keywordMatch}% keyword match - needs improvement to pass ATS`,
+        impact: '+10-15 points overall',
+        action: 'Review job description and add 4-6 missing keywords. Focus on technical skills mentioned multiple times'
       });
     }
-    if (scores.skillsMatch < 70) {
+    
+    // CRITICAL: Skills
+    if (resume.skills.length === 0) {
+      suggestions.push({
+        type: 'skills',
+        priority: 'critical',
+        message: 'NO SKILLS SECTION - This will cause instant ATS rejection',
+        impact: '+25-35 points overall',
+        action: 'Add a dedicated "Skills" section with 12-15 relevant technical skills (languages, frameworks, tools, methodologies)'
+      });
+    } else if (resume.skills.length < 7) {
+      suggestions.push({
+        type: 'skills',
+        priority: 'critical',
+        message: `Only ${resume.skills.length} skills listed - minimum should be 10-12`,
+        impact: '+15-25 points',
+        action: 'Expand skills section to 12-15 items. Include: programming languages, frameworks, databases, cloud platforms, and tools'
+      });
+    } else if (scores.skillsMatch < 70) {
       suggestions.push({
         type: 'skills',
         priority: 'high',
-        message: 'Add more relevant technical skills to your resume',
+        message: `${resume.skills.length} skills but score is low - may not be job-relevant`,
+        impact: '+10-15 points',
+        action: 'Add 3-5 more job-specific skills from the job description. Remove outdated/irrelevant skills'
       });
     }
-    if (scores.experience < 70) {
+    
+    // Experience quality
+    const hasMetrics = /\d+%|\$\d+|\d+x|increased|decreased|reduced|improved/i.test(text);
+    if (!hasMetrics || scores.experience < 60) {
       suggestions.push({
         type: 'experience',
-        priority: 'medium',
-        message: 'Quantify your achievements with specific metrics and numbers',
+        priority: hasMetrics ? 'high' : 'critical',
+        message: hasMetrics ? 'Experience needs more quantified achievements' : 'NO quantified achievements - experience appears weak',
+        impact: '+15-20 points',
+        action: 'Add specific metrics to EVERY bullet point: percentages ("+40%"), dollar amounts ("$500K saved"), numbers ("team of 8"), timeframes ("reduced from 4hrs to 30min")'
       });
     }
-    return suggestions;
+    
+    // Action verbs
+    const hasActionVerbs = /\b(led|managed|architected|built|designed|implemented|delivered|created|reduced|increased|improved)\b/i.test(text);
+    if (!hasActionVerbs) {
+      suggestions.push({
+        type: 'experience',
+        priority: 'high',
+        message: 'Weak action verbs detected - use strong, specific verbs',
+        impact: '+8-12 points',
+        action: 'Start each bullet with powerful verbs: Architected, Led, Engineered, Optimized, Delivered, Scaled, Reduced, Increased (not "responsible for" or "worked on")'
+      });
+    }
+    
+    // Formatting issues
+    if (resume.text.length < 400) {
+      suggestions.push({
+        type: 'formatting',
+        priority: 'critical',
+        message: 'Resume too short - appears incomplete to ATS',
+        impact: '+15-20 points',
+        action: 'Expand resume to 600-1500 words. Add more detail to experience bullets, include a professional summary, list certifications if any'
+      });
+    }
+    
+    if (!resume.contactInfo?.email) {
+      suggestions.push({
+        type: 'formatting',
+        priority: 'critical',
+        message: 'Missing email address - ATS cannot contact you',
+        impact: '+10 points',
+        action: 'Add email address at the top of resume in a clear "Contact" or header section'
+      });
+    }
+    
+    if (scores.formatting < 60) {
+      suggestions.push({
+        type: 'formatting',
+        priority: 'high',
+        message: 'Formatting issues detected - ATS may not parse correctly',
+        impact: '+10-15 points',
+        action: 'Use standard section headers: "Professional Summary", "Experience", "Education", "Skills". Avoid tables, graphics, columns. Use simple bullet points'
+      });
+    }
+    
+    // Education
+    if (resume.education.length === 0 || scores.education < 60) {
+      suggestions.push({
+        type: 'education',
+        priority: 'medium',
+        message: 'Education section missing or incomplete',
+        impact: '+5-10 points',
+        action: 'Add education section with: Degree, Field of Study, Institution, Graduation Year. Include relevant certifications (AWS, PMP, etc.)'
+      });
+    }
+    
+    return suggestions.slice(0, 8); // Return top 8 most critical suggestions
   }
 }

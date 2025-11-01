@@ -6,8 +6,9 @@ import {
   Home, Newspaper, Search, ArrowLeft, Sparkles, 
   Zap, Target, Award, TrendingUp, Users, Globe, Rocket
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { BackButton } from "@/components/BackButton";
 
 const NotFound = () => {
   const location = useLocation();
@@ -21,6 +22,9 @@ const NotFound = () => {
       <div className="text-center">
         <div className="absolute top-4 right-4">
           <ModeToggle />
+        </div>
+        <div className="absolute top-4 left-4">
+          <BackButton to="/" label="Home" />
         </div>
         <h1 className="mb-4 text-4xl font-bold">404</h1>
         <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>

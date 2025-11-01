@@ -8,8 +8,11 @@ import { ArrowLeft, Download, Brain, Sparkles, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/BackButton';
 
 interface Suggestion {
-  text: string;
-  priority: 'high' | 'medium' | 'low';
+  type: string;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  impact?: string;
+  action?: string;
 }
 
 interface ATSScores {
@@ -146,21 +149,46 @@ export default function ATSResults() {
               <CardTitle>Improvement Suggestions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {scores.suggestions.map((suggestion: Suggestion, idx: number) => (
                   <div
                     key={idx}
                     className={`p-4 rounded-lg border-l-4 ${
-                      suggestion.priority === 'high'
-                        ? 'border-red-500 bg-red-50'
+                      suggestion.priority === 'critical'
+                        ? 'border-red-600 bg-red-50 dark:bg-red-950/20'
+                        : suggestion.priority === 'high'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                         : suggestion.priority === 'medium'
-                        ? 'border-yellow-500 bg-yellow-50'
-                        : 'border-blue-500 bg-blue-50'
+                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
+                        : 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <Badge variant="outline">{suggestion.priority}</Badge>
-                      <p>{suggestion.text}</p>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Badge 
+                          variant="outline" 
+                          className="mt-0.5 uppercase text-xs"
+                        >
+                          {suggestion.priority}
+                        </Badge>
+                        <div className="flex-1 space-y-2">
+                          <p className="font-medium">{suggestion.message}</p>
+                          {suggestion.impact && (
+                            <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" />
+                              <span className="font-semibold">Impact:</span> {suggestion.impact}
+                            </p>
+                          )}
+                          {suggestion.action && (
+                            <p className="text-sm text-blue-700 dark:text-blue-400 flex items-start gap-1">
+                              <AlertCircle className="h-3 w-3 mt-0.5" />
+                              <span>
+                                <span className="font-semibold">Action:</span> {suggestion.action}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}

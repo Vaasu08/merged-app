@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ModeToggle } from '@/components/mode-toggle';
 import { parseCV } from '@/lib/cvParser';
-import { ATSScorer } from '@/lib/atsScorer';
 import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
 import { Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';

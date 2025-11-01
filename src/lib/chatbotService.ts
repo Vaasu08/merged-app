@@ -1,4 +1,5 @@
 // Enhanced Chatbot Service with advanced features
+import geminiService from './geminiService';
 
 // Comprehensive website knowledge base - regularly updated
 const WEBSITE_KNOWLEDGE_BASE = `
@@ -124,28 +125,18 @@ Our mission is to help confused students find clarity, confidence, and direction
 `;
 
 export class ChatbotService {
-  private apiKey: string;
-
   constructor() {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('VITE_GEMINI_API_KEY is required');
-    }
-    this.apiKey = apiKey;
-    console.log('ChatbotService initialized with API key:', apiKey.substring(0, 10) + '...');
+    console.log('ChatbotService initialized with optimized Gemini service');
   }
 
   // Test API key validity
   async testApiKey(): Promise<boolean> {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Hello' }] }]
-        })
+      await geminiService.generateText('Hello', { 
+        maxOutputTokens: 10,
+        useCache: false 
       });
-      return res.ok;
+      return true;
     } catch (error) {
       console.error('API key test failed:', error);
       return false;
@@ -155,7 +146,6 @@ export class ChatbotService {
   async processMessage(message: string): Promise<string> {
     try {
       console.log('🤖 Processing message:', message);
-      console.log('🔑 API Key available:', !!this.apiKey);
       
       // Create an enhanced, intelligent prompt for the chatbot
       const prompt = `You are Horizon AI Assistant - an expert, friendly, and enthusiastic career guidance chatbot for the Horizon platform. Your personality is warm, supportive, and knowledgeable.
@@ -219,38 +209,20 @@ ${message}
 
       console.log('📤 Sending enhanced prompt to Gemini');
       
-      // Use Gemini 2.0 Flash for better responses
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { 
-            temperature: 0.8, // Higher for more creative, engaging responses
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 1024
-          }
-        })
+      // Use optimized Gemini service with caching and retry logic
+      const response = await geminiService.generateText(prompt, {
+        temperature: 0.8, // Higher for more creative, engaging responses
+        maxOutputTokens: 1024,
+        useCache: true,
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('❌ Gemini API Error:', errorText);
-        throw new Error(`Gemini request failed: ${res.status} ${res.statusText}`);
-      }
-
-      const data = await res.json();
-      console.log('✅ Gemini response received');
-      
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = response.data;
       
       if (!text) {
-        console.error('❌ No content in response:', data);
         throw new Error('No content returned by Gemini');
       }
       
-      console.log('📥 Raw Gemini response:', text.substring(0, 150) + '...');
+      console.log('📥 Gemini response received in', response.duration, 'ms', response.cached ? '(cached)' : '');
       
       // Clean up the response and add helpful footer
       const cleanedResponse = text.trim();

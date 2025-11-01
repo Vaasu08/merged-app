@@ -3,21 +3,19 @@ import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import OpenAI from 'openai'; // Modern OpenAI import (v4+)
+import { generateText, generateJSON, getCacheStats as getGeminiCacheStats, clearCache as clearGeminiCache } from './geminiClient.js';
 
 // ==================== ENV SETUP ====================
 const PORT = process.env.PORT || 4000;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // Debug logging
 console.log('🔍 Environment Variables Debug:');
 console.log('SUPABASE_URL:', SUPABASE_URL ? '✅ Set' : '❌ Missing');
 console.log('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? '✅ Set' : '❌ Missing');
 console.log('GEMINI_API_KEY:', GEMINI_API_KEY ? '✅ Set' : '❌ Missing');
-console.log('OPENAI_API_KEY:', OPENAI_API_KEY ? '✅ Set' : '❌ Missing');
 console.log('');
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -28,9 +26,6 @@ if (!GEMINI_API_KEY) {
   console.warn('Warning: Missing Gemini key. Set GEMINI_API_KEY for AI features.');
   console.warn('Roadmap generation will use fallback responses.');
 }
-if (!OPENAI_API_KEY) {
-  console.warn('Warning: Missing OpenAI key. Roadmap generation will not work.');
-}
 
 // ==================== CLIENTS ====================
 // Supabase admin client (only if env vars are provided)
@@ -39,11 +34,6 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
       auth: { persistSession: false, autoRefreshToken: false },
     })
   : null;
-
-// OpenAI client (for roadmap generation) - only if API key is provided
-const openai = OPENAI_API_KEY ? new OpenAI({
-  apiKey: OPENAI_API_KEY,
-}) : null;
 
 // ==================== EXPRESS APP ====================
 const app = express();
@@ -149,10 +139,22 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 // Cache statistics endpoint
 app.get('/api/cache/stats', (_req, res) => {
-  res.json(getCacheStats());
+  const jobCacheStats = getCacheStats();
+  const geminiCacheStats = getGeminiCacheStats();
+  
+  res.json({
+    jobCache: jobCacheStats,
+    geminiCache: geminiCacheStats,
+  });
 });
 
-// ==================== EXISTING GEMINI QUERY ROUTE ====================
+// Clear Gemini cache endpoint (for debugging/admin)
+app.post('/api/cache/clear', (_req, res) => {
+  clearGeminiCache();
+  res.json({ success: true, message: 'Gemini cache cleared' });
+});
+
+// ==================== OPTIMIZED GEMINI QUERY ROUTE ====================
 app.post('/api/query', async (req, res) => {
   const parse = QueryBodySchema.safeParse(req.body);
   if (!parse.success) {
@@ -161,9 +163,9 @@ app.post('/api/query', async (req, res) => {
   const { userId, question, ocrText, metadata } = parse.data;
 
   try {
-    const prompt = `You are a helpful assistant.
-You will be given OCR-extracted document text and a user question.
-Answer strictly based on the provided document text. If the answer is not present, say you cannot find it.
+    const prompt = `You are a helpful assistant analyzing document content.
+Answer the user's question strictly based on the provided document text.
+If the answer is not present, clearly state that you cannot find it in the document.
 
 Document Text:
 """
@@ -172,162 +174,48 @@ ${ocrText}
 
 Question: ${question}
 
-Answer:`;
+Provide a clear, concise answer:`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, topP: 0.9 },
-        }),
-      }
-    );
+    // Use optimized Gemini client with caching and retry logic
+    const answer = await generateText(prompt, {
+      temperature: 0.2,
+      maxOutputTokens: 1024,
+      useCache: true,
+    });
 
-    if (!geminiRes.ok) {
-      const text = await geminiRes.text();
-      throw new Error(`Gemini error ${geminiRes.status}: ${text}`);
-    }
-    const data = await geminiRes.json();
-    const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     if (!answer) throw new Error('Empty answer from Gemini');
 
-    // Persist to Supabase
-    const { error: insertError, data: inserted } = await supabase
-      .from('gemini_responses')
-      .insert({
-        user_id: userId,
-        question,
-        ocr_text: ocrText,
-        answer,
-        metadata,
-      })
-      .select('*')
-      .limit(1)
-      .maybeSingle();
+    // Persist to Supabase (if available)
+    if (supabase) {
+      const { error: insertError, data: inserted } = await supabase
+        .from('gemini_responses')
+        .insert({
+          user_id: userId,
+          question,
+          ocr_text: ocrText,
+          answer,
+          metadata,
+        })
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-    if (insertError) throw insertError;
+      if (insertError) console.warn('Supabase insert warning:', insertError);
+      
+      return res.status(200).json({ answer, id: inserted?.id });
+    }
 
-    return res.status(200).json({ answer, id: inserted?.id });
+    return res.status(200).json({ answer });
   } catch (err) {
     console.error('Query handler error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ==================== NEW ROADMAP GENERATION ROUTE ====================
-app.post('/api/roadmap/generate', async (req, res) => {
-  // Validate request body
-  const parse = RoadmapBodySchema.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ 
-      error: 'Invalid request', 
-      details: parse.error.flatten() 
-    });
-  }
-
-  const { fields, project, days, checkpoints, experience_level, learning_style, time_per_day, goals } = parse.data;
-
-  if (!openai) {
-    return res.status(503).json({ 
-      error: 'OpenAI service not configured',
-      message: 'Please set OPENAI_API_KEY environment variable' 
-    });
-  }
-
-  try {
-    const prompt = `
-Create a detailed, personalized learning roadmap for a student with the following profile:
-
-Fields of Interest: ${fields.join(', ')}
-Prior Project: ${project}
-Timeframe: ${days} days
-Include Checkpoints/Tests: ${checkpoints ? 'Yes' : 'No'}
-Experience Level: ${experience_level}
-Learning Style: ${learning_style}
-Daily Time Commitment: ${time_per_day} hours
-Goals: ${goals}
-
-Generate a comprehensive roadmap with:
-1. Weekly breakdown with specific topics and subtopics
-2. Recommended resources (courses, books, documentation)
-3. Hands-on projects for each phase
-4. Skill checkpoints and assessments ${checkpoints ? '(include test details)' : ''}
-5. Estimated time for each milestone
-6. Prerequisites and learning path dependencies
-
-Format as JSON:
-{
-  "title": "Personalized Roadmap Title",
-  "overview": "2-3 sentence overview",
-  "duration_days": ${days},
-  "difficulty": "beginner/intermediate/advanced",
-  "phases": [
-    {
-      "phase_number": 1,
-      "title": "Phase name",
-      "duration_days": X,
-      "description": "What you'll learn",
-      "topics": ["topic1", "topic2"],
-      "resources": [
-        {"type": "course", "name": "Resource name", "url": "optional url", "duration": "X hours"}
-      ],
-      "project": {"title": "Project name", "description": "What to build", "skills_practiced": []},
-      "checkpoint": {"title": "Test/Assessment", "topics_covered": [], "estimated_time": "X hours"}
-    }
-  ],
-  "final_project": {
-    "title": "Capstone project name",
-    "description": "Detailed description",
-    "skills_required": [],
-    "estimated_duration": "X days"
-  },
-  "next_steps": ["suggestion1", "suggestion2"]
-}
-
-Make it practical, actionable, and tailored to the user's background and goals.
-    `;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert learning path designer and career coach. Create detailed, practical, and personalized learning roadmaps. Always respond with valid JSON only."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 3000,
-      response_format: { type: "json_object" }
-    });
-
-    const roadmapText = response.choices[0]?.message?.content;
-    if (!roadmapText) {
-      throw new Error('Empty response from OpenAI');
-    }
-
-    const roadmap = JSON.parse(roadmapText);
-
-    return res.status(200).json({
-      success: true,
-      roadmap: roadmap
-    });
-  } catch (error) {
-    console.error('Error generating roadmap:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: err.message 
     });
   }
 });
 
-// ==================== ALTERNATIVE: GEMINI-BASED ROADMAP (Cost-effective) ====================
+// ==================== GEMINI-BASED ROADMAP GENERATION ====================
 app.post('/api/roadmap/generate-gemini', async (req, res) => {
   const parse = RoadmapBodySchema.safeParse(req.body);
   if (!parse.success) {
@@ -490,32 +378,12 @@ Return ONLY valid JSON in this exact format:
 }
 `;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { 
-            temperature: 0.7, 
-            topP: 0.9,
-            responseMimeType: "application/json" 
-          },
-        }),
-      }
-    );
-
-    if (!geminiRes.ok) {
-      const text = await geminiRes.text();
-      throw new Error(`Gemini error ${geminiRes.status}: ${text}`);
-    }
-
-    const data = await geminiRes.json();
-    const roadmapText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    if (!roadmapText) throw new Error('Empty roadmap from Gemini');
-
-    const roadmap = JSON.parse(roadmapText);
+    // Use optimized Gemini client with automatic JSON parsing
+    const roadmap = await generateJSON(prompt, {
+      temperature: 0.7,
+      maxOutputTokens: 3000,
+      useCache: true,
+    });
 
     return res.status(200).json({
       success: true,
@@ -643,39 +511,12 @@ Make sure:
 - Focus on practical knowledge and best practices
 `;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
-      }),
+    // Use optimized Gemini client with automatic JSON parsing
+    const quiz = await generateJSON(prompt, {
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+      useCache: true,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const data = await response.json();
-    const quizText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    if (!quizText) throw new Error('Empty quiz from Gemini');
-
-    // Clean up the response - remove markdown code blocks if present
-    let cleanQuizText = quizText;
-    if (cleanQuizText.includes('```json')) {
-      cleanQuizText = cleanQuizText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    }
-    if (cleanQuizText.includes('```')) {
-      cleanQuizText = cleanQuizText.replace(/```\n?/g, '');
-    }
-
-    const quiz = JSON.parse(cleanQuizText);
 
     return res.status(200).json({
       success: true,
@@ -834,8 +675,7 @@ app.listen(PORT, () => {
   console.log(`   GET  /health`);
   console.log(`   GET  /api/cache/stats`);
   console.log(`   POST /api/query (Gemini OCR Q&A)`);
-  console.log(`   POST /api/roadmap/generate (OpenAI)`);
-  console.log(`   POST /api/roadmap/generate-gemini (Gemini - Free)`);
+  console.log(`   POST /api/roadmap/generate-gemini (Gemini Roadmap Generation)`);
   console.log(`   POST /api/quiz/generate (Gemini Quiz Generation)`);
   console.log(`   POST /api/jobs/search (RapidAPI JSearch Proxy - Cached)`);
   console.log(`\n💾 Cache: ${MAX_CACHE_SIZE} entries max, ${CACHE_DURATION / 60000} min TTL`);

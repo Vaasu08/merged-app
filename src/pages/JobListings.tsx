@@ -117,7 +117,7 @@ const JobListings = () => {
           className="mb-8"
         >
           <div className="mb-4">
-            <BackButton label="Back to Career Plan" className="hover:bg-muted" />
+            <BackButton to="/" label="Back to Home" className="hover:bg-muted" />
           </div>
 
           <div className="flex items-center gap-3 mb-3">

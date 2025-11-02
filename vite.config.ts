@@ -32,4 +32,29 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: [
+      '@tensorflow/tfjs',
+      '@tensorflow-models/face-landmarks-detection',
+      '@mediapipe/face_mesh'
+    ],
+    exclude: [],
+    esbuildOptions: {
+      target: 'esnext',
+    },
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'tensorflow': ['@tensorflow/tfjs'],
+          'face-detection': ['@tensorflow-models/face-landmarks-detection', '@mediapipe/face_mesh'],
+        },
+      },
+    },
+  },
 }));

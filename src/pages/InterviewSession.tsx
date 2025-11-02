@@ -167,9 +167,13 @@ const InterviewSession = () => {
             // Initialize face detector when video is ready
             videoRef.current.onloadedmetadata = async () => {
               try {
+                // Give a small delay to ensure video is fully loaded
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 const initialized = await facialExpressionDetector.initialize();
                 if (initialized && videoRef.current && canvasRef.current) {
                   setDetectorReady(true);
+                  
                   // Start detection when video starts playing
                   videoRef.current.onplaying = () => {
                     if (videoRef.current && canvasRef.current) {
@@ -184,19 +188,27 @@ const InterviewSession = () => {
                             addExpressionData(detectedExpressions, detectedPosture);
                           }
                         }
-                      );
+                      ).catch((error) => {
+                        console.warn('Face detection runtime error:', error);
+                        // Don't show error to user, just log it
+                      });
                     }
                   };
+                  
                   // Trigger if video is already playing
                   if (!videoRef.current.paused) {
                     videoRef.current.onplaying?.();
                   }
                 } else {
-                  toast.error("Face detection unavailable. Video analysis disabled.");
+                  // Gracefully disable face detection without error toast
+                  console.warn("Face detection unavailable. Continuing without video analysis.");
+                  setDetectorReady(false);
+                  // Don't show error - just continue without face detection
                 }
-              } catch (error) {
-                console.error("Error initializing face detector:", error);
-                toast.error("Face detection initialization failed.");
+              } catch (error: any) {
+                console.error("Error initializing face detector:", error?.message || error);
+                setDetectorReady(false);
+                // Don't show error toast - gracefully degrade
               }
             };
           }

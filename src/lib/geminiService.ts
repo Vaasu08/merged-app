@@ -248,14 +248,25 @@ class GeminiService {
 
     try {
       const jsonData = parseJSONResponse(response.data);
+      
+      // Validate that we got actual data
+      if (!jsonData || (typeof jsonData === 'object' && Object.keys(jsonData).length === 0)) {
+        console.error('Empty or invalid JSON response from Gemini');
+        throw new Error('Empty response from Gemini API');
+      }
+      
       return {
         data: jsonData as T,
         cached: response.cached,
         duration: response.duration,
       };
     } catch (error) {
-      console.error('Failed to parse JSON response:', response.data);
-      throw new Error('Invalid JSON response from Gemini');
+      console.error('❌ Failed to parse JSON response from Gemini');
+      console.error('Raw response (first 500 chars):', response.data.substring(0, 500));
+      if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON format from Gemini: ${error.message}`);
+      }
+      throw error instanceof Error ? error : new Error('Invalid JSON response from Gemini');
     }
   }
 

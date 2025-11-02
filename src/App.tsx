@@ -11,7 +11,6 @@ import { RoadmapProvider } from "@/contexts/RoadmapContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import IndexWrapper from "./components/IndexWrapper";
 import { AppDebugger } from "@/components/AppDebugger";
-import { MinimalTest } from "@/components/MinimalTest";
 import NotFound from "./pages/NotFound";
 import Insights from "./pages/Insights";
 import Signup from "./pages/Signup";
@@ -46,6 +45,9 @@ import SkillGraph from "@/pages/SkillGraph";
 // --- AI Career Agent Swarm ---
 import AgentSwarm from "@/pages/AgentSwarm";
 
+// --- ATS Scorer Test ---
+import ATSScorerTest from "@/components/ATSScorerTest";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -62,7 +64,6 @@ const App = () => {
   return (
     <ErrorBoundary>
       <AppDebugger />
-      <MinimalTest />
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" enableSystem>
           <TooltipProvider>
@@ -88,6 +89,7 @@ const App = () => {
                     {/* ATS Resume Assessment */}
                     <Route path="/ats-assessment" element={<ATSAssessment />} />
                     <Route path="/ats-results" element={<ATSResults />} />
+                    <Route path="/ats-test" element={<ATSScorerTest />} />
 
                     {/* Job Listings */}
                     <Route path="/job-listings" element={<JobListings />} />

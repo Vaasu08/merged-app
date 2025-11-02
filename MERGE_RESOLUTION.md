@@ -12,10 +12,12 @@ When merging `mitul` branch into `main`, there are conflicts in:
 ### src/lib/atsScorerAI.ts
 
 **Main Branch:**
+
 - Suggestion priority: `'high' | 'medium' | 'low'`
 - Suggestion fields: `type`, `priority`, `message`
 
 **Mitul Branch (Enhanced):**
+
 - Suggestion priority: `'critical' | 'high' | 'medium' | 'low'` ✅ **ADDED 'critical'**
 - Suggestion fields: `type`, `priority`, `message`, `impact`, `action` ✅ **ADDED impact/action**
 - Enhanced AI prompt for 6-10 suggestions
@@ -25,10 +27,12 @@ When merging `mitul` branch into `main`, there are conflicts in:
 ### src/pages/ATSResults.tsx
 
 **Main Branch:**
+
 - Suggestion interface: `text?`, `message?`, `priority` (3 levels)
 - No impact/action display
 
 **Mitul Branch (Enhanced):**
+
 - Suggestion interface: `message`, `impact?`, `action?`, `priority` (4 levels including 'critical')
 - UI displays impact with Sparkles icon (green)
 - UI displays action with AlertCircle icon (blue)
@@ -87,12 +91,14 @@ git commit -m "merge: integrate main branch updates with enhanced ATS features"
 After resolving conflicts, test:
 
 1. **ATS Assessment with AI ON:**
+
    - Upload resume
    - Verify 6-10 suggestions generated
    - Check impact/action fields populated
    - Verify critical priority displayed correctly
 
 2. **ATS Assessment with AI OFF:**
+
    - Upload resume
    - Verify 10 fallback suggestions generated
    - Check all have impact/action fields
@@ -108,18 +114,20 @@ After resolving conflicts, test:
 **CRITICAL:** After merge is complete, you MUST:
 
 1. Rotate all API keys (they're in git history):
+
    - Gemini API key: AIzaSyD1CG6vaUjgvaIaxhhAS2zPno6m31Jf1tc
    - Supabase URL and keys
 
 2. Clean git history:
+
    ```bash
    # Install git-filter-repo
    pip install git-filter-repo
-   
+
    # Remove .env files from history
    git filter-repo --path .env --invert-paths
    git filter-repo --path server/.env --invert-paths
-   
+
    # Force push (CAUTION: coordinate with team)
    git push origin --force --all
    ```
@@ -131,19 +139,21 @@ After resolving conflicts, test:
 ### Key Interface Changes
 
 **Before (Main):**
+
 ```typescript
 interface Suggestion {
   type: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   message: string;
 }
 ```
 
 **After (Mitul - KEEP THIS):**
+
 ```typescript
 interface Suggestion {
   type: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  priority: "critical" | "high" | "medium" | "low";
   message: string;
   impact: string;
   action: string;

@@ -5,6 +5,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
 
+interface ATSScores {
+  overall: number;
+  keywordMatch: number;
+  skillsMatch: number;
+  experience: number;
+  education: number;
+  formatting: number;
+  grade: string;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  suggestions: Array<{
+    type: string;
+    priority: 'critical' | 'high' | 'medium' | 'low';
+    message: string;
+    impact: string;
+    action: string;
+  }>;
+}
+
 const sampleResume = {
   text: `John Doe - Software Developer
 
@@ -84,8 +103,8 @@ Nice to have:
 
 export default function ATSScorerTest() {
   const [jobDescription, setJobDescription] = useState(sampleJobDescription);
-  const [aiResults, setAiResults] = useState<any>(null);
-  const [fallbackResults, setFallbackResults] = useState<any>(null);
+  const [aiResults, setAiResults] = useState<ATSScores | null>(null);
+  const [fallbackResults, setFallbackResults] = useState<ATSScores | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -230,10 +249,11 @@ export default function ATSScorerTest() {
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Suggestions</h3>
               <ul className="list-disc pl-5 space-y-1">
-                {aiResults.suggestions?.map((suggestion: any, idx: number) => (
+                {aiResults.suggestions?.map((suggestion, idx: number) => (
                   <li key={idx} className="text-muted-foreground">
                     <span className={`font-medium ${
-                      suggestion.priority === 'high' ? 'text-red-600' :
+                      suggestion.priority === 'critical' ? 'text-red-600' :
+                      suggestion.priority === 'high' ? 'text-orange-600' :
                       suggestion.priority === 'medium' ? 'text-yellow-600' : 'text-blue-600'
                     }`}>
                       [{suggestion.priority.toUpperCase()}]
@@ -303,10 +323,11 @@ export default function ATSScorerTest() {
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Suggestions</h3>
               <ul className="list-disc pl-5 space-y-1">
-                {fallbackResults.suggestions?.map((suggestion: any, idx: number) => (
+                {fallbackResults.suggestions?.map((suggestion, idx: number) => (
                   <li key={idx} className="text-muted-foreground">
                     <span className={`font-medium ${
-                      suggestion.priority === 'high' ? 'text-red-600' :
+                      suggestion.priority === 'critical' ? 'text-red-600' :
+                      suggestion.priority === 'high' ? 'text-orange-600' :
                       suggestion.priority === 'medium' ? 'text-yellow-600' : 'text-blue-600'
                     }`}>
                       [{suggestion.priority.toUpperCase()}]

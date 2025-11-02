@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useInterview } from "@/contexts/InterviewContext";
 
 const InterviewFeedback = () => {
-  const { userName, feedback, resetInterview } = useInterview();
+  const { userName, feedback, resetInterview, interviewMode, expressionData } = useInterview();
   const navigate = useNavigate();
 
   const handleStartNewInterview = () => {
@@ -131,6 +131,22 @@ const InterviewFeedback = () => {
                   </div>
                   <Progress value={feedback.criteria.experience} />
                 </div>
+                {interviewMode === "video" && feedback.criteria.professionalPresence !== undefined && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">Professional Presence</span>
+                      <span className={`font-bold ${getScoreColor(feedback.criteria.professionalPresence)}`}>
+                        {feedback.criteria.professionalPresence}
+                      </span>
+                    </div>
+                    <Progress value={feedback.criteria.professionalPresence} />
+                    {feedback.postureScore !== undefined && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        Posture Score: {feedback.postureScore}/100
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

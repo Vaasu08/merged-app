@@ -24,6 +24,11 @@ interface InterviewContextType {
     attentiveness: number;
   };
   updateBehaviorAnalysis: (key: keyof InterviewContextType['behaviorAnalysis'], value: number) => void;
+  expressionData: {
+    expressions: Array<{ timestamp: number; blink: boolean; smile: boolean; mouth_open: boolean }>;
+    posture: Array<{ timestamp: number; slouch_level: string; slouch_score: number }>;
+  };
+  addExpressionData: (expressions: any, posture: any) => void;
   feedback: {
     strengths: string[];
     improvements: string[];
@@ -35,8 +40,10 @@ interface InterviewContextType {
       problemSolving: number;
       culturalFit: number;
       experience: number;
+      professionalPresence?: number; // For video interviews
     };
     detailedReview: string;
+    postureScore?: number; // For video interviews
   };
   setFeedback: (feedback: InterviewContextType['feedback']) => void;
   generateFeedback: () => void;
@@ -129,6 +136,11 @@ const defaultContext: InterviewContextType = {
     attentiveness: 0,
   },
   updateBehaviorAnalysis: () => {},
+  expressionData: {
+    expressions: [],
+    posture: [],
+  },
+  addExpressionData: () => {},
   feedback: {
     strengths: [],
     improvements: [],
@@ -140,8 +152,10 @@ const defaultContext: InterviewContextType = {
       problemSolving: 0,
       culturalFit: 0,
       experience: 0,
+      professionalPresence: undefined,
     },
     detailedReview: "",
+    postureScore: undefined,
   },
   setFeedback: () => {},
   generateFeedback: () => {},
@@ -173,7 +187,11 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     engagement: 0,
     attentiveness: 0,
   });
-  const [feedback, setFeedback] = useState({
+  const [expressionData, setExpressionData] = useState({
+    expressions: [] as Array<{ timestamp: number; blink: boolean; smile: boolean; mouth_open: boolean }>,
+    posture: [] as Array<{ timestamp: number; slouch_level: string; slouch_score: number }>,
+  });
+  const [feedback, setFeedback] = useState<InterviewContextType['feedback']>({
     strengths: [],
     improvements: [],
     overallScore: 0,
@@ -184,8 +202,10 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
       problemSolving: 0,
       culturalFit: 0,
       experience: 0,
+      professionalPresence: undefined,
     },
     detailedReview: "",
+    postureScore: undefined,
   });
 
   const handleSetJobField = (field: JobField) => {
@@ -234,6 +254,29 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
       [key]: value,
     }));
   };
+
+  const addExpressionData = (expressions: any, posture: any) => {
+    const timestamp = Date.now();
+    setExpressionData((prev) => ({
+      expressions: [
+        ...prev.expressions,
+        {
+          timestamp,
+          blink: expressions.blink || false,
+          smile: expressions.smile || false,
+          mouth_open: expressions.mouth_open || false,
+        },
+      ],
+      posture: [
+        ...prev.posture,
+        {
+          timestamp,
+          slouch_level: posture.slouch_level || 'GOOD',
+          slouch_score: posture.slouch_score || 0,
+        },
+      ],
+    }));
+  };
   
   const addCustomJobField = (id: string, label: string) => {
     const newField = {
@@ -247,6 +290,45 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
 
   const generateFeedback = () => {
     if (answers.length === 0) return;
+    
+    // Analyze posture data if available (for video interviews)
+    let postureScore = 100; // Default to perfect if no video data
+    let postureAnalysis = {
+      avgSlouchScore: 0,
+      worstSlouchLevel: 'GOOD' as string,
+      postureIssues: [] as string[],
+      totalMeasurements: 0
+    };
+    
+    if (interviewMode === "video" && expressionData.posture.length > 0) {
+      const postureScores = expressionData.posture.map(p => p.slouch_score || 0);
+      const slouchLevels = expressionData.posture.map(p => p.slouch_level || 'GOOD');
+      
+      postureAnalysis.avgSlouchScore = postureScores.reduce((sum, score) => sum + score, 0) / postureScores.length;
+      postureAnalysis.worstSlouchLevel = slouchLevels.reduce((worst, level) => {
+        const severity = { 'GOOD': 0, 'MILD': 1, 'MODERATE': 2, 'SEVERE': 3 };
+        return severity[level as keyof typeof severity] > severity[worst as keyof typeof severity] ? level : worst;
+      }, 'GOOD');
+      postureAnalysis.totalMeasurements = expressionData.posture.length;
+      
+      // Count posture issues
+      const severeCount = slouchLevels.filter(l => l === 'SEVERE').length;
+      const moderateCount = slouchLevels.filter(l => l === 'MODERATE').length;
+      const mildCount = slouchLevels.filter(l => l === 'MILD').length;
+      
+      if (severeCount > postureAnalysis.totalMeasurements * 0.3) {
+        postureAnalysis.postureIssues.push('Frequent severe slouching detected');
+      }
+      if (moderateCount > postureAnalysis.totalMeasurements * 0.4) {
+        postureAnalysis.postureIssues.push('Consistent moderate slouching');
+      }
+      if (mildCount > postureAnalysis.totalMeasurements * 0.5) {
+        postureAnalysis.postureIssues.push('Occasional slouching');
+      }
+      
+      // Calculate posture score (inverse of slouch score)
+      postureScore = Math.max(0, Math.min(100, 100 - postureAnalysis.avgSlouchScore));
+    }
     
     // More strict evaluation of response quality
     const avgResponseLength = answers.reduce((sum, ans) => sum + ans.length, 0) / answers.length;
@@ -286,11 +368,20 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     
     // Video-specific metrics
     const eyeContact = interviewMode === "video" ? Math.floor(65 + Math.random() * 35) : 0;
-    const attentiveness = interviewMode === "video" ? Math.floor(65 + Math.random() * 35) : 0;
+    
+    // Attentiveness combines engagement with posture
+    const baseAttentiveness = interviewMode === "video" ? Math.floor(65 + Math.random() * 25) : 0;
+    // Reduce attentiveness based on poor posture
+    const posturePenalty = interviewMode === "video" ? Math.max(0, (100 - postureScore) * 0.3) : 0;
+    const attentiveness = Math.max(0, Math.min(100, baseAttentiveness - posturePenalty));
+    
+    // Confidence is also affected by posture (good posture = more confident appearance)
+    const postureConfidenceBoost = interviewMode === "video" && postureScore > 80 ? 5 : 0;
+    const adjustedConfidence = Math.min(100, confidence + postureConfidenceBoost);
     
     setBehaviorAnalysis({
       clarity,
-      confidence,
+      confidence: adjustedConfidence,
       engagement,
       eyeContact,
       attentiveness
@@ -318,14 +409,35 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     const culturalFit = calculateCriteriaScore(engagement, 70);
     const experience = calculateCriteriaScore(keywordsScore, 75);
     
+    // Professional presence score (includes posture for video interviews)
+    let professionalPresence = 75; // Base score
+    if (interviewMode === "video") {
+      // Professional presence heavily influenced by posture
+      professionalPresence = Math.floor(
+        (postureScore * 0.6) + // 60% posture
+        (adjustedConfidence * 0.2) + // 20% confidence
+        (attentiveness * 0.2) // 20% attentiveness
+      );
+    }
+    
     // Weighted overall score calculation
-    const overallScore = Math.floor(
-      (technicalKnowledge * 0.25) +
-      (communication * 0.2) +
-      (problemSolving * 0.25) +
-      (culturalFit * 0.15) +
-      (experience * 0.15)
-    );
+    // For video interviews, include professional presence (10% weight)
+    const overallScore = interviewMode === "video"
+      ? Math.floor(
+          (technicalKnowledge * 0.22) +
+          (communication * 0.18) +
+          (problemSolving * 0.22) +
+          (culturalFit * 0.13) +
+          (experience * 0.15) +
+          (professionalPresence * 0.10) // Add posture/professional presence
+        )
+      : Math.floor(
+          (technicalKnowledge * 0.25) +
+          (communication * 0.2) +
+          (problemSolving * 0.25) +
+          (culturalFit * 0.15) +
+          (experience * 0.15)
+        );
     
     // Strict pass/fail threshold - 70 is the passing score
     const passed = overallScore >= 70;
@@ -383,6 +495,30 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
       improvements.push("Responses would benefit from more depth, specificity and examples");
     }
     
+    // Posture feedback for video interviews
+    if (interviewMode === "video" && expressionData.posture.length > 0) {
+      if (postureScore >= 85) {
+        strengths.push("Maintained excellent posture throughout the interview, demonstrating professionalism");
+      } else if (postureScore >= 70) {
+        strengths.push("Generally maintained good posture and professional appearance");
+      } else if (postureScore >= 50) {
+        improvements.push("Work on maintaining better posture - sit upright and keep shoulders back");
+      } else {
+        improvements.push("Posture needs significant improvement - frequent slouching was detected. Practice sitting upright with shoulders aligned");
+      }
+      
+      // Specific posture feedback
+      if (postureAnalysis.worstSlouchLevel === 'SEVERE') {
+        improvements.push("Severe slouching detected - maintain an upright position with chin parallel to the floor");
+      } else if (postureAnalysis.worstSlouchLevel === 'MODERATE') {
+        improvements.push("Moderate slouching observed - focus on keeping your back straight and head aligned with your spine");
+      }
+      
+      if (postureAnalysis.postureIssues.length > 0) {
+        improvements.push(...postureAnalysis.postureIssues);
+      }
+    }
+    
     // Ensure we always have some feedback
     if (strengths.length === 0) {
       strengths.push("Shows willingness to learn and adaptability");
@@ -398,16 +534,27 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     // Generate a more detailed performance review based on scores
     let detailedReview = "";
     
+    // Add posture context for video interviews
+    const postureContext = interviewMode === "video" && expressionData.posture.length > 0
+      ? postureScore >= 85
+        ? " The candidate maintained excellent posture throughout, projecting confidence and professionalism."
+        : postureScore >= 70
+        ? " Posture was generally good, though occasional improvement opportunities were noted."
+        : postureScore >= 50
+        ? " Posture needs attention - frequent slouching was observed which may have impacted the professional presentation."
+        : " Significant posture issues were detected throughout the interview, with frequent slouching that negatively impacted professional presence."
+      : "";
+    
     if (overallScore >= 85) {
-      detailedReview = "The candidate demonstrated exceptional mastery of technical concepts and communication skills. Responses were comprehensive, well-structured, and showed deep understanding of the field. The candidate would likely excel in this role and bring significant value to the organization.";
+      detailedReview = `The candidate demonstrated exceptional mastery of technical concepts and communication skills. Responses were comprehensive, well-structured, and showed deep understanding of the field.${postureContext} The candidate would likely excel in this role and bring significant value to the organization.`;
     } else if (overallScore >= 75) {
-      detailedReview = "The candidate showed strong competency in most areas with clear communication and good technical knowledge. Responses were thoughtful and demonstrated relevant experience. With minor improvements, the candidate would be a strong asset to the team.";
+      detailedReview = `The candidate showed strong competency in most areas with clear communication and good technical knowledge. Responses were thoughtful and demonstrated relevant experience.${postureContext} With minor improvements, the candidate would be a strong asset to the team.`;
     } else if (overallScore >= 70) {
-      detailedReview = "The candidate met the basic requirements with adequate technical knowledge and communication skills. While some answers lacked depth or specificity, the overall performance demonstrated capability for the role with proper guidance and development.";
+      detailedReview = `The candidate met the basic requirements with adequate technical knowledge and communication skills. While some answers lacked depth or specificity, the overall performance demonstrated capability for the role with proper guidance and development.${postureContext}`;
     } else if (overallScore >= 60) {
-      detailedReview = "The candidate showed potential but fell short in key areas. Responses lacked sufficient depth, specificity, or relevant examples. With additional preparation and development, the candidate might be suitable for a more junior position or future opportunities.";
+      detailedReview = `The candidate showed potential but fell short in key areas. Responses lacked sufficient depth, specificity, or relevant examples.${postureContext} With additional preparation and development, the candidate might be suitable for a more junior position or future opportunities.`;
     } else {
-      detailedReview = "The candidate needs significant improvement in technical knowledge and communication skills. Responses were often vague, lacked structure, or missed key points. Additional training and experience would be necessary before reconsidering for a similar role.";
+      detailedReview = `The candidate needs significant improvement in technical knowledge and communication skills. Responses were often vague, lacked structure, or missed key points.${postureContext} Additional training and experience would be necessary before reconsidering for a similar role.`;
     }
     
     setFeedback({
@@ -421,8 +568,10 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
         problemSolving,
         culturalFit,
         experience,
+        ...(interviewMode === "video" && { professionalPresence }),
       },
       detailedReview,
+      ...(interviewMode === "video" && { postureScore: Math.round(postureScore) }),
     });
   };
 
@@ -439,6 +588,10 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
       engagement: 0,
       attentiveness: 0,
     });
+    setExpressionData({
+      expressions: [],
+      posture: [],
+    });
     setFeedback({
       strengths: [],
       improvements: [],
@@ -450,8 +603,10 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
         problemSolving: 0,
         culturalFit: 0,
         experience: 0,
+        professionalPresence: undefined,
       },
       detailedReview: "",
+      postureScore: undefined,
     });
   };
 
@@ -472,6 +627,8 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
         setAnswers,
         behaviorAnalysis,
         updateBehaviorAnalysis,
+        expressionData,
+        addExpressionData,
         feedback,
         setFeedback,
         generateFeedback,

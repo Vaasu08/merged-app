@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Video, VideoOff, Send, Volume, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { BackButton } from "@/components/BackButton";
+import facialExpressionDetector, { ExpressionData, PostureData } from "@/lib/facialExpressionDetector";
 
 // Define TypeScript interfaces for speech recognition
 interface SpeechRecognitionEvent extends Event {
@@ -62,10 +63,12 @@ const InterviewSession = () => {
     setCurrentQuestionIndex,
     addAnswer,
     setAnswers,
-    generateFeedback
+    generateFeedback,
+    addExpressionData
   } = useInterview();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const [currentResponse, setCurrentResponse] = useState("");
@@ -75,16 +78,127 @@ const InterviewSession = () => {
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [expressions, setExpressions] = useState<ExpressionData | null>(null);
+  const [posture, setPosture] = useState<PostureData | null>(null);
+  const [detectorReady, setDetectorReady] = useState(false);
 
-  // Set up camera for video mode
+  // Set up camera and face detection for video mode
   useEffect(() => {
     const setupCamera = async () => {
-      if (interviewMode === "video" && videoRef.current) {
+      if (interviewMode === "video" && videoRef.current && canvasRef.current) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          // Get available devices to find the best camera
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          
+          // Try to get high-quality video constraints
+          const getHighQualityConstraints = (): MediaTrackConstraints => {
+            return {
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 480 },
+              frameRate: { ideal: 30, min: 24 },
+              facingMode: 'user',
+              // Focus and exposure settings for better quality
+              focusMode: 'continuous' as any,
+              exposureMode: 'continuous' as any,
+              whiteBalanceMode: 'continuous' as any,
+              // Advanced settings
+              advanced: [
+                { width: 1920 },  // Prefer 1080p if available
+                { height: 1080 },
+                { frameRate: 60 },  // Prefer higher frame rate
+                { width: 1280 },  // Fallback to 720p
+                { height: 720 },
+              ] as any,
+            };
+          };
+
+          // Try high quality first, fallback to basic if it fails
+          let stream: MediaStream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: getHighQualityConstraints(),
+              audio: false
+            });
+          } catch (highQualityError) {
+            console.warn('High quality constraints failed, trying basic:', highQualityError);
+            // Fallback to basic but still try to get good quality
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                frameRate: { ideal: 30 }
+              }
+            });
+          }
+
           if (videoRef.current) {
+            // Apply video quality improvements
             videoRef.current.srcObject = stream;
+            videoRef.current.playsInline = true;
+            videoRef.current.setAttribute('playsinline', 'true');
+            
+            // Try to apply track constraints for better quality
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack && videoTrack.getCapabilities) {
+              const capabilities = videoTrack.getCapabilities();
+              const settings: any = {};
+              
+              // Try to set focus if available
+              if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                settings.focusMode = 'continuous';
+              }
+              
+              // Try to set exposure if available
+              if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
+                settings.exposureMode = 'continuous';
+              }
+              
+              // Apply settings if any
+              if (Object.keys(settings).length > 0) {
+                videoTrack.applyConstraints({ advanced: [settings] }).catch(err => {
+                  console.warn('Could not apply advanced camera constraints:', err);
+                });
+              }
+            }
+            
             setCameraActive(true);
+            
+            // Initialize face detector when video is ready
+            videoRef.current.onloadedmetadata = async () => {
+              try {
+                const initialized = await facialExpressionDetector.initialize();
+                if (initialized && videoRef.current && canvasRef.current) {
+                  setDetectorReady(true);
+                  // Start detection when video starts playing
+                  videoRef.current.onplaying = () => {
+                    if (videoRef.current && canvasRef.current) {
+                      facialExpressionDetector.run(
+                        videoRef.current,
+                        canvasRef.current,
+                        (detectedExpressions, detectedPosture) => {
+                          setExpressions(detectedExpressions);
+                          setPosture(detectedPosture);
+                          // Store in context for feedback generation
+                          if (addExpressionData) {
+                            addExpressionData(detectedExpressions, detectedPosture);
+                          }
+                        }
+                      );
+                    }
+                  };
+                  // Trigger if video is already playing
+                  if (!videoRef.current.paused) {
+                    videoRef.current.onplaying?.();
+                  }
+                } else {
+                  toast.error("Face detection unavailable. Video analysis disabled.");
+                }
+              } catch (error) {
+                console.error("Error initializing face detector:", error);
+                toast.error("Face detection initialization failed.");
+              }
+            };
           }
         } catch (error) {
           console.error("Error accessing camera:", error);
@@ -110,13 +224,16 @@ const InterviewSession = () => {
         window.speechSynthesis.cancel();
       }
       
+      // Stop face detector
+      facialExpressionDetector.stop();
+      
       // Clean up camera
       if (cameraActive && videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [interviewMode, questions, currentQuestionIndex, setAnswers]);
+  }, [interviewMode, questions, currentQuestionIndex, setAnswers, cameraActive]);
 
   // Initialize speech recognition for audio and video modes
   useEffect(() => {
@@ -357,10 +474,40 @@ const InterviewSession = () => {
                 muted 
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover"
+                style={{
+                  transform: 'scaleX(-1)', // Mirror for user (natural self-view)
+                  imageRendering: 'crisp-edges',
+                  WebkitImageRendering: 'crisp-edges',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transformOrigin: 'center',
+                }}
+              />
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                style={{ 
+                  mixBlendMode: 'screen',
+                  transform: 'scaleX(-1)', // Mirror to match video
+                  imageRendering: 'crisp-edges',
+                  WebkitImageRendering: 'crisp-edges',
+                }}
               />
               {!cameraActive && (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center z-10">
                   <p className="text-white">Camera access required for video interview</p>
+                </div>
+              )}
+              {detectorReady && expressions && posture && (
+                <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-xs z-10">
+                  <div className="space-y-1">
+                    <div>Smile: {expressions.smile ? '✓' : '✗'}</div>
+                    <div>Blink: {expressions.blink ? 'Detected' : 'Normal'}</div>
+                    <div>Posture: {posture.slouch_level}</div>
+                    {posture.slouching && (
+                      <div className="text-orange-400">⚠ Improve posture</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

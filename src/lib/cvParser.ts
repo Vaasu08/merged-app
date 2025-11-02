@@ -1,8 +1,5 @@
 import { skillsDatabase } from '@/data/careerData';
 
-
-
-
 export interface ParsedCV {
   // Existing fields
   skills: string[];
@@ -27,9 +24,6 @@ export interface ParsedCV {
     skills?: string;
   };
 }
-
-
-
 
 export const parseCV = async (file: File): Promise<ParsedCV> => {
   try {
@@ -83,9 +77,6 @@ export const parseCV = async (file: File): Promise<ParsedCV> => {
   }
 };
 
-
-
-
 const extractTextFromFile = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -123,9 +114,6 @@ const extractTextFromFile = async (file: File): Promise<string> => {
   });
 };
 
-
-
-
 // Helper function to get skill variations
 const getSkillVariations = (skillName: string): string[] => {
   const variations: string[] = [];
@@ -158,9 +146,6 @@ const getSkillVariations = (skillName: string): string[] => {
  
   return variations;
 };
-
-
-
 
 const extractSkills = (text: string): string[] => {
   const foundSkills: string[] = [];
@@ -202,332 +187,245 @@ const extractSkills = (text: string): string[] => {
     const matches = text.match(pattern);
     if (matches) {
       matches.forEach(match => {
-        // Extract the content after the colon
-        const content = match.split(/[:\s]/).slice(1).join(' ').trim();
-        if (content) {
-          // Split by common separators and clean up
-          const skills = content.split(/[,;|•\-\n]/)
-            .map(s => s.trim())
-            .filter(s => s.length > 1 && s.length < 50);
-         
-          // Try to match these with our skill database
-          skills.forEach(skillText => {
-            const matchedSkill = skillsDatabase.find(skill =>
-              skill.name.toLowerCase().includes(skillText.toLowerCase()) ||
-              skillText.toLowerCase().includes(skill.name.toLowerCase())
+        // Extract the skills part (after the colon)
+        const skillsPart = match.split(':').pop()?.trim() || '';
+        // Split by common separators
+        const skillsList = skillsPart.split(/[,/|•\n]/).map(s => s.trim());
+        skillsList.forEach(skill => {
+          if (skill.length > 1) { // Filter out single characters
+            // Try to find a match in our skills database
+            const matchedSkill = skillsDatabase.find(s => 
+              s.name.toLowerCase() === skill.toLowerCase() || 
+              s.id.toLowerCase() === skill.toLowerCase()
             );
-            if (matchedSkill && !foundSkills.includes(matchedSkill.id)) {
+            if (matchedSkill) {
               foundSkills.push(matchedSkill.id);
             }
-          });
-        }
+          }
+        });
       });
     }
   });
  
-  return [...new Set(foundSkills)];
+  return [...new Set(foundSkills)]; // Remove duplicates
 };
 
-
-
-
-// Fallback skill extraction for when standard matching fails
 const extractSkillsFallback = (text: string): string[] => {
+  // More aggressive skill extraction for cases where standard extraction fails
   const foundSkills: string[] = [];
   const textLower = text.toLowerCase();
  
-  // Simple keyword matching for common tech terms
-  const techKeywords = [
-    'javascript', 'js', 'typescript', 'ts', 'python', 'py', 'java', 'c++', 'cpp',
-    'react', 'vue', 'angular', 'node', 'nodejs', 'express', 'django', 'flask',
-    'html', 'css', 'bootstrap', 'tailwind', 'sass', 'scss',
-    'sql', 'mysql', 'postgresql', 'mongodb', 'redis',
-    'aws', 'azure', 'docker', 'kubernetes', 'git', 'github',
-    'agile', 'scrum', 'kanban', 'jira', 'confluence'
+  // Look for common skill section headers and extract everything after them
+  const sectionHeaders = [
+    'skills', 'technical skills', 'technologies', 'tools', 
+    'programming languages', 'frameworks', 'libraries', 'expertise'
   ];
  
-  techKeywords.forEach(keyword => {
-    if (textLower.includes(keyword)) {
-      // Try to find matching skill in database
-      const matchingSkill = skillsDatabase.find(skill =>
-        skill.name.toLowerCase().includes(keyword) ||
-        skill.id.toLowerCase().includes(keyword) ||
-        keyword.includes(skill.name.toLowerCase()) ||
-        keyword.includes(skill.id.toLowerCase())
-      );
-     
-      if (matchingSkill) {
-        foundSkills.push(matchingSkill.id);
-      }
+  sectionHeaders.forEach(header => {
+    const startIndex = textLower.indexOf(header);
+    if (startIndex !== -1) {
+      // Extract 300 characters after the header
+      const sectionText = text.substring(startIndex, startIndex + 300);
+      // Split by common separators and look for matches
+      const potentialSkills = sectionText.split(/[,/|•\n:]/).map(s => s.trim());
+      potentialSkills.forEach(skill => {
+        if (skill.length > 1 && skill.length < 30) { // Reasonable length
+          const matchedSkill = skillsDatabase.find(s => 
+            s.name.toLowerCase().includes(skill.toLowerCase()) || 
+            s.id.toLowerCase().includes(skill.toLowerCase())
+          );
+          if (matchedSkill) {
+            foundSkills.push(matchedSkill.id);
+          }
+        }
+      });
     }
   });
  
   return [...new Set(foundSkills)];
 };
 
-
-
-
 const extractExperience = (text: string): string[] => {
-  const experiencePatterns = [
-    /(?:experience|work history|employment)[:\s]*(.+?)(?:\n\n|\n[A-Z]|$)/gis,
-    /(?:worked at|employed at|position at)[:\s]*(.+?)(?:\n|$)/gi,
-  ];
- 
   const experiences: string[] = [];
  
-  experiencePatterns.forEach(pattern => {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const content = match.split(/[:\s]/).slice(1).join(' ').trim();
-        if (content && content.length > 10) {
-          experiences.push(content.substring(0, 200)); // Limit length
-        }
-      });
-    }
-  });
- 
-  return experiences.slice(0, 5); // Limit to 5 experiences
-};
-
-
-
-
-const extractEducation = (text: string): string[] => {
-  const educationPatterns = [
-    /(?:education|academic|degree|university|college)[:\s]*(.+?)(?:\n\n|\n[A-Z]|$)/gis,
-    /(?:bachelor|master|phd|diploma|certificate)[:\s]*(.+?)(?:\n|$)/gi,
+  // Look for common experience section headers
+  const experienceHeaders = [
+    'experience', 'work experience', 'professional experience', 
+    'employment', 'career history', 'positions'
   ];
  
-  const education: string[] = [];
- 
-  educationPatterns.forEach(pattern => {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const content = match.split(/[:\s]/).slice(1).join(' ').trim();
-        if (content && content.length > 5) {
-          education.push(content.substring(0, 150)); // Limit length
-        }
-      });
+  experienceHeaders.forEach(header => {
+    const regex = new RegExp(`${header}([\\s\\S]*?)(?=\\n{2,}|$)`, 'i');
+    const match = text.match(regex);
+    if (match) {
+      experiences.push(match[1].trim());
     }
   });
  
-  return education.slice(0, 3); // Limit to 3 education entries
+  // If no experience sections found, return the whole text as experience
+  return experiences.length > 0 ? experiences : [text.substring(0, 500)];
 };
 
-
-
-
-// NEW: Extract keywords for ATS matching
-const extractKeywords = (text: string): string[] => {
-  const keywords: string[] = [];
-  const textLower = text.toLowerCase();
+const extractEducation = (text: string): string[] => {
+  const educations: string[] = [];
  
-  // Remove common stop words
-  const stopWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
-    'could', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those'
+  // Look for common education section headers
+  const educationHeaders = [
+    'education', 'academic background', 'qualifications', 
+    'degrees', 'university', 'college'
+  ];
+ 
+  educationHeaders.forEach(header => {
+    const regex = new RegExp(`${header}([\\s\\S]*?)(?=\\n{2,}|$)`, 'i');
+    const match = text.match(regex);
+    if (match) {
+      educations.push(match[1].trim());
+    }
+  });
+ 
+  return educations;
+};
+
+const extractKeywords = (text: string): string[] => {
+  // Extract keywords using a more sophisticated approach
+  const commonWords = new Set([
+    'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from',
+    'up', 'about', 'into', 'over', 'after', 'before', 'under', 'above', 'below', 'between',
+    'through', 'during', 'without', 'within', 'along', 'across', 'behind', 'beyond',
+    'near', 'toward', 'among', 'throughout', 'despite', 'except', 'plus', 'minus',
+    'via', 'per', 'etc', 'ie', 'eg', 'vs', 'etc.', 'i.e.', 'e.g.', 'v.s.', 'vs.'
   ]);
  
-  // Extract words (alphanumeric with optional dots/hyphens)
-  const words = textLower.match(/\b[\w.-]+\b/g) || [];
+  // Extract words (3+ characters) and filter out common words
+  const words = text.toLowerCase().match(/\b\w{3,}\b/g) || [];
+  const filteredWords = words.filter(word => !commonWords.has(word));
  
-  // Filter and collect keywords
-  words.forEach(word => {
-    // Must be longer than 3 chars and not a stop word
-    if (word.length > 3 && !stopWords.has(word)) {
-      keywords.push(word);
-    }
+  // Count frequency of each word
+  const wordCount: Record<string, number> = {};
+  filteredWords.forEach(word => {
+    wordCount[word] = (wordCount[word] || 0) + 1;
   });
  
-  // Get unique keywords and return top 50 most frequent
-  const wordFreq: Record<string, number> = {};
-  keywords.forEach(kw => {
-    wordFreq[kw] = (wordFreq[kw] || 0) + 1;
-  });
- 
-  const sortedKeywords = Object.entries(wordFreq)
+  // Sort by frequency and return top 50 keywords
+  return Object.entries(wordCount)
     .sort((a, b) => b[1] - a[1])
-    .map(([word]) => word)
-    .slice(0, 50);
- 
-  return sortedKeywords;
+    .slice(0, 50)
+    .map(([word]) => word);
 };
 
-
-
-
-// NEW: Calculate total years of experience
 const calculateExperienceYears = (text: string): number => {
-  // Find year patterns (e.g., 2019-2023, 2019-Present, Jan 2019 - Dec 2023)
-  const yearPattern = /\b(19|20)\d{2}\b/g;
-  const years = text.match(yearPattern);
+  // Look for patterns like "X years of experience" or "X+ years"
+  const yearsPatterns = [
+    /(\d+)\s*years?\s*(?:of\s*)?experience/i,
+    /(\d+)\+?\s*years?/i,
+    /experience\s*:\s*(\d+)/i
+  ];
  
-  if (!years || years.length === 0) return 0;
+  for (const pattern of yearsPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const years = parseInt(match[1], 10);
+      if (!isNaN(years) && years > 0 && years < 50) {
+        return years;
+      }
+    }
+  }
  
-  // Convert to numbers and find range
-  const yearNumbers = years.map(y => parseInt(y));
-  const minYear = Math.min(...yearNumbers);
-  const maxYear = Math.max(...yearNumbers);
+  // Look for date ranges to calculate experience
+  const datePattern = /(\d{4})\s*[-–—]\s*(\d{4}|present|current)/gi;
+  let totalYears = 0;
+  let match;
  
-  // Calculate difference
-  const experienceYears = maxYear - minYear;
+  while ((match = datePattern.exec(text)) !== null) {
+    const startYear = parseInt(match[1], 10);
+    const endYearStr = match[2].toLowerCase();
+    const endYear = endYearStr === 'present' || endYearStr === 'current' ? 
+      new Date().getFullYear() : parseInt(endYearStr, 10);
+   
+    if (!isNaN(startYear) && !isNaN(endYear) && startYear > 1980 && endYear >= startYear) {
+      totalYears += (endYear - startYear);
+    }
+  }
  
-  // Cap at reasonable maximum (40 years)
-  return Math.min(Math.max(experienceYears, 0), 40);
+  // If we found date ranges, return the total years
+  if (totalYears > 0) {
+    return Math.min(totalYears, 40); // Cap at 40 years
+  }
+ 
+  // Default fallback
+  return 0;
 };
 
-
-
-
-// NEW: Extract contact information
 const extractContactInfo = (text: string): ParsedCV['contactInfo'] => {
   const contactInfo: ParsedCV['contactInfo'] = {};
  
-  // Email regex
-  const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
-  const emailMatch = text.match(emailPattern);
+  // Email pattern
+  const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
   if (emailMatch) {
     contactInfo.email = emailMatch[0];
   }
  
-  // Phone regex (various formats)
-  const phonePattern = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-  const phoneMatch = text.match(phonePattern);
-  if (phoneMatch) {
-    contactInfo.phone = phoneMatch[0];
+  // Phone pattern (various formats)
+  const phonePatterns = [
+    /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/, // 123-456-7890 or 123.456.7890 or 1234567890
+    /\(\d{3}\)\s*\d{3}[-.]?\d{4}/, // (123) 456-7890
+    /\+\d{1,3}\s*\d{3,4}\s*\d{3,4}\s*\d{3,4}/ // +1 123 456 7890
+  ];
+ 
+  for (const pattern of phonePatterns) {
+    const phoneMatch = text.match(pattern);
+    if (phoneMatch) {
+      contactInfo.phone = phoneMatch[0];
+      break;
+    }
   }
  
-  // LinkedIn profile
-  const linkedinPattern = /(?:linkedin\.com\/in\/|linkedin:?\s*)([a-zA-Z0-9-]+)/i;
-  const linkedinMatch = text.match(linkedinPattern);
+  // LinkedIn pattern
+  const linkedinMatch = text.match(/linkedin\.com\/in\/[A-Za-z0-9_-]+/i);
   if (linkedinMatch) {
-    contactInfo.linkedin = linkedinMatch[0];
+    contactInfo.linkedin = `https://www.${linkedinMatch[0]}`;
   }
  
-  // Location (city, state/country)
-  const locationPattern = /(?:location|address|based in)[:\s]*([A-Z][a-zA-Z\s,]+(?:,\s*[A-Z]{2,})?)/i;
-  const locationMatch = text.match(locationPattern);
-  if (locationMatch && locationMatch[1]) {
+  // Location pattern (simple approach)
+  const locationMatch = text.match(/(?:location|based in|city)[:\s]*([A-Za-z\s,]+)/i);
+  if (locationMatch) {
     contactInfo.location = locationMatch[1].trim();
   }
  
   return contactInfo;
 };
 
-
-
-
-// NEW: Extract resume sections
 const extractSections = (text: string): ParsedCV['sections'] => {
   const sections: ParsedCV['sections'] = {};
  
-  // Summary/Objective section
-  const summaryPattern = /(?:summary|objective|profile|about)[:\s]*(.+?)(?:\n\n|\n(?:[A-Z][A-Z\s]+:)|$)/is;
-  const summaryMatch = text.match(summaryPattern);
-  if (summaryMatch && summaryMatch[1]) {
-    sections.summary = summaryMatch[1].trim().substring(0, 500);
-  }
+  // Define common section headers
+  const sectionHeaders: Record<string, RegExp> = {
+    summary: /(?:summary|profile|about me)([\s\S]*?)(?=\n{2,}|$)/i,
+    experience: /(?:experience|work experience|professional experience)([\s\S]*?)(?=\n{2,}|$)/i,
+    education: /(?:education|academic background|qualifications)([\s\S]*?)(?=\n{2,}|$)/i,
+    skills: /(?:skills|technical skills|technologies|tools)([\s\S]*?)(?=\n{2,}|$)/i
+  };
  
-  // Experience section
-  const expPattern = /(?:experience|work history|employment)[:\s]*(.+?)(?:\n\n(?:[A-Z][A-Z\s]+:)|$)/is;
-  const expMatch = text.match(expPattern);
-  if (expMatch && expMatch[1]) {
-    sections.experience = expMatch[1].trim().substring(0, 1000);
-  }
- 
-  // Education section
-  const eduPattern = /(?:education|academic)[:\s]*(.+?)(?:\n\n(?:[A-Z][A-Z\s]+:)|$)/is;
-  const eduMatch = text.match(eduPattern);
-  if (eduMatch && eduMatch[1]) {
-    sections.education = eduMatch[1].trim().substring(0, 500);
-  }
- 
-  // Skills section
-  const skillsPattern = /(?:skills|technical skills|competencies)[:\s]*(.+?)(?:\n\n(?:[A-Z][A-Z\s]+:)|$)/is;
-  const skillsMatch = text.match(skillsPattern);
-  if (skillsMatch && skillsMatch[1]) {
-    sections.skills = skillsMatch[1].trim().substring(0, 500);
-  }
+  // Extract each section
+  Object.entries(sectionHeaders).forEach(([key, regex]) => {
+    const match = text.match(regex);
+    if (match) {
+      sections[key as keyof ParsedCV['sections']] = match[1].trim();
+    }
+  });
  
   return sections;
 };
 
-
-
-
-const calculateConfidence = (skillCount: number, textLength: number): number => {
-  // Simple confidence calculation based on skill count and text length
-  const skillScore = Math.min(skillCount * 10, 50);
-  const lengthScore = Math.min(textLength / 100, 30);
-  const confidence = Math.min(skillScore + lengthScore, 100);
- 
-  return Math.round(confidence);
+const calculateConfidence = (skillsCount: number, textLength: number): number => {
+  // Calculate confidence based on amount of data extracted
+  let confidence = 50; // Base confidence
+  
+  // Add confidence for skills found
+  confidence += Math.min(skillsCount * 5, 30);
+  
+  // Add confidence for text length
+  confidence += Math.min(textLength / 100, 20);
+  
+  return Math.min(confidence, 100);
 };
-
-
-
-
-// Helper function to get skill name by ID
-export const getSkillNameById = (skillId: string): string => {
-  return skillsDatabase.find(skill => skill.id === skillId)?.name || skillId;
-};
-
-
-
-
-// NEW: Get education level for ATS scoring
-export const getEducationLevel = (education: string[]): string[] => {
-  const levels: string[] = [];
-  const eduText = education.join(' ').toLowerCase();
- 
-  if (eduText.includes('phd') || eduText.includes('doctorate')) {
-    levels.push('PhD');
-  }
-  if (eduText.includes('master') || eduText.includes('m.s') || eduText.includes('mba')) {
-    levels.push('Masters');
-  }
-  if (eduText.includes('bachelor') || eduText.includes('b.s') || eduText.includes('b.a')) {
-    levels.push('Bachelors');
-  }
-  if (eduText.includes('diploma') || eduText.includes('associate')) {
-    levels.push('Diploma');
-  }
- 
-  return levels;
-};
-
-
-
-
-// Test function for debugging (can be called from browser console)
-export const testCVParsing = async (text: string): Promise<ParsedCV> => {
-  const skills = extractSkills(text);
-  const fallbackSkills = extractSkillsFallback(text);
-  const allSkills = [...new Set([...skills, ...fallbackSkills])];
- 
-  return {
-    skills: allSkills,
-    experience: extractExperience(text),
-    education: extractEducation(text),
-    confidence: calculateConfidence(allSkills.length, text.length),
-    text,
-    keywords: extractKeywords(text),
-    experienceYears: calculateExperienceYears(text),
-    contactInfo: extractContactInfo(text),
-    sections: extractSections(text),
-  };
-};
-
-
-
-
-
-
-
-
-

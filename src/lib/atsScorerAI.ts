@@ -105,12 +105,9 @@ export class ATSScorerAI {
     }
     
     // Use optimized Gemini service with caching and retry logic
-    const response = await geminiService.generateJSON<GeminiATSAnalysis>(prompt, {
+    const response = await geminiService.generateJSON<GeminiATSAnalysis>(this.buildAnalysisPrompt(resumeData, jobDescription), {
       temperature: 0.2, // Lowered from 0.3 for more consistent scoring
       maxOutputTokens: 4096, // Increased from 3072 for MORE detailed suggestions (6-10 items)
-    const response = await geminiService.generateJSON<GeminiATSAnalysis>(this.buildAnalysisPrompt(resumeData, jobDescription), {
-      temperature: 0.3,
-      maxOutputTokens: 2048,
       useCache: true,
     });
 
@@ -482,7 +479,7 @@ export class ATSScorerFallback {
     return Math.max(20, Math.min(95, score)); // Cap between 20-95
   }
 
-  private static calculateOverall(scores: any): number {
+  private static calculateOverall(scores: Record<string, number>): number {
     const WEIGHTS = {
       keywordMatch: 0.40,
       skillsMatch: 0.25,
@@ -525,7 +522,7 @@ export class ATSScorerFallback {
     return { matched, missing };
   }
 
-  private static generateSuggestions(scores: any, resume: ParsedCV): Suggestion[] {
+  private static generateSuggestions(scores: Record<string, number>, resume: ParsedCV): Suggestion[] {
     const suggestions: Suggestion[] = [];
     const text = resume.text.toLowerCase();
     

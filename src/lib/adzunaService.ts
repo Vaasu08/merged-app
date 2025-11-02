@@ -54,10 +54,10 @@ export const searchJobs = async (params: JobSearchParams): Promise<JobSearchResp
     country = 'us'
   } = params;
 
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  const url = `${apiUrl}/api/jobs/search`;
+  
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-    const url = `${apiUrl}/api/jobs/search`;
-    
     console.log('🔍 Adzuna Service - Fetching jobs via backend proxy');
     console.log('📍 API URL:', url);
     console.log('📋 Request params:', { what, where, page, sort_by, results_per_page });
@@ -113,6 +113,29 @@ export const searchJobs = async (params: JobSearchParams): Promise<JobSearchResp
       message: error instanceof Error ? error.message : 'Unknown error',
       type: typeof error
     });
+    
+    // Provide better error messages for common issues
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      const connectionError = new Error(
+        'Backend server is not running. Please start the server on port 4000.\n' +
+        'Run: cd server && npm start'
+      );
+      connectionError.name = 'ConnectionError';
+      throw connectionError;
+    }
+    
+    if (error instanceof Error) {
+      // Enhance fetch errors with more context
+      if (error.message.includes('fetch')) {
+        const enhancedError = new Error(
+          `Unable to connect to backend server at ${url}. ` +
+          'Please ensure the backend server is running on port 4000.'
+        );
+        enhancedError.name = error.name;
+        throw enhancedError;
+      }
+    }
+    
     throw error;
   }
 };

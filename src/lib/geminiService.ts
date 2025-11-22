@@ -132,14 +132,18 @@ function parseJSONResponse(text: string): unknown {
 // ==================== GEMINI SERVICE CLASS ====================
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null;
   private defaultModel: string;
+  private hasApiKey: boolean;
 
   constructor(apiKey: string = GEMINI_API_KEY, defaultModel: string = DEFAULT_MODEL) {
-    if (!apiKey) {
-      throw new Error('Gemini API key not configured. Set VITE_GEMINI_API_KEY environment variable.');
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+    } else {
+      console.warn('⚠️ Gemini API key not configured. API calls will return fallback values.');
+      this.genAI = null;
     }
-    this.genAI = new GoogleGenerativeAI(apiKey);
     this.defaultModel = defaultModel;
   }
 
@@ -147,6 +151,9 @@ class GeminiService {
    * Get a generative model instance
    */
   private getModel(modelName: string = this.defaultModel): GenerativeModel {
+    if (!this.genAI) {
+      throw new Error('Gemini API key not configured');
+    }
     return this.genAI.getGenerativeModel({ model: modelName });
   }
 
@@ -166,6 +173,16 @@ class GeminiService {
       maxOutputTokens = 2048,
       useCache = true,
     } = options;
+
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.genAI) {
+      console.warn('⚠️ Gemini API key not available, returning fallback response');
+      return {
+        data: 'I apologize, but the AI service is currently unavailable. Please configure VITE_GEMINI_API_KEY to enable AI features.',
+        cached: false,
+        duration: Date.now() - startTime,
+      };
+    }
 
     // Check rate limit
     checkRateLimit();
@@ -200,38 +217,48 @@ class GeminiService {
     const modelInstance = this.getModel(model);
 
     // Make API call with retry logic
-    const result = await retryWithBackoff(async () => {
-      const response = await modelInstance.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig,
+    try {
+      const result = await retryWithBackoff(async () => {
+        const response = await modelInstance.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig,
+        });
+        
+        return response;
       });
+
+      const text = result.response.text();
       
-      return response;
-    });
+      if (!text) {
+        throw new Error('Empty response from Gemini');
+      }
 
-    const text = result.response.text();
-    
-    if (!text) {
-      throw new Error('Empty response from Gemini');
-    }
+      // Cache successful response
+      if (useCache) {
+        const cacheKey = getCacheKey(model, prompt, options);
+        responseCache.set(cacheKey, {
+          data: text,
+          timestamp: Date.now(),
+        });
+      }
 
-    // Cache successful response
-    if (useCache) {
-      const cacheKey = getCacheKey(model, prompt, options);
-      responseCache.set(cacheKey, {
+      const duration = Date.now() - startTime;
+      console.log(`✅ Gemini API call completed in ${duration}ms`);
+
+      return {
         data: text,
-        timestamp: Date.now(),
-      });
+        cached: false,
+        duration,
+      };
+    } catch (error) {
+      console.error('❌ Gemini API call failed:', error);
+      console.warn('⚠️ Returning fallback response');
+      return {
+        data: 'I apologize, but the AI service encountered an error. Please try again later or check your API configuration.',
+        cached: false,
+        duration: Date.now() - startTime,
+      };
     }
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ Gemini API call completed in ${duration}ms`);
-
-    return {
-      data: text,
-      cached: false,
-      duration,
-    };
   }
 
   /**
@@ -263,10 +290,13 @@ class GeminiService {
     } catch (error) {
       console.error('❌ Failed to parse JSON response from Gemini');
       console.error('Raw response (first 500 chars):', response.data.substring(0, 500));
-      if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON format from Gemini: ${error.message}`);
-      }
-      throw error instanceof Error ? error : new Error('Invalid JSON response from Gemini');
+      console.warn('⚠️ Returning fallback empty object');
+      // Return fallback empty object instead of throwing
+      return {
+        data: {} as T,
+        cached: false,
+        duration: response.duration,
+      };
     }
   }
 
@@ -277,6 +307,13 @@ class GeminiService {
     prompt: string,
     options: GeminiOptions = {}
   ): AsyncGenerator<string, void, unknown> {
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.genAI) {
+      console.warn('⚠️ Gemini API key not available, returning fallback stream message');
+      yield 'I apologize, but the AI service is currently unavailable. Please configure VITE_GEMINI_API_KEY to enable AI features.';
+      return;
+    }
+
     const {
       model = this.defaultModel,
       temperature = 0.7,
@@ -285,27 +322,32 @@ class GeminiService {
       maxOutputTokens = 2048,
     } = options;
 
-    checkRateLimit();
+    try {
+      checkRateLimit();
 
-    const generationConfig: GenerationConfig = {
-      temperature,
-      topK,
-      topP,
-      maxOutputTokens,
-    };
+      const generationConfig: GenerationConfig = {
+        temperature,
+        topK,
+        topP,
+        maxOutputTokens,
+      };
 
-    const modelInstance = this.getModel(model);
+      const modelInstance = this.getModel(model);
 
-    const result = await modelInstance.generateContentStream({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig,
-    });
+      const result = await modelInstance.generateContentStream({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig,
+      });
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        yield chunkText;
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        if (chunkText) {
+          yield chunkText;
+        }
       }
+    } catch (error) {
+      console.error('❌ Gemini streaming error:', error);
+      yield 'I apologize, but the AI service encountered an error. Please try again later.';
     }
   }
 
@@ -333,9 +375,18 @@ class GeminiService {
 }
 
 // ==================== SINGLETON INSTANCE ====================
-const geminiService = new GeminiService();
+// Create instance with safe error handling - won't throw if API key is missing
+let geminiService: GeminiService | null = null;
 
-export default geminiService;
+try {
+  geminiService = new GeminiService();
+} catch (error) {
+  console.warn('⚠️ Failed to create GeminiService, will use fallback responses:', error);
+  // Create a service instance with empty key - it will use fallbacks
+  geminiService = new GeminiService('');
+}
+
+export default geminiService!;
 
 // ==================== EXPORTS ====================
 export { GeminiService, DEFAULT_MODEL, ALTERNATIVE_MODEL };

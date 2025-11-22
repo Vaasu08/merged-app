@@ -98,22 +98,30 @@ class PlannerAgent {
   private model;
   private agentId = 'planner';
   private agentName = 'Career Planner';
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 2048,
-      }
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 2048,
+        }
+      });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Planner agent will use fallback plans.');
+      this.model = null;
+    }
   }
 
   // Analyze skill gaps based on target role
   private analyzeSkillGaps(currentSkills: string[], targetRole?: string): string[] {
     if (!targetRole) return [];
-    
+
     const roleSkillMap: Record<string, string[]> = {
       'software engineer': ['System Design', 'Data Structures', 'Algorithms', 'Testing'],
       'data scientist': ['Machine Learning', 'Statistics', 'Python', 'SQL', 'Data Visualization'],
@@ -125,7 +133,7 @@ class PlannerAgent {
 
     const normalizedRole = targetRole.toLowerCase();
     let requiredSkills: string[] = [];
-    
+
     for (const [role, skills] of Object.entries(roleSkillMap)) {
       if (normalizedRole.includes(role)) {
         requiredSkills = skills;
@@ -147,11 +155,11 @@ class PlannerAgent {
     weekNumber: number
   ): Promise<WeeklyPlan> {
     // Calculate intelligent metrics based on progress
-    const successRate = currentProgress.applicationsSubmitted > 0 
+    const successRate = currentProgress.applicationsSubmitted > 0
       ? (currentProgress.interviewsCompleted / currentProgress.applicationsSubmitted * 100).toFixed(1)
       : 0;
-    
-    const skillGaps = profile.targetRole 
+
+    const skillGaps = profile.targetRole
       ? this.analyzeSkillGaps(profile.skills, profile.targetRole)
       : [];
 
@@ -274,63 +282,71 @@ Return ONLY valid JSON in this exact format:
 
 Make tasks SPECIFIC with company names, exact timeframes, and measurable outcomes. Be strategic and actionable.`;
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      let responseText = result.response.text().trim();
-      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      
-      const plan = JSON.parse(responseText);
-      console.log('✅ Planner Agent: Created weekly plan', plan);
-      return plan;
-    } catch (error) {
-      console.error('❌ Planner Agent error:', error);
-      // Fallback plan
-      const today = new Date();
-      const weekStart = new Date(today);
-      const weekEnd = new Date(today);
-      weekEnd.setDate(weekEnd.getDate() + 7);
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback weekly plan');
+      // Continue to fallback plan below
+    } else {
+      try {
+        const result = await this.model.generateContent(prompt);
+        let responseText = result.response.text().trim();
+        responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-      return {
-        week: weekNumber,
-        startDate: weekStart.toISOString().split('T')[0],
-        endDate: weekEnd.toISOString().split('T')[0],
-        goals: {
-          applications: 7,
-          networking: 3,
-          skillDevelopment: profile.skills.slice(0, 2),
-          interviewPrep: 2
-        },
-        tasks: [
-          {
-            id: 'task-1',
-            title: `Apply to 7 ${profile.targetRole || 'relevant'} positions`,
-            description: 'Focus on companies matching your skills and experience',
-            priority: 'high',
-            assignedAgent: 'recruiter',
-            status: 'pending',
-            dueDate: weekEnd.toISOString().split('T')[0]
-          },
-          {
-            id: 'task-2',
-            title: 'Update LinkedIn and connect with 3 professionals',
-            description: 'Network in your target industry',
-            priority: 'medium',
-            assignedAgent: 'coach',
-            status: 'pending',
-            dueDate: weekEnd.toISOString().split('T')[0]
-          },
-          {
-            id: 'task-3',
-            title: 'Practice 2 mock interviews',
-            description: 'Prepare for behavioral and technical questions',
-            priority: 'high',
-            assignedAgent: 'interviewer',
-            status: 'pending',
-            dueDate: weekEnd.toISOString().split('T')[0]
-          }
-        ]
-      };
+        const plan = JSON.parse(responseText);
+        console.log('✅ Planner Agent: Created weekly plan', plan);
+        return plan;
+      } catch (error) {
+        console.error('❌ Planner Agent error:', error);
+        console.warn('⚠️ Using fallback weekly plan');
+      }
     }
+
+    // Fallback plan
+    const today = new Date();
+    const weekStart = new Date(today);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    return {
+      week: weekNumber,
+      startDate: weekStart.toISOString().split('T')[0],
+      endDate: weekEnd.toISOString().split('T')[0],
+      goals: {
+        applications: 7,
+        networking: 3,
+        skillDevelopment: profile.skills.slice(0, 2),
+        interviewPrep: 2
+      },
+      tasks: [
+        {
+          id: 'task-1',
+          title: `Apply to 7 ${profile.targetRole || 'relevant'} positions`,
+          description: 'Focus on companies matching your skills and experience',
+          priority: 'high',
+          assignedAgent: 'recruiter',
+          status: 'pending',
+          dueDate: weekEnd.toISOString().split('T')[0]
+        },
+        {
+          id: 'task-2',
+          title: 'Update LinkedIn and connect with 3 professionals',
+          description: 'Network in your target industry',
+          priority: 'medium',
+          assignedAgent: 'coach',
+          status: 'pending',
+          dueDate: weekEnd.toISOString().split('T')[0]
+        },
+        {
+          id: 'task-3',
+          title: 'Practice 2 mock interviews',
+          description: 'Prepare for behavioral and technical questions',
+          priority: 'high',
+          assignedAgent: 'interviewer',
+          status: 'pending',
+          dueDate: weekEnd.toISOString().split('T')[0]
+        }
+      ]
+    };
   }
 
   async generateMessage(context: string): Promise<AgentMessage> {
@@ -352,49 +368,97 @@ class RecruiterAgent {
   private model;
   private agentId = 'recruiter';
   private agentName = 'Job Recruiter';
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.6,
-        topP: 0.9,
-        maxOutputTokens: 1024,
-      }
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.6,
+          topP: 0.9,
+          maxOutputTokens: 2048,
+        }
+      });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Recruiter agent will use fallback methods.');
+      this.model = null;
+    }
   }
 
+  // Step 1: Generate Optimized Search Query (Opal Node: "Generate Job Search Query")
+  async generateJobSearchQuery(profile: UserProfile): Promise<string> {
+    if (!this.hasApiKey || !this.model) {
+      return profile.targetRole || profile.currentRole || 'software engineer';
+    }
+
+    const prompt = `You are an expert Technical Recruiter. Generate a highly optimized boolean search query to find the best job opportunities for this candidate.
+
+CANDIDATE PROFILE:
+- Target Role: ${profile.targetRole || 'Not specified'}
+- Current Role: ${profile.currentRole || 'Not specified'}
+- Top Skills: ${profile.skills.slice(0, 5).join(', ')}
+- Experience Level: ${profile.experience.length} positions
+
+TASK:
+Create a search query string that includes the target role and 2-3 most critical skills. 
+Do NOT use complex boolean operators like OR/AND if not supported by standard job boards. 
+Keep it simple but specific.
+Example: "Senior React Developer TypeScript" or "Product Manager Fintech"
+
+Return ONLY the query string.`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const query = result.response.text().trim().replace(/"/g, '');
+      console.log('🔍 Recruiter Agent: Generated query:', query);
+      return query;
+    } catch (error) {
+      console.error('❌ Error generating query:', error);
+      return profile.targetRole || 'software engineer';
+    }
+  }
+
+  // Step 2: Research & Search (Opal Node: "Research Job Postings")
   async findRelevantJobs(profile: UserProfile, count: number = 10): Promise<JobListing[]> {
     try {
+      // 1. Generate optimized query
+      const searchQuery = await this.generateJobSearchQuery(profile);
+
       const searchParams = {
-        what: profile.targetRole || profile.currentRole || 'software engineer',
+        what: searchQuery,
         where: profile.location || '',
         results_per_page: count,
         sort_by: 'relevance' as const,
-        max_days_old: 7
+        max_days_old: 14 // Increased to find more candidates for ranking
       };
 
       console.log('🔍 Recruiter Agent: Searching for jobs...', searchParams);
       const response = await searchJobs(searchParams);
       console.log(`✅ Recruiter Agent: Found ${response.results.length} jobs`);
-      return response.results;
+
+      return response.results || [];
     } catch (error) {
       console.error('❌ Recruiter Agent error:', error);
+      console.warn('⚠️ Using fallback empty job list');
       return [];
     }
   }
 
+  // Step 3: Analyze & Rank (Opal Node: "Identify and Summarize Suitable Jobs")
   async analyzeJobMatch(job: JobListing, profile: UserProfile): Promise<number> {
     // Enhanced AI-powered matching algorithm (0-100 score)
     let score = 0;
     const jobText = `${job.title} ${job.description} ${job.category.label}`.toLowerCase();
-    
+
     // 1. Skill matching (40 points)
-    const matchingSkills = profile.skills.filter(skill => 
+    const matchingSkills = profile.skills.filter(skill =>
       jobText.includes(skill.toLowerCase())
     );
     score += (matchingSkills.length / Math.max(profile.skills.length, 1)) * 40;
-    
+
     // 2. Title matching (30 points)
     const targetRole = (profile.targetRole || profile.currentRole || '').toLowerCase();
     const jobTitle = job.title.toLowerCase();
@@ -403,19 +467,19 @@ class RecruiterAgent {
     } else if (targetRole && jobText.includes(targetRole)) {
       score += 15;
     }
-    
+
     // 3. Experience level matching (15 points)
     const yearsExp = profile.experience.length;
     const isEntry = jobText.includes('entry') || jobText.includes('junior');
     const isMid = jobText.includes('mid-level') || jobText.includes('intermediate');
     const isSenior = jobText.includes('senior') || jobText.includes('lead') || jobText.includes('principal');
-    
+
     if ((yearsExp < 2 && isEntry) || (yearsExp >= 2 && yearsExp <= 5 && isMid) || (yearsExp > 5 && isSenior)) {
       score += 15;
     } else if ((yearsExp >= 2 && isEntry) || (yearsExp > 5 && isMid)) {
       score += 7; // Partial match for overqualified
     }
-    
+
     // 4. Location matching (10 points)
     const isRemote = jobText.includes('remote') || jobText.includes('work from home');
     if (isRemote) {
@@ -425,7 +489,7 @@ class RecruiterAgent {
     } else if (profile.location) {
       score += 3; // Partial for willing to relocate
     }
-    
+
     // 5. Salary alignment (5 points)
     if (job.salary_min && profile.preferences?.salaryMin) {
       if (job.salary_min >= profile.preferences.salaryMin) {
@@ -434,32 +498,51 @@ class RecruiterAgent {
         score += 2;
       }
     }
-    
+
     return Math.min(100, Math.round(score));
   }
 
+  // Step 4: Generate Webpage/Report (Opal Node: "Generate Job Matches Webpage")
   async generateMessage(jobCount: number, topMatch?: JobListing): Promise<AgentMessage> {
     const companyName = topMatch?.company || 'Unknown Company';
-    
+
+    // If we have a top match, generate a mini-report
+    let message = '';
+    if (topMatch && this.hasApiKey && this.model) {
+      const prompt = `Summarize this job opportunity for a candidate.
+      
+      JOB: ${topMatch.title} at ${companyName}
+      DESC: ${topMatch.description.slice(0, 500)}...
+      SALARY: ${topMatch.salary_min ? '$' + topMatch.salary_min : 'Competitive'}
+      
+      Create a 2-sentence "Recruiter Pitch" explaining why this is a great opportunity.`;
+
+      try {
+        const result = await this.model.generateContent(prompt);
+        const pitch = result.response.text().trim();
+        message = `💼 Analyzed ${jobCount} opportunities! Top pick: **${topMatch.title}** at ${companyName}.\n\n${pitch}`;
+      } catch (e) {
+        message = `💼 Analyzed ${jobCount} opportunities! Top recommendation: ${topMatch.title} at ${companyName}.`;
+      }
+    } else {
+      message = `💼 Analyzed ${jobCount} opportunities! ${topMatch ? `Top recommendation: ${topMatch.title} at ${companyName}.` : 'Check Job Listings for curated opportunities.'}`;
+    }
+
     const actionItems = topMatch ? [
-      `🎯 Priority: Apply to ${companyName} - ${topMatch.title}`,
-      'Customize resume with keywords from job description',
-      'Research company culture and recent news'
+      `🎯 Priority: Apply to ${companyName}`,
+      'Customize resume with keywords from description',
+      'Research company culture'
     ] : [
       'Review recommended jobs on Job Listings page',
       'Tailor your resume for each application',
       'Apply to at least 5 positions this week'
     ];
 
-    const salaryInfo = topMatch?.salary_min && topMatch?.salary_max 
-      ? `Salary range: $${Math.round(topMatch.salary_min/1000)}k-$${Math.round(topMatch.salary_max/1000)}k.`
-      : 'Competitive salary.';
-
     return {
       agentId: this.agentId,
       agentName: this.agentName,
       timestamp: new Date(),
-      message: `💼 Analyzed ${jobCount} opportunities! ${topMatch ? `Top recommendation: ${topMatch.title} at ${companyName} - excellent match for your background. ${salaryInfo} Apply ASAP!` : 'Check Job Listings for curated opportunities.'}`,
+      message: message,
       actionItems: actionItems.slice(0, 3),
       data: { jobCount }
     };
@@ -470,25 +553,33 @@ class CoachAgent {
   private model;
   private agentId = 'coach';
   private agentName = 'Career Coach';
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.8,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.8,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
+      });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Coach agent will use fallback motivation.');
+      this.model = null;
+    }
   }
 
   async generateMotivation(profile: UserProfile, progress: UserProgress): Promise<string> {
-    const successRate = progress.applicationsSubmitted > 0 
+    const successRate = progress.applicationsSubmitted > 0
       ? parseFloat(((progress.interviewsCompleted / progress.applicationsSubmitted) * 100).toFixed(1))
       : 0;
-    
+
     const ratingText = successRate > 15 ? '(Excellent!)' : successRate > 10 ? '(Good)' : '(Needs improvement)';
-    
+
     const prompt = `You are an expert Career Coach AI with psychology background. Generate a highly personalized, data-driven motivational message.
 
 CANDIDATE PROFILE:
@@ -520,13 +611,24 @@ Generate a motivational message that:
 
 Length: 3-4 sentences (100-120 words). Be authentic and data-driven.`;
 
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback motivation');
+      const defaultMotivation = progress.applicationsSubmitted > 5
+        ? `${profile.fullName}, you've submitted ${progress.applicationsSubmitted} applications - that's real momentum! Your ${successRate}% interview rate ${successRate > 10 ? 'exceeds' : 'is building toward'} industry standards. Focus on quality applications to ${profile.targetRole || 'your target role'} positions where your ${profile.skills[0] || 'unique skills'} truly shine. You're closer than you think! 🚀`
+        : `${profile.fullName}, every career journey starts with action. ${progress.applicationsSubmitted || 0} applications submitted so far - let's build that momentum! Focus on 5-7 targeted applications this week to ${profile.targetRole || 'roles that excite you'}, emphasizing your ${profile.skills.slice(0, 2).join(' and ')} expertise. Quality beats quantity every time! 💪`;
+      return defaultMotivation;
+    }
+
     try {
       const result = await this.model.generateContent(prompt);
       return result.response.text().trim();
     } catch (error) {
+      console.error('❌ Error generating motivation:', error);
+      console.warn('⚠️ Using fallback motivation');
       const defaultMotivation = progress.applicationsSubmitted > 5
         ? `${profile.fullName}, you've submitted ${progress.applicationsSubmitted} applications - that's real momentum! Your ${successRate}% interview rate ${successRate > 10 ? 'exceeds' : 'is building toward'} industry standards. Focus on quality applications to ${profile.targetRole || 'your target role'} positions where your ${profile.skills[0] || 'unique skills'} truly shine. You're closer than you think! 🚀`
-        : `${profile.fullName}, every career journey starts with action. ${progress.applicationsSubmitted || 0} applications submitted so far - let's build that momentum! Focus on 5-7 targeted applications this week to ${profile.targetRole || 'roles that excite you'}, emphasizing your ${profile.skills.slice(0,2).join(' and ')} expertise. Quality beats quantity every time! 💪`;
+        : `${profile.fullName}, every career journey starts with action. ${progress.applicationsSubmitted || 0} applications submitted so far - let's build that momentum! Focus on 5-7 targeted applications this week to ${profile.targetRole || 'roles that excite you'}, emphasizing your ${profile.skills.slice(0, 2).join(' and ')} expertise. Quality beats quantity every time! 💪`;
       return defaultMotivation;
     }
   }
@@ -540,7 +642,7 @@ Length: 3-4 sentences (100-120 words). Be authentic and data-driven.`;
     const interviewRate = Math.min(100, (currentProgress.interviewsCompleted / Math.max(weeklyGoals.interviewPrep, 1)) * 100);
     const networkingRate = Math.min(100, (currentProgress.networkingEvents / Math.max(weeklyGoals.networking, 1)) * 100);
     const skillRate = Math.min(100, (currentProgress.skillsLearned.length / Math.max(weeklyGoals.skillDevelopment.length, 1)) * 100);
-    
+
     const avgCompletion = (applicationsRate + interviewRate + networkingRate + skillRate) / 4;
 
     const insights: string[] = [];
@@ -563,7 +665,7 @@ Length: 3-4 sentences (100-120 words). Be authentic and data-driven.`;
     const conversionRate = currentProgress.applicationsSubmitted > 0
       ? (currentProgress.interviewsCompleted / currentProgress.applicationsSubmitted) * 100
       : 0;
-    
+
     if (conversionRate < 8 && currentProgress.applicationsSubmitted > 10) {
       insights.push('📊 Application-to-interview rate below industry average (10-15%)');
       recommendations.push('Improve resume ATS score and use more targeted keywords');
@@ -611,7 +713,7 @@ Length: 3-4 sentences (100-120 words). Be authentic and data-driven.`;
 
   async generateMessage(progress: UserProgress, motivationalText: string): Promise<AgentMessage> {
     const analysis = await this.trackProgress(progress, { applications: 7, interviewPrep: 2, networking: 3, skillDevelopment: ['skill1', 'skill2'] });
-    
+
     return {
       agentId: this.agentId,
       agentName: this.agentName,
@@ -637,16 +739,24 @@ class InterviewerAgent {
   private model;
   private agentId = 'interviewer';
   private agentName = 'Interview Coach';
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 1536,
-      }
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 1536,
+        }
+      });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Interviewer agent will use fallback assessments.');
+      this.model = null;
+    }
   }
 
   async assessReadiness(profile: UserProfile): Promise<{
@@ -657,7 +767,7 @@ class InterviewerAgent {
   }> {
     const yearsExp = profile.experience.length;
     const skillCount = profile.skills.length;
-    
+
     const prompt = `You are an expert Interview Coach AI who has helped thousands of candidates succeed. Assess this candidate's interview readiness comprehensively.
 
 CANDIDATE PROFILE:
@@ -707,48 +817,57 @@ Return ONLY valid JSON:
 
 Be honest, specific, and actionable. Reference actual profile data.`;
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      let responseText = result.response.text().trim();
-      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const assessment = JSON.parse(responseText);
-      console.log(`✅ Interviewer Agent: Readiness score ${assessment.score}/100`);
-      return assessment;
-    } catch (error) {
-      console.error('❌ Interviewer assessment error:', error);
-      // Intelligent fallback based on profile
-      const baseScore = 50;
-      const skillBonus = Math.min(20, skillCount * 2);
-      const expBonus = Math.min(20, yearsExp * 4);
-      const targetRoleBonus = profile.targetRole ? 10 : 0;
-      
-      return {
-        score: Math.min(100, baseScore + skillBonus + expBonus + targetRoleBonus),
-        strengths: [
-          `${skillCount} technical skills show strong foundation`,
-          `${yearsExp} positions demonstrate career progression`,
-          profile.targetRole ? `Clear goal: ${profile.targetRole}` : 'Open to opportunities'
-        ],
-        improvements: [
-          'Practice behavioral interview questions using STAR method',
-          'Prepare 3-5 achievement stories with metrics',
-          'Research target company culture and values'
-        ],
-        recommendedTopics: [
-          `Technical interviews for ${profile.targetRole || profile.currentRole || 'your field'}`,
-          'Behavioral questions and storytelling',
-          'System design and architecture',
-          'Salary negotiation tactics',
-          'Follow-up and closing techniques'
-        ]
-      };
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback readiness assessment');
+      // Continue to fallback below
+    } else {
+      try {
+        const result = await this.model.generateContent(prompt);
+        let responseText = result.response.text().trim();
+        responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const assessment = JSON.parse(responseText);
+        console.log(`✅ Interviewer Agent: Readiness score ${assessment.score}/100`);
+        return assessment;
+      } catch (error) {
+        console.error('❌ Interviewer assessment error:', error);
+        console.warn('⚠️ Using fallback readiness assessment');
+        // Continue to fallback below
+      }
     }
+
+    // Intelligent fallback based on profile
+    const baseScore = 50;
+    const skillBonus = Math.min(20, skillCount * 2);
+    const expBonus = Math.min(20, yearsExp * 4);
+    const targetRoleBonus = profile.targetRole ? 10 : 0;
+
+    return {
+      score: Math.min(100, baseScore + skillBonus + expBonus + targetRoleBonus),
+      strengths: [
+        `${skillCount} technical skills show strong foundation`,
+        `${yearsExp} positions demonstrate career progression`,
+        profile.targetRole ? `Clear goal: ${profile.targetRole}` : 'Open to opportunities'
+      ],
+      improvements: [
+        'Practice behavioral interview questions using STAR method',
+        'Prepare 3-5 achievement stories with metrics',
+        'Research target company culture and values'
+      ],
+      recommendedTopics: [
+        `Technical interviews for ${profile.targetRole || profile.currentRole || 'your field'}`,
+        'Behavioral questions and storytelling',
+        'System design and architecture',
+        'Salary negotiation tactics',
+        'Follow-up and closing techniques'
+      ]
+    };
   }
 
   async generateMockQuestions(profile: UserProfile, count: number = 5): Promise<string[]> {
     const targetRole = profile.targetRole || profile.currentRole || 'professional role';
     const topSkills = profile.skills.slice(0, 3).join(', ');
-    
+
     const prompt = `You are an expert technical interviewer for ${targetRole} positions. Generate ${count} highly relevant, challenging interview questions.
 
 CANDIDATE CONTEXT:
@@ -779,30 +898,39 @@ EXAMPLE FORMAT:
   "Why are you interested in transitioning to ${targetRole} and what unique value do you bring?"
 ]`;
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      let responseText = result.response.text().trim();
-      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const questions = JSON.parse(responseText);
-      console.log(`✅ Interviewer Agent: Generated ${questions.length} mock questions`);
-      return questions;
-    } catch (error) {
-      console.error('❌ Mock question generation error:', error);
-      // Intelligent fallback questions based on profile
-      return [
-        `Describe your experience building applications with ${profile.skills[0] || 'your primary technology'} and how you ensured code quality.`,
-        `Tell me about a time when you had to learn ${profile.skills[1] || 'a new technology'} quickly for a project. What was your approach?`,
-        `A stakeholder disagrees with your technical approach to implementing ${profile.skills[0] || 'a feature'}. How do you handle this?`,
-        `Walk me through how you would design a scalable system for a ${targetRole} position at a high-growth startup.`,
-        `Why are you interested in becoming a ${targetRole}, and what specific achievements make you qualified for this role?`
-      ].slice(0, count);
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback mock questions');
+      // Continue to fallback below
+    } else {
+      try {
+        const result = await this.model.generateContent(prompt);
+        let responseText = result.response.text().trim();
+        responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const questions = JSON.parse(responseText);
+        console.log(`✅ Interviewer Agent: Generated ${questions.length} mock questions`);
+        return questions;
+      } catch (error) {
+        console.error('❌ Mock question generation error:', error);
+        console.warn('⚠️ Using fallback mock questions');
+        // Continue to fallback below
+      }
     }
+
+    // Intelligent fallback questions based on profile
+    return [
+      `Describe your experience building applications with ${profile.skills[0] || 'your primary technology'} and how you ensured code quality.`,
+      `Tell me about a time when you had to learn ${profile.skills[1] || 'a new technology'} quickly for a project. What was your approach?`,
+      `A stakeholder disagrees with your technical approach to implementing ${profile.skills[0] || 'a feature'}. How do you handle this?`,
+      `Walk me through how you would design a scalable system for a ${targetRole} position at a high-growth startup.`,
+      `Why are you interested in becoming a ${targetRole}, and what specific achievements make you qualified for this role?`
+    ].slice(0, count);
   }
 
   async generateMessage(readiness: ReadinessAssessment): Promise<AgentMessage> {
     const scoreEmoji = readiness.score >= 85 ? '🎯' : readiness.score >= 70 ? '💪' : readiness.score >= 55 ? '📈' : '⚡';
     const readinessLevel = readiness.score >= 85 ? 'Excellent!' : readiness.score >= 70 ? 'Good!' : readiness.score >= 55 ? 'Improving!' : 'Needs work!';
-    
+
     return {
       agentId: this.agentId,
       agentName: this.agentName,

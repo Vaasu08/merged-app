@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { getScores } from '@/lib/scoresService';
 import ATSScoreDisplay from '@/components/ATSScoreDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,19 @@ export default function ATSResults() {
       navigate('/ats-assessment');
     }
   }, [scores, navigate]);
+
+  useEffect(() => {
+    // Non-blocking ping to backend scores endpoint to ensure connectivity
+    // Does not affect UI rendering
+    (async () => {
+      try {
+        await getScores();
+      } catch (e) {
+        // Silently ignore to avoid impacting the results view
+        // You can surface a toast here if desired
+      }
+    })();
+  }, []);
 
 
   if (!scores) return null;

@@ -189,10 +189,24 @@ export const quizService = {
       });
 
       if (!response.ok) {
-        console.warn('Failed to save quiz result to database');
+        console.warn('⚠️ Failed to save quiz result to database (non-fatal)');
+        // Save to localStorage as fallback
+        try {
+          const storageKey = `quiz_result_${quizId}_${userId}`;
+          localStorage.setItem(storageKey, JSON.stringify(result));
+        } catch (storageError) {
+          console.warn('⚠️ Also failed to save to localStorage:', storageError);
+        }
       }
     } catch (error) {
-      console.warn('Error saving quiz result:', error);
+      console.warn('⚠️ Error saving quiz result (non-fatal):', error);
+      // Save to localStorage as fallback
+      try {
+        const storageKey = `quiz_result_${quizId}_${userId}`;
+        localStorage.setItem(storageKey, JSON.stringify(result));
+      } catch (storageError) {
+        // Ignore localStorage errors - saving is optional
+      }
     }
   },
 

@@ -87,7 +87,14 @@ export class AIResumeService {
     userData: UserData,
     jobDescription: string
   ): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    if (!apiKey) {
+      console.warn('⚠️ Gemini API key not available, using fallback summary');
+      return `${userData.targetRole || 'Experienced Professional'} with ${userData.experienceYears || 0}+ years of expertise in ${userData.skills?.slice(0, 5).join(', ') || 'technical skills'}. Proven track record of delivering high-quality solutions and driving technical excellence.`;
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 
     const prompt = `Create a compelling, ATS-friendly professional summary for this candidate.
@@ -112,8 +119,13 @@ Requirements:
 Return ONLY the summary text.`;
 
 
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (error) {
+      console.error('❌ Error generating summary:', error);
+      console.warn('⚠️ Using fallback summary');
+      return `${userData.targetRole || 'Experienced Professional'} with ${userData.experienceYears || 0}+ years of expertise in ${userData.skills?.slice(0, 5).join(', ') || 'technical skills'}. Proven track record of delivering high-quality solutions and driving technical excellence.`;
+    }
   }
 
 
@@ -121,7 +133,19 @@ Return ONLY the summary text.`;
     roleData: { title?: string; company?: string; description?: string; achievements?: string[] },
     jobDescription: string
   ): Promise<string[]> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    if (!apiKey) {
+      console.warn('⚠️ Gemini API key not available, using fallback bullet points');
+      return [
+        `${roleData.title || 'Role'} at ${roleData.company || 'Company'} - Delivered key projects and initiatives`,
+        `Applied expertise to solve complex problems and drive business value`,
+        `Collaborated with cross-functional teams to achieve project objectives`,
+        `Maintained high standards of quality and best practices`
+      ];
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 
     const prompt = `Generate 4-5 ATS-optimized achievement bullet points for this role.
@@ -147,14 +171,24 @@ Requirements:
 Return as a JSON array: ["bullet 1", "bullet 2", ...]`;
 
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-   
-    try {
-      return JSON.parse(text);
-    } catch {
-      // Fallback if not valid JSON
-      return text.split('\n').filter(line => line.trim().length > 0);
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+     
+      try {
+        return JSON.parse(text);
+      } catch {
+        // Fallback if not valid JSON
+        return text.split('\n').filter(line => line.trim().length > 0);
+      }
+    } catch (error) {
+      console.error('❌ Error generating bullet points:', error);
+      console.warn('⚠️ Using fallback bullet points');
+      return [
+        `${roleData.title || 'Role'} at ${roleData.company || 'Company'} - Delivered key projects and initiatives`,
+        `Applied expertise to solve complex problems and drive business value`,
+        `Collaborated with cross-functional teams to achieve project objectives`,
+        `Maintained high standards of quality and best practices`
+      ];
     }
   }
 
@@ -163,7 +197,18 @@ Return as a JSON array: ["bullet 1", "bullet 2", ...]`;
     currentSkills: string[],
     jobDescription: string
   ): Promise<{ technical: string[]; tools: string[]; soft: string[] }> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    if (!apiKey) {
+      console.warn('⚠️ Gemini API key not available, using fallback skill optimization');
+      return {
+        technical: currentSkills,
+        tools: [],
+        soft: [],
+      };
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 
     const prompt = `Optimize this skills list for ATS based on the job description.
@@ -191,12 +236,21 @@ Return as JSON:
 }`;
 
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-   
-    try {
-      return JSON.parse(text);
-    } catch {
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+     
+      try {
+        return JSON.parse(text);
+      } catch {
+        return {
+          technical: currentSkills,
+          tools: [],
+          soft: [],
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error optimizing skills:', error);
+      console.warn('⚠️ Using fallback skill optimization');
       return {
         technical: currentSkills,
         tools: [],

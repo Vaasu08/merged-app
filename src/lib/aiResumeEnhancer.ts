@@ -72,16 +72,24 @@ export interface EnhancedResume {
 
 class AIResumeEnhancer {
   private model;
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 2048,
-      }
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({ 
+        model: 'gemini-2.0-flash-exp',
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 2048,
+        }
+      });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Resume enhancement will use fallback content.');
+      this.model = null;
+    }
   }
 
   /**
@@ -115,6 +123,12 @@ Requirements:
 
 Return ONLY the summary text, no additional commentary.`;
 
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback summary');
+      return `${targetRole || 'Experienced Professional'} with ${experienceYears}+ years of expertise in ${topSkills}. Proven track record of delivering high-quality solutions and driving technical excellence across diverse projects. Skilled in problem-solving, cross-functional collaboration, and continuous learning with a passion for innovation.`;
+    }
+
     try {
       console.log('Calling Gemini API for professional summary...');
       const result = await this.model.generateContent(prompt);
@@ -122,10 +136,10 @@ Return ONLY the summary text, no additional commentary.`;
       console.log('Professional summary received:', summary.substring(0, 100) + '...');
       return summary;
     } catch (error) {
-      console.error('Error generating summary:', error);
+      console.error('❌ Error generating summary:', error);
       // Improved fallback
       const fallback = `${targetRole || 'Experienced Professional'} with ${experienceYears}+ years of expertise in ${topSkills}. Proven track record of delivering high-quality solutions and driving technical excellence across diverse projects. Skilled in problem-solving, cross-functional collaboration, and continuous learning with a passion for innovation.`;
-      console.log('Using fallback summary');
+      console.warn('⚠️ Using fallback summary');
       return fallback;
     }
   }
@@ -165,6 +179,23 @@ Format your response as JSON:
 
 Return ONLY valid JSON, no markdown formatting.`;
 
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback bullet points');
+      return {
+        bulletPoints: [
+          `${position} at ${company}, contributing to key projects and initiatives`,
+          `Applied expertise in ${skills.slice(0, 3).join(', ')} to deliver high-quality solutions`,
+          `Collaborated with cross-functional teams to achieve project objectives`,
+          `Maintained code quality and followed best practices`
+        ],
+        keyAchievements: [
+          'Successfully delivered multiple projects on time',
+          'Contributed to team productivity and efficiency'
+        ]
+      };
+    }
+
     try {
       const result = await this.model.generateContent(prompt);
       let responseText = result.response.text().trim();
@@ -178,8 +209,9 @@ Return ONLY valid JSON, no markdown formatting.`;
         keyAchievements: parsed.keyAchievements || []
       };
     } catch (error) {
-      console.error('Error enhancing experience:', error);
+      console.error('❌ Error enhancing experience:', error);
       // Fallback bullet points
+      console.warn('⚠️ Using fallback bullet points');
       return {
         bulletPoints: [
           `${position} at ${company}, contributing to key projects and initiatives`,
@@ -218,6 +250,12 @@ Return as a JSON array of strings:
 
 Return ONLY valid JSON, no markdown.`;
 
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback competencies');
+      return skills.slice(0, 12);
+    }
+
     try {
       const result = await this.model.generateContent(prompt);
       let responseText = result.response.text().trim();
@@ -226,7 +264,8 @@ Return ONLY valid JSON, no markdown.`;
       const parsed = JSON.parse(responseText);
       return Array.isArray(parsed) ? parsed : skills.slice(0, 12);
     } catch (error) {
-      console.error('Error generating competencies:', error);
+      console.error('❌ Error generating competencies:', error);
+      console.warn('⚠️ Using fallback competencies');
       return skills.slice(0, 12);
     }
   }
@@ -261,6 +300,12 @@ Format as JSON:
 
 Return ONLY valid JSON, no markdown.`;
 
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback education data');
+      return { coursework: [], achievements: [] };
+    }
+
     try {
       const result = await this.model.generateContent(prompt);
       let responseText = result.response.text().trim();
@@ -272,7 +317,8 @@ Return ONLY valid JSON, no markdown.`;
         achievements: parsed.achievements || []
       };
     } catch (error) {
-      console.error('Error enhancing education:', error);
+      console.error('❌ Error enhancing education:', error);
+      console.warn('⚠️ Using fallback education data');
       return { coursework: [], achievements: [] };
     }
   }

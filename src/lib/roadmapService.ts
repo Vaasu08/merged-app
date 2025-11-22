@@ -64,7 +64,7 @@ export const roadmapService = {
     try {
       console.log('🤖 Generating roadmap with Gemini API...');
       
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://merged-app-production.up.railway.app';
       const endpoint = `${apiUrl}/api/roadmap/generate-gemini`;
       
       console.log('📍 API endpoint:', endpoint);
@@ -295,31 +295,47 @@ export const roadmapService = {
 
   // Get user's roadmaps
   async getUserRoadmaps(userId: string) {
-    const { data, error } = await supabase
-      .from('roadmaps')
-      .select(`
-        *,
-        roadmap_phases (*)
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('roadmaps')
+        .select(`
+          *,
+          roadmap_phases (*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.warn('⚠️ Error fetching user roadmaps:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('💥 Error in getUserRoadmaps:', error);
+      return [];
+    }
   },
 
   // Get single roadmap
   async getRoadmap(roadmapId: string) {
-    const { data, error } = await supabase
-      .from('roadmaps')
-      .select(`
-        *,
-        roadmap_phases (*)
-      `)
-      .eq('id', roadmapId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('roadmaps')
+        .select(`
+          *,
+          roadmap_phases (*)
+        `)
+        .eq('id', roadmapId)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.warn('⚠️ Error fetching roadmap:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('💥 Error in getRoadmap:', error);
+      return null;
+    }
   },
 };

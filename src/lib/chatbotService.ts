@@ -296,7 +296,26 @@ ${message}
         stack: error instanceof Error ? error.stack : 'No stack trace',
         name: error instanceof Error ? error.name : 'Unknown error type'
       });
-      return "I'm sorry, I'm having trouble responding right now. Please try again in a moment!";
+      
+      // Return helpful fallback message with platform information
+      return `I'm sorry, I'm having trouble connecting to the AI service right now. However, I can still help you with basic information about Horizon:
+
+**How to get career recommendations:**
+- Input your skills on the home page and click "Analyze My Career Path"
+- Or take our AI Career Assessment for personalized recommendations
+
+**Available features:**
+- AI-Powered Career Assessment
+- Skill-Based Career Discovery  
+- Resume Builder with ATS Optimization
+- Interview Simulator
+- Career Roadmap Generator
+
+**Need help?**
+- Check our FAQ section
+- Email: horizon@gmail.com
+
+Please try again in a moment, or explore the features above while the AI service recovers!`;
     }
   }
 }

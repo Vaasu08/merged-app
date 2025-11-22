@@ -2,10 +2,10 @@
 // This can be run in the browser console or as a separate test
 
 import { ATSScorerAI, ATSScorerFallback } from './atsScorerAI';
-import { ParsedResume } from './cvParser';
+import { ParsedCV } from './cvParser';
 
 // Sample test data
-const sampleResume: ParsedResume = {
+const sampleResume: ParsedCV = {
   text: `John Doe - Software Developer Resume
 
 CONTACT INFORMATION

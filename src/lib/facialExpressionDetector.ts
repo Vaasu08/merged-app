@@ -46,36 +46,59 @@ class FacialExpressionDetector {
         faceLandmarksDetection = await import('@tensorflow-models/face-landmarks-detection');
       }
       
-      // Try to use createDetector first (newer API)
-      try {
-        const model = (faceLandmarksDetection as any).SupportedModels?.MediaPipeFaceMesh;
-        if (!model) {
-          throw new Error('MediaPipeFaceMesh model not found');
-        }
-        const detectorConfig = {
-          runtime: 'mediapipe' as const,
-          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
-          maxFaces: 1,
-          refineLandmarks: true,
-        };
-        this.detector = await (faceLandmarksDetection as any).createDetector(model, detectorConfig);
-      } catch (createError) {
-        // Fallback to load method (older API)
+      // Check if the module loaded correctly
+      if (!faceLandmarksDetection || !(faceLandmarksDetection as any).SupportedModels) {
+        console.error('Face landmarks detection module not loaded correctly');
+        return false;
+      }
+      
+      // Get the model - the API uses SupportedModels.MediaPipeFaceMesh
+      const model = (faceLandmarksDetection as any).SupportedModels.MediaPipeFaceMesh;
+      if (!model) {
+        console.error('MediaPipeFaceMesh model not found in SupportedModels');
+        return false;
+      }
+      
+      // Try multiple solution paths in case CDN is blocked
+      const solutionPaths = [
+        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619',
+        'node_modules/@mediapipe/face_mesh'
+      ];
+      
+      let lastError: Error | null = null;
+      
+      for (const solutionPath of solutionPaths) {
         try {
-          this.detector = await (faceLandmarksDetection as any).load(
-            (faceLandmarksDetection as any).SupportedPackages?.mediapipeFacemesh || 
-            (faceLandmarksDetection as any).SupportedModels?.MediaPipeFaceMesh
-          );
-        } catch (loadError) {
-          console.error('Both initialization methods failed:', loadError);
-          return false;
+          const detectorConfig: any = {
+            runtime: 'mediapipe' as const,
+            solutionPath: solutionPath,
+            maxFaces: 1,
+            refineLandmarks: true,
+          };
+          
+          // Use createDetector (correct API for v1.0.6)
+          this.detector = await (faceLandmarksDetection as any).createDetector(model, detectorConfig);
+          
+          // Verify detector was created
+          if (this.detector && typeof this.detector.estimateFaces === 'function') {
+            console.log('✅ Face mesh detector initialized successfully with path:', solutionPath);
+            return true;
+          } else {
+            throw new Error('Detector created but estimateFaces method not available');
+          }
+        } catch (error: any) {
+          lastError = error;
+          console.warn(`Failed to initialize with solutionPath: ${solutionPath}`, error?.message || error);
+          continue; // Try next path
         }
       }
       
-      console.log('✅ Face mesh detector initialized');
-      return true;
-    } catch (error) {
-      console.error('❌ Error initializing detector:', error);
+      // If all paths failed, log the last error
+      console.error('❌ All initialization attempts failed. Last error:', lastError);
+      return false;
+    } catch (error: any) {
+      console.error('❌ Error initializing detector:', error?.message || error);
       return false;
     }
   }

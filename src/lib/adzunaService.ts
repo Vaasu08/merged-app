@@ -54,14 +54,14 @@ export const searchJobs = async (params: JobSearchParams): Promise<JobSearchResp
     country = 'us'
   } = params;
 
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const url = `${apiUrl}/api/jobs/search`;
+
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-    const url = `${apiUrl}/api/jobs/search`;
-    
     console.log('🔍 Adzuna Service - Fetching jobs via backend proxy');
     console.log('📍 API URL:', url);
     console.log('📋 Request params:', { what, where, page, sort_by, results_per_page });
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -88,19 +88,19 @@ export const searchJobs = async (params: JobSearchParams): Promise<JobSearchResp
     }
 
     const data = await response.json();
-    
+
     console.log('✅ Response received:', {
       success: data.success,
       resultsCount: data.results?.length || 0,
       totalCount: data.count
     });
-    
+
     if (!data.success) {
       throw new Error(data.error || 'Failed to fetch jobs');
     }
-    
+
     console.log(`✨ Successfully fetched ${data.results?.length || 0} jobs`);
-    
+
     return {
       results: data.results || [],
       count: data.count || 0,
@@ -113,7 +113,14 @@ export const searchJobs = async (params: JobSearchParams): Promise<JobSearchResp
       message: error instanceof Error ? error.message : 'Unknown error',
       type: typeof error
     });
-    throw error;
+
+    // Return fallback empty results instead of throwing
+    console.warn('⚠️ Using fallback empty job results due to API error');
+    return {
+      results: [],
+      count: 0,
+      mean: 0
+    };
   }
 };
 
@@ -145,7 +152,7 @@ export const getCareerKeywords = (careerTitle: string): string => {
  */
 export const formatSalary = (min?: number, max?: number, isPredicted?: boolean): string => {
   if (!min && !max) return 'Salary not specified';
-  
+
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -155,7 +162,7 @@ export const formatSalary = (min?: number, max?: number, isPredicted?: boolean):
   };
 
   const predictedText = isPredicted ? ' (estimated)' : '';
-  
+
   if (min && max) {
     return `${formatNumber(min)} - ${formatNumber(max)}${predictedText}`;
   } else if (min) {
@@ -163,7 +170,7 @@ export const formatSalary = (min?: number, max?: number, isPredicted?: boolean):
   } else if (max) {
     return `Up to ${formatNumber(max)}${predictedText}`;
   }
-  
+
   return 'Salary not specified';
 };
 
@@ -175,7 +182,7 @@ export const getDaysAgo = (dateString: string): string => {
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;

@@ -141,9 +141,17 @@ const CAREER_ROLES: CareerRole[] = [
 
 class SkillGraphService {
   private model;
+  private hasApiKey: boolean;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    this.hasApiKey = !!apiKey && apiKey.length > 0;
+    if (this.hasApiKey) {
+      this.model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    } else {
+      console.warn('⚠️ Gemini API key not configured. Skill graph AI insights will use fallback recommendations.');
+      this.model = null;
+    }
   }
 
   /**
@@ -179,6 +187,16 @@ class SkillGraphService {
    * Use AI to get additional skill insights and recommendations
    */
   private async getAIInsights(userSkills: string[], role: CareerRole, matchedSkills: string[], missingSkills: string[]): Promise<string[]> {
+    // Return fallback if no API key
+    if (!this.hasApiKey || !this.model) {
+      console.warn('⚠️ API key not available, using fallback recommendations');
+      return [
+        'Learn ' + (missingSkills.slice(0, 2).join(' and ') || 'core technologies'),
+        'Build projects showcasing your skills',
+        'Get certified in core technologies'
+      ];
+    }
+
     try {
       const prompt = `
 You are a career advisor AI. A user has these skills: ${userSkills.join(', ')}
@@ -208,9 +226,9 @@ Format as a simple list, one per line, no numbering or bullets.
         'Contribute to open-source projects'
       ];
     } catch (error) {
-      console.warn('AI insights failed, using fallback:', error);
+      console.warn('⚠️ AI insights failed, using fallback:', error);
       return [
-        'Learn ' + missingSkills.slice(0, 2).join(' and '),
+        'Learn ' + (missingSkills.slice(0, 2).join(' and ') || 'core technologies'),
         'Build projects showcasing your skills',
         'Get certified in core technologies'
       ];

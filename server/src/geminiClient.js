@@ -111,7 +111,17 @@ function parseJSONResponse(text) {
  */
 async function generateContent(prompt, options = {}) {
   if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured');
+    console.warn('⚠️ GEMINI_API_KEY not configured, returning fallback response');
+    // Return fallback response structure
+    return {
+      candidates: [{
+        content: {
+          parts: [{
+            text: 'AI service unavailable. Please configure GEMINI_API_KEY.'
+          }]
+        }
+      }]
+    };
   }
   
   const {
@@ -126,7 +136,20 @@ async function generateContent(prompt, options = {}) {
   } = options;
   
   // Check rate limit
-  checkRateLimit();
+  try {
+    checkRateLimit();
+  } catch (error) {
+    console.warn('⚠️ Rate limit exceeded, returning fallback response');
+    return {
+      candidates: [{
+        content: {
+          parts: [{
+            text: 'Rate limit exceeded. Please try again in a moment.'
+          }]
+        }
+      }]
+    };
+  }
   
   // Check cache
   if (useCache) {
@@ -164,43 +187,58 @@ async function generateContent(prompt, options = {}) {
   }
   
   // Make API call with retry logic
-  const response = await retryWithBackoff(async () => {
-    const startTime = Date.now();
-    
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+  try {
+    const response = await retryWithBackoff(async () => {
+      const startTime = Date.now();
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+      
+      const duration = Date.now() - startTime;
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const error = new Error(
+          errorData.error?.message || `Gemini API error: ${res.status}`
+        );
+        error.status = res.status;
+        error.details = errorData;
+        throw error;
+      }
+      
+      const data = await res.json();
+      console.log(`✅ Gemini API call completed in ${duration}ms`);
+      
+      return data;
     });
     
-    const duration = Date.now() - startTime;
-    
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      const error = new Error(
-        errorData.error?.message || `Gemini API error: ${res.status}`
-      );
-      error.status = res.status;
-      error.details = errorData;
-      throw error;
+    // Cache successful response
+    if (useCache) {
+      const cacheKey = getCacheKey(model, prompt, options);
+      responseCache.set(cacheKey, {
+        data: response,
+        timestamp: Date.now(),
+      });
     }
     
-    const data = await res.json();
-    console.log(`✅ Gemini API call completed in ${duration}ms`);
-    
-    return data;
-  });
-  
-  // Cache successful response
-  if (useCache) {
-    const cacheKey = getCacheKey(model, prompt, options);
-    responseCache.set(cacheKey, {
-      data: response,
-      timestamp: Date.now(),
-    });
+    return response;
+  } catch (error) {
+    console.error('❌ Gemini API call failed:', error);
+    console.warn('⚠️ Returning fallback response');
+    // Return fallback response structure
+    return {
+      candidates: [{
+        content: {
+          parts: [{
+            text: 'AI service encountered an error. Please try again later or check your API configuration.'
+          }]
+        }
+      }]
+    };
   }
-  
-  return response;
 }
 
 /**
@@ -210,18 +248,24 @@ async function generateContent(prompt, options = {}) {
  * @returns {Promise<string>} - Extracted text
  */
 async function generateText(prompt, options = {}) {
-  const response = await generateContent(prompt, {
-    ...options,
-    responseMimeType: 'text/plain',
-  });
-  
-  const text = response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-  
-  if (!text) {
-    throw new Error('Empty response from Gemini');
+  try {
+    const response = await generateContent(prompt, {
+      ...options,
+      responseMimeType: 'text/plain',
+    });
+    
+    const text = response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    
+    if (!text) {
+      console.warn('⚠️ Empty response from Gemini, returning fallback message');
+      return 'AI service returned an empty response. Please try again.';
+    }
+    
+    return text;
+  } catch (error) {
+    console.error('❌ Error in generateText:', error);
+    return 'AI service encountered an error. Please try again later.';
   }
-  
-  return text;
 }
 
 /**
@@ -231,18 +275,30 @@ async function generateText(prompt, options = {}) {
  * @returns {Promise<object>} - Parsed JSON object
  */
 async function generateJSON(prompt, options = {}) {
-  const response = await generateContent(prompt, {
-    ...options,
-    responseMimeType: 'application/json',
-  });
-  
-  const text = response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-  
-  if (!text) {
-    throw new Error('Empty response from Gemini');
+  try {
+    const response = await generateContent(prompt, {
+      ...options,
+      responseMimeType: 'application/json',
+    });
+    
+    const text = response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    
+    if (!text) {
+      console.warn('⚠️ Empty response from Gemini, returning fallback empty object');
+      return {};
+    }
+    
+    try {
+      return parseJSONResponse(text);
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
+      console.warn('⚠️ Returning fallback empty object');
+      return {};
+    }
+  } catch (error) {
+    console.error('❌ Error in generateJSON:', error);
+    return {};
   }
-  
-  return parseJSONResponse(text);
 }
 
 /**

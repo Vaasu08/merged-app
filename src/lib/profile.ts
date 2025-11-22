@@ -250,8 +250,9 @@ export async function saveUserSkills(userId: string, skills: string[]): Promise<
     if (toInsert.length > 0) {
       const { error: insertErr } = await supabase.from('user_skills').insert(toInsert);
       if (insertErr) {
-        console.error('Supabase error inserting skills:', insertErr);
-        throw new Error(`Failed to add ${toInsert.length} new skills`);
+        console.warn('⚠️ Supabase error inserting skills (non-fatal, localStorage saved):', insertErr);
+        // Don't throw - localStorage already saved, so operation succeeded locally
+        return;
       }
       console.log(`Successfully inserted ${toInsert.length} skills`);
     }
@@ -263,8 +264,9 @@ export async function saveUserSkills(userId: string, skills: string[]): Promise<
         .eq('user_id', userId)
         .in('skill_id', toDelete);
       if (deleteErr) {
-        console.error('Supabase error deleting skills:', deleteErr);
-        throw new Error(`Failed to remove ${toDelete.length} skills`);
+        console.warn('⚠️ Supabase error deleting skills (non-fatal, localStorage saved):', deleteErr);
+        // Don't throw - localStorage already saved
+        return;
       }
       console.log(`Successfully deleted ${toDelete.length} skills`);
     }
@@ -272,19 +274,36 @@ export async function saveUserSkills(userId: string, skills: string[]): Promise<
     console.log('Skills successfully saved to Supabase');
     
   } catch (e) {
-    console.warn('Failed to save to Supabase, localStorage backup already saved:', e);
-    // Re-throw so UI can show error, but localStorage is already saved
-    throw e;
+    console.warn('⚠️ Failed to save to Supabase, localStorage backup already saved (non-fatal):', e);
+    // Don't throw - localStorage save is sufficient fallback
   }
 }
 
 // Convenience: merge a delta skill in/out and persist
 export async function toggleUserSkill(userId: string, skillId: string, shouldHave: boolean): Promise<void> {
-  if (shouldHave) {
-    const { error } = await supabase.from('user_skills').upsert({ user_id: userId, skill_id: skillId }, { onConflict: 'user_id,skill_id' });
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('user_skills').delete().eq('user_id', userId).eq('skill_id', skillId);
-    if (error) throw error;
+  try {
+    // Save to localStorage first as fallback
+    const currentSkills = await getUserSkills(userId);
+    const updatedSkills = shouldHave 
+      ? [...new Set([...currentSkills, skillId])]
+      : currentSkills.filter(s => s !== skillId);
+    localStorage.setItem(`skills_${userId}`, JSON.stringify(updatedSkills));
+    
+    if (shouldHave) {
+      const { error } = await supabase.from('user_skills').upsert({ user_id: userId, skill_id: skillId }, { onConflict: 'user_id,skill_id' });
+      if (error) {
+        console.warn('⚠️ Supabase error toggling skill (non-fatal, localStorage saved):', error);
+        // Don't throw - localStorage already saved
+      }
+    } else {
+      const { error } = await supabase.from('user_skills').delete().eq('user_id', userId).eq('skill_id', skillId);
+      if (error) {
+        console.warn('⚠️ Supabase error removing skill (non-fatal, localStorage saved):', error);
+        // Don't throw - localStorage already saved
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ Error toggling skill (non-fatal):', e);
+    // Don't throw - localStorage save is sufficient fallback
   }
 }

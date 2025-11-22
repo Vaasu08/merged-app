@@ -60,7 +60,7 @@ const queryClient = new QueryClient({
 const App = () => {
   // Debug logging
   console.log('🚀 App component rendering...');
-  
+
   return (
     <ErrorBoundary>
       <AppDebugger />
@@ -75,76 +75,76 @@ const App = () => {
                   <RoadmapProvider>
                     <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
                       <Routes>
-                    {/* Home and Info */}
-                    <Route path="/" element={<IndexWrapper />} />
-                    <Route path="/insights" element={<Insights />} />
-                    <Route path="/community" element={<Community />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/blog/:id" element={<BlogDetail />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
+                        {/* Home and Info */}
+                        <Route path="/" element={<IndexWrapper />} />
+                        <Route path="/insights" element={<Insights />} />
+                        <Route path="/community" element={<Community />} />
+                        <Route path="/blog" element={<Blog />} />
+                        <Route path="/blog/:id" element={<BlogDetail />} />
+                        <Route path="/signup" element={<Signup />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/terms" element={<Terms />} />
+                        <Route path="/privacy" element={<Privacy />} />
 
-                    {/* ATS Resume Assessment */}
-                    <Route path="/ats-assessment" element={<ATSAssessment />} />
-                    <Route path="/ats-results" element={<ATSResults />} />
-                    <Route path="/ats-test" element={<ATSScorerTest />} />
+                        {/* ATS Resume Assessment */}
+                        <Route path="/ats-assessment" element={<ATSAssessment />} />
+                        <Route path="/ats-results" element={<ATSResults />} />
+                        <Route path="/ats-test" element={<ATSScorerTest />} />
 
-                    {/* Job Listings */}
-                    <Route path="/job-listings" element={<JobListings />} />
+                        {/* Job Listings */}
+                        <Route path="/job-listings" element={<JobListings />} />
 
-                    {/* Skill Graph Visualizer */}
-                    <Route path="/skill-graph" element={<SkillGraph />} />
+                        {/* Skill Graph Visualizer */}
+                        <Route path="/skill-graph" element={<SkillGraph />} />
 
-                    {/* AI Career Agent Swarm */}
-                    <Route path="/agent-swarm" element={
-                      <AuthGuard>
-                        <AgentSwarm />
-                      </AuthGuard>
-                    } />
+                        {/* AI Career Agent Swarm */}
+                        <Route path="/agent-swarm" element={
+                          <AuthGuard>
+                            <AgentSwarm />
+                          </AuthGuard>
+                        } />
 
-                    {/* Protected Profile/Resume */}
-                    <Route path="/profile" element={
-                      <AuthGuard>
-                        <Profile />
-                      </AuthGuard>
-                    } />
-                    <Route path="/resume" element={
-                      <AuthGuard>
-                        <ResumeBuilder />
-                      </AuthGuard>
-                    } />
+                        {/* Protected Profile/Resume */}
+                        <Route path="/profile" element={
+                          <AuthGuard>
+                            <Profile />
+                          </AuthGuard>
+                        } />
+                        <Route path="/resume" element={
+                          <AuthGuard>
+                            <ResumeBuilder />
+                          </AuthGuard>
+                        } />
 
-                    {/* Interview Simulator */}
-                    <Route path="/interview" element={<InterviewHome />} />
-                    <Route path="/interview-home" element={<InterviewHome />} />
-                    <Route path="/interview-welcome" element={<InterviewWelcome />} />
-                    <Route path="/interview-prep" element={<InterviewPrep />} />
-                    <Route path="/interview-session" element={<InterviewSession />} />
-                    <Route path="/interview-feedback" element={<InterviewFeedback />} />
+                        {/* Interview Simulator */}
+                        <Route path="/interview" element={<InterviewHome />} />
+                        <Route path="/interview-home" element={<InterviewHome />} />
+                        <Route path="/interview-welcome" element={<InterviewWelcome />} />
+                        <Route path="/interview-prep" element={<InterviewPrep />} />
+                        <Route path="/interview-session" element={<InterviewSession />} />
+                        <Route path="/interview-feedback" element={<InterviewFeedback />} />
 
-                    {/* Learning Roadmap Builder */}
-                    <Route path="/roadmap" element={<RoadmapOnboarding />} />
-                    <Route path="/roadmap/view" element={
-                      <AuthGuard>
-                        <RoadmapView />
-                      </AuthGuard>
-                    } />
+                        {/* Learning Roadmap Builder */}
+                        <Route path="/roadmap" element={<RoadmapOnboarding />} />
+                        <Route path="/roadmap/view" element={
+                          <AuthGuard>
+                            <RoadmapView />
+                          </AuthGuard>
+                        } />
 
-                    {/* 404 Fallback */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  <Chatbot />
-                </BrowserRouter>
-              </RoadmapProvider>
-            </InterviewProvider>
-          </ChatbotProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-  </ErrorBoundary>
+                        {/* 404 Fallback */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                      <Chatbot />
+                    </BrowserRouter>
+                  </RoadmapProvider>
+                </InterviewProvider>
+              </ChatbotProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

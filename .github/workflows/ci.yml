@@ -1,0 +1,92 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, mitul]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: cd server && npm ci
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          # These are placeholder values for build - not real credentials
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  security-scan:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run npm audit (frontend)
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run npm audit (backend)
+        run: cd server && npm audit --audit-level=moderate
+        continue-on-error: true
+
+  check-secrets:
+    name: Check for Exposed Secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for .env files in commits
+        run: |
+          if git log --all --full-history -- .env server/.env | grep -q 'commit'; then
+            echo "⚠️ WARNING: .env files found in git history!"
+            echo "Please clean your git history and rotate all API keys."
+            exit 1
+          fi
+
+      - name: Verify .gitignore exists
+        run: |
+          if [ ! -f .gitignore ]; then
+            echo "❌ ERROR: .gitignore file missing!"
+            exit 1
+          fi
+
+      - name: Check that .env is gitignored
+        run: |
+          if ! grep -q "^\.env$" .gitignore; then
+            echo "⚠️ WARNING: .env not properly gitignored!"
+            exit 1
+          fi

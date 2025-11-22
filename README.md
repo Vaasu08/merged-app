@@ -17,6 +17,8 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 - **ATS Scoring**: Analyze resume compatibility with Applicant Tracking Systems
 - **Smart Parsing**: Extract and organize resume data automatically
 - **PDF Export**: Generate polished, ATS-friendly PDF resumes
+- **Version Control**: Automatic versioning and primary resume management
+- **Persistent Storage**: All resumes and ATS scores saved to database
 
 ### 🎤 Interview Preparation
 
@@ -24,6 +26,8 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 - **Real-time Feedback**: Instant analysis of your interview responses
 - **Question Bank**: Curated interview questions by role and difficulty
 - **Performance Tracking**: Monitor your interview readiness score
+- **Session History**: All interview sessions and feedback saved
+- **Audio/Video Support**: Record and review your interview responses
 
 ### 📈 Learning & Development
 
@@ -31,6 +35,8 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 - **Skill Assessments**: Interactive quizzes to test your knowledge
 - **Progress Tracking**: Monitor your skill development journey
 - **Resource Recommendations**: Curated learning materials and courses
+- **Phase Management**: Track completion of roadmap phases
+- **Career Assessment Results**: Save and review your career test outcomes
 
 ### 💬 AI Career Coach
 
@@ -45,6 +51,8 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 - **Profile Management**: Comprehensive user profile and skill tracking
 - **Data Privacy**: Your data is secure and never shared
 - **Progress Saving**: Automatic cloud sync of your career data
+- **Job Application Tracking**: Manage and track all your job applications
+- **Complete History**: Access all your resumes, scores, and session data anytime
 
 ## 🚀 Getting Started
 
@@ -97,8 +105,16 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 
 4. **Set up the database**
 
-   - Run the SQL schema from `database-setup.sql` in your Supabase SQL editor
-   - This creates all necessary tables and relationships
+   Go to your Supabase dashboard → SQL Editor and run the entire `database-setup.sql` file. This creates:
+
+   - **User Management**: `user_profiles`, `user_skills`, `profiles`
+   - **Resume System**: `user_resumes`, `ats_scores`
+   - **Career Planning**: `roadmaps`, `roadmap_phases`
+   - **Interview Prep**: `interview_sessions`, `interview_responses`
+   - **Assessments**: `career_assessments`
+   - **Job Tracking**: `job_applications`
+
+   All tables include RLS policies for security and proper indexing for performance.
 
 5. **Start the development servers**
 
@@ -144,9 +160,11 @@ Discover your perfect career path with Horizon's intelligent skill mapping, pers
 
 ### Database
 
-- **Supabase (PostgreSQL)** - Relational database
-- **Row-Level Security** - Built-in data protection
+- **Supabase (PostgreSQL)** - Relational database with 11 production tables
+- **Row-Level Security** - Built-in data protection and user isolation
 - **Real-time subscriptions** - Live data updates
+- **Automatic Backups** - Your data is safe and recoverable
+- **Scalable Architecture** - Handles growing user base efficiently
 
 ## 📁 Project Structure
 
@@ -157,6 +175,7 @@ merged-app/
 │   ├── pages/           # Page components
 │   ├── lib/             # Utility functions and services
 │   │   ├── geminiService.ts          # Optimized Gemini API client
+│   │   ├── dataService.ts            # Database operations (NEW)
 │   │   ├── chatbotService.ts         # AI chatbot
 │   │   ├── careerAgentSwarm.ts       # Multi-agent AI system
 │   │   ├── aiResumeService.ts        # Resume building
@@ -171,7 +190,7 @@ merged-app/
 │       ├── app.js                     # Express server
 │       └── geminiClient.js            # Backend Gemini client
 ├── public/              # Static assets
-└── database-setup.sql   # Database schema
+└── database-setup.sql   # Complete database schema
 
 ```
 
@@ -195,16 +214,66 @@ Multi-agent AI system with specialized agents:
 - **Recruiter Agent**: Finds relevant job opportunities
 - **Interviewer Agent**: Assesses interview readiness
 - **Coach Agent**: Provides career guidance and feedback
+- **Research Agent**: Company and industry analysis
+- **Networking Agent**: LinkedIn strategy and outreach
+- **Negotiation Agent**: Salary optimization and offer analysis
+- **Branding Agent**: Personal brand development
+
+### Data Persistence
+
+All user data is automatically saved to Supabase:
+
+- **Resumes**: Version control, primary flag, full content
+- **ATS Scores**: Complete analysis history with suggestions
+- **Roadmaps**: Learning paths with phase tracking
+- **Interview Sessions**: Full history with AI feedback
+- **Career Assessments**: Test results and recommendations
+- **Job Applications**: Application status and timeline tracking
 
 ### ATS Optimization
 
 Resume scoring across multiple dimensions:
 
-- Keyword matching (25%)
+- Keyword matching (40%)
 - Skills alignment (25%)
-- Experience relevance (25%)
-- Education fit (15%)
-- Formatting quality (10%)
+- Experience relevance (20%)
+- Education fit (10%)
+- Formatting quality (5%)
+
+### Database Architecture
+
+Production-ready PostgreSQL schema with 11 tables:
+
+**User Management**
+
+- `user_profiles` - Complete user information
+- `user_skills` - Skill tracking with many-to-many relationships
+- `profiles` - Auth integration
+
+**Resume & Career**
+
+- `user_resumes` - Version-controlled resume storage
+- `ats_scores` - ATS analysis with detailed feedback
+- `roadmaps` - Career planning and goals
+- `roadmap_phases` - Learning phase tracking
+
+**Interview & Assessment**
+
+- `interview_sessions` - Mock interview history
+- `interview_responses` - Q&A with AI feedback
+- `career_assessments` - Career test results
+
+**Job Search**
+
+- `job_applications` - Application tracking and status
+
+All tables include:
+
+- Row-Level Security (RLS) policies
+- Optimized indexes for query performance
+- Automatic timestamps (created_at, updated_at)
+- Cascade deletion on user removal
+- JSONB columns for flexible data storage
 
 ## 🔧 Development
 

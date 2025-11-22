@@ -44,11 +44,19 @@ export interface GeminiResponse<T = string> {
 // ==================== UTILITY FUNCTIONS ====================
 
 /**
- * Generate cache key from request parameters
+ * Generate cache key based on model, prompt, and config
  */
 function getCacheKey(model: string, prompt: string, options: GeminiOptions): string {
   const configStr = JSON.stringify(options);
-  return `${model}:${prompt.substring(0, 100)}:${configStr}`;
+  // Use full prompt hash instead of substring to avoid cache collisions
+  // Create a simple hash from the prompt to keep key manageable
+  let hash = 0;
+  for (let i = 0; i < prompt.length; i++) {
+    const char = prompt.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return `${model}:${hash}:${configStr}`;
 }
 
 /**

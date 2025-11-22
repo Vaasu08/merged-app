@@ -352,7 +352,7 @@ Goals: ${goals}
 
 Generate a comprehensive roadmap with weekly breakdown, resources, projects, and assessments.
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON with no markdown code blocks or additional text. Use this exact format:
 {
   "title": "string",
   "overview": "string",
@@ -529,7 +529,7 @@ Create a ${difficulty} level quiz about ${topic}${subtopic ? ` focusing on ${sub
 
 Generate exactly ${numQuestions} multiple-choice questions with 4 options each.
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON with no markdown code blocks or additional text. Use this exact format:
 {
   "id": "quiz_${Date.now()}",
   "title": "${topic} ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Quiz",

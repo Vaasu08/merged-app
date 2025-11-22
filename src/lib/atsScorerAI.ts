@@ -278,6 +278,11 @@ CRITICAL INSTRUCTIONS FOR SUGGESTIONS:
 🎯 GENERATE 6-10 SUGGESTIONS (minimum 6, target 8-10)
 - Cover ALL weak areas (keyword, skills, experience, formatting, education)
 - Each suggestion MUST have: type, priority, message, impact (+X points), action (specific steps)
+- Prioritize critical and high priority issues first
+- Be specific and actionable in the action field
+- Always include concrete examples in the action field
+
+Return ONLY valid JSON with no markdown code blocks or additional commentary.
 - Be hyper-specific with examples and numbers
 - Mix priorities: 1-2 critical, 2-3 high, 2-3 medium, 1-2 low
 

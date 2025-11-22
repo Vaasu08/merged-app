@@ -472,7 +472,7 @@ OUTPUT:
 📤 OUTPUT FORMAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON with no markdown code blocks, no commentary, no additional text:
 
 {
   "technical": ["TypeScript", "React.js", "Node.js", "..."],
@@ -485,7 +485,8 @@ CRITICAL RULES:
 - Order by importance (must-haves first)
 - Be specific (AWS Lambda, not just AWS)
 - Skip soft skills unless JD emphasizes them
-- 10-18 technical, 8-15 tools, 0-6 soft`;
+- 10-18 technical, 8-15 tools, 0-6 soft
+- Return PURE JSON only - no markdown formatting`;
 
     const result = await geminiService.generateJSON<{
       technical: string[];

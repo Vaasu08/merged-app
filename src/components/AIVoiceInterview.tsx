@@ -4,9 +4,10 @@
  * Features:
  * - Role-specific interviews (FSD, ML, DSA)
  * - AI-powered dynamic questions and follow-ups
- * - Voice-first interaction with real-time transcription
+ * - Continuous conversation mode (like ChatGPT voice)
+ * - Real-time transcription with silence detection
+ * - ElevenLabs-style natural TTS
  * - Answer evaluation with feedback
- * - WebRTC voice streaming (optional)
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -20,12 +21,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Mic, MicOff, Volume2, VolumeX, Send, ArrowRight, 
   Brain, Code, Database, Cpu, AlertCircle, CheckCircle2,
-  Loader2, MessageSquare, Sparkles, BarChart3
+  Loader2, MessageSquare, Sparkles, BarChart3, Radio
 } from "lucide-react";
 import { toast } from "sonner";
 import { BackButton } from "@/components/BackButton";
 import { useInterview, AIInterviewRole } from "@/contexts/InterviewContext";
-import { voiceService, TranscriptionResult, VoiceState } from "@/lib/voiceService";
+import { voiceService, TranscriptionResult, VoiceState, VoiceEventType } from "@/lib/voiceService";
 import { InterviewQuestion, AnswerEvaluation } from "@/lib/aiInterviewService";
 
 // Role options with icons
@@ -73,23 +74,32 @@ const difficultyOptions = [
   { id: 'senior', label: 'Senior', description: '5+ years experience' },
 ] as const;
 
-// Audio level visualizer component
-const AudioVisualizer: React.FC<{ level: number; isActive: boolean }> = ({ level, isActive }) => {
+// Audio level visualizer component with wave effect
+const AudioVisualizer: React.FC<{ level: number; isActive: boolean; isContinuous?: boolean }> = ({ 
+  level, 
+  isActive,
+  isContinuous 
+}) => {
   return (
     <div className="flex items-center gap-1 h-8">
-      {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className={`w-1 rounded-full transition-all duration-75 ${
-            isActive && level > i * 20 
-              ? 'bg-green-500' 
-              : 'bg-gray-300 dark:bg-gray-600'
-          }`}
-          style={{ 
-            height: isActive ? `${Math.max(8, Math.min(32, 8 + (level - i * 15) * 0.8))}px` : '8px' 
-          }}
-        />
-      ))}
+      {[...Array(7)].map((_, i) => {
+        const barHeight = isActive 
+          ? Math.max(8, Math.min(32, 8 + (level - i * 12) * 0.9)) 
+          : 8;
+        return (
+          <div
+            key={i}
+            className={`w-1 rounded-full transition-all duration-75 ${
+              isActive && level > i * 12 
+                ? isContinuous 
+                  ? 'bg-gradient-to-t from-green-500 to-emerald-400' 
+                  : 'bg-green-500' 
+                : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+            style={{ height: `${barHeight}px` }}
+          />
+        );
+      })}
     </div>
   );
 };
@@ -165,52 +175,175 @@ const AIVoiceInterview: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [continuousMode, setContinuousMode] = useState(true); // ChatGPT-style continuous
   const [voiceState, setVoiceState] = useState<VoiceState>({
     isListening: false,
     isSpeaking: false,
     isProcessing: false,
     audioLevel: 0,
     error: null,
+    mode: 'idle',
   });
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [lastEvaluation, setLastEvaluation] = useState<AnswerEvaluation | null>(null);
+  const [isVoiceReady, setIsVoiceReady] = useState(false);
   
   // Refs
   const voiceInitialized = useRef(false);
   const currentQuestionRef = useRef<string>("");
+  const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle auto-submit from silence detection (defined first to be used in useEffect)
+  const handleAutoSubmit = useCallback(async (transcript: string) => {
+    if (!transcript.trim() || aiInterview.isProcessing) return;
+    
+    // Debounce auto-submit
+    if (autoSubmitTimeoutRef.current) {
+      clearTimeout(autoSubmitTimeoutRef.current);
+    }
+    
+    autoSubmitTimeoutRef.current = setTimeout(async () => {
+      if (transcript.trim().length > 20) {
+        toast.info("Submitting your answer...");
+        setCurrentResponse(transcript);
+        // Use inline submit logic to avoid circular dep
+        voiceService.pauseListening();
+        try {
+          const result = await submitAIAnswer(transcript.trim());
+          setLastEvaluation(result.evaluation);
+          setShowEvaluation(true);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          setShowEvaluation(false);
+          if (result.nextQuestion) {
+            setCurrentResponse("");
+            voiceService.clearTranscript();
+            if (result.isFollowUp) {
+              toast.info("Follow-up question incoming...", { duration: 2000 });
+            }
+          } else {
+            voiceService.stopContinuousMode();
+            toast.success("Interview complete! Generating feedback...");
+            await getAIFeedback();
+            navigate("/interview-feedback");
+          }
+        } catch (error) {
+          toast.error("Failed to submit answer");
+          voiceService.resumeListening();
+        }
+      }
+    }, 500);
+  }, [aiInterview.isProcessing, submitAIAnswer, getAIFeedback, navigate]);
 
   // Initialize voice service
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    
     const initVoice = async () => {
       if (!voiceInitialized.current) {
+        console.log('🎙️ Initializing voice service...');
         const success = await voiceService.initialize({
           continuous: true,
           interimResults: true,
           language: 'en-US',
+          silenceThreshold: 2500, // 2.5 seconds of silence = ready to submit
         });
-        voiceInitialized.current = success;
         
-        // Subscribe to voice events
-        voiceService.on((event, data) => {
-          if (event === 'stateChange') {
-            setVoiceState(data as VoiceState);
-          } else if (event === 'transcription' || event === 'finalTranscription') {
-            const result = data as TranscriptionResult;
-            setCurrentResponse(result.transcript);
-          }
-        });
+        if (success) {
+          voiceInitialized.current = true;
+          setIsVoiceReady(true);
+          console.log('✅ Voice service ready');
+          
+          // Subscribe to voice events
+          unsubscribe = voiceService.on((event: VoiceEventType, data) => {
+            if (event === 'stateChange') {
+              const state = data as VoiceState;
+              setVoiceState(state);
+              setIsListening(state.isListening);
+              setIsSpeaking(state.isSpeaking);
+            } else if (event === 'transcription' || event === 'finalTranscription') {
+              const result = data as TranscriptionResult;
+              setCurrentResponse(result.transcript);
+            } else if (event === 'silenceDetected') {
+              // Auto-submit in continuous mode when silence detected
+              const transcript = data as string;
+              if (transcript.trim().length > 20) {
+                console.log('🤫 Silence detected, auto-submitting...');
+                handleAutoSubmit(transcript);
+              }
+            } else if (event === 'error') {
+              const error = data as Error;
+              toast.error(error.message || 'Voice error');
+            }
+          });
+        } else {
+          toast.error('Voice service not available in this browser');
+        }
       }
     };
     
     initVoice();
     
     return () => {
+      unsubscribe?.();
       voiceService.cleanup();
       voiceInitialized.current = false;
+      if (autoSubmitTimeoutRef.current) {
+        clearTimeout(autoSubmitTimeoutRef.current);
+      }
     };
+  }, [handleAutoSubmit]);
+
+  // Start continuous listening mode (like ChatGPT) - defined early for speakQuestion
+  const startContinuousListening = useCallback(async () => {
+    if (!isVoiceReady) {
+      toast.error("Voice service not ready yet");
+      return;
+    }
+    
+    try {
+      console.log('🎙️ Starting continuous listening mode...');
+      await voiceService.startContinuousMode();
+      voiceService.clearTranscript();
+      setCurrentResponse("");
+      toast.success("Listening... Speak your answer", { duration: 2000 });
+    } catch (error) {
+      console.error('Failed to start continuous mode:', error);
+      toast.error("Could not access microphone. Please check permissions.");
+    }
+  }, [isVoiceReady]);
+
+  // Stop continuous listening
+  const stopContinuousListening = useCallback(() => {
+    voiceService.stopContinuousMode();
+    setIsListening(false);
   }, []);
 
-  // Speak question when it changes
+  // Speak question when it changes (uses ElevenLabs-style natural speech)
+  const speakQuestion = useCallback(async (question: string) => {
+    setIsSpeaking(true);
+    try {
+      // Use speakNaturally for ElevenLabs-style speech
+      await voiceService.speakNaturally(question, {
+        onStart: () => console.log('🔊 AI speaking...'),
+        onEnd: () => {
+          console.log('🔊 AI finished speaking');
+          setIsSpeaking(false);
+          // Auto-start listening after AI finishes speaking (continuous mode)
+          if (continuousMode && !aiInterview.isProcessing) {
+            setTimeout(() => {
+              if (!voiceState.isListening) {
+                startContinuousListening();
+              }
+            }, 500);
+          }
+        },
+      });
+    } catch (error) {
+      console.warn('Speech synthesis error:', error);
+    }
+    setIsSpeaking(false);
+  }, [continuousMode, aiInterview.isProcessing, voiceState.isListening, startContinuousListening]);
+
   useEffect(() => {
     if (
       setupPhase === 'interview' &&
@@ -221,17 +354,7 @@ const AIVoiceInterview: React.FC = () => {
       currentQuestionRef.current = aiInterview.currentQuestion.question;
       speakQuestion(aiInterview.currentQuestion.question);
     }
-  }, [aiInterview.currentQuestion, setupPhase, audioEnabled]);
-
-  const speakQuestion = async (question: string) => {
-    setIsSpeaking(true);
-    try {
-      await voiceService.speak(question, { rate: 0.95 });
-    } catch (error) {
-      console.warn('Speech synthesis error:', error);
-    }
-    setIsSpeaking(false);
-  };
+  }, [aiInterview.currentQuestion, setupPhase, audioEnabled, speakQuestion]);
 
   const startInterview = async () => {
     if (!selectedRole) return;
@@ -240,6 +363,11 @@ const AIVoiceInterview: React.FC = () => {
       await startAIInterview(selectedRole, selectedDifficulty);
       setSetupPhase('interview');
       toast.success("Interview started! Good luck!");
+      
+      // Enable continuous mode by default
+      if (continuousMode) {
+        setTimeout(() => startContinuousListening(), 1500);
+      }
     } catch (error) {
       toast.error("Failed to start interview");
       console.error(error);
@@ -248,35 +376,43 @@ const AIVoiceInterview: React.FC = () => {
 
   const toggleListening = async () => {
     if (isListening) {
-      voiceService.stopListening();
-      setIsListening(false);
+      if (continuousMode) {
+        stopContinuousListening();
+      } else {
+        voiceService.stopListening();
+        setIsListening(false);
+      }
     } else {
       try {
-        await voiceService.startListening();
-        setIsListening(true);
-        voiceService.clearTranscript();
-        setCurrentResponse("");
+        if (continuousMode) {
+          await startContinuousListening();
+        } else {
+          await voiceService.startListening();
+          setIsListening(true);
+          voiceService.clearTranscript();
+          setCurrentResponse("");
+        }
       } catch (error) {
-        toast.error("Could not access microphone");
-        console.error(error);
+        console.error('Microphone error:', error);
+        toast.error("Could not access microphone. Please check your browser permissions.");
       }
     }
   };
 
-  const handleSubmitAnswer = async () => {
-    if (!currentResponse.trim()) {
-      toast.error("Please provide an answer");
-      return;
-    }
+  // Internal submit handler for auto-submit
+  const handleSubmitAnswerInternal = async (answer: string) => {
+    if (!answer.trim() || aiInterview.isProcessing) return;
     
-    // Stop listening if active
-    if (isListening) {
+    // Stop listening while processing
+    if (continuousMode) {
+      voiceService.pauseListening();
+    } else {
       voiceService.stopListening();
       setIsListening(false);
     }
     
     try {
-      const result = await submitAIAnswer(currentResponse.trim());
+      const result = await submitAIAnswer(answer.trim());
       
       setLastEvaluation(result.evaluation);
       setShowEvaluation(true);
@@ -287,6 +423,7 @@ const AIVoiceInterview: React.FC = () => {
       
       if (result.nextQuestion) {
         setCurrentResponse("");
+        voiceService.clearTranscript();
         
         // Announce follow-up if applicable
         if (result.isFollowUp) {
@@ -294,6 +431,9 @@ const AIVoiceInterview: React.FC = () => {
         }
       } else {
         // Interview complete
+        if (continuousMode) {
+          stopContinuousListening();
+        }
         toast.success("Interview complete! Generating feedback...");
         await getAIFeedback();
         navigate("/interview-feedback");
@@ -301,10 +441,27 @@ const AIVoiceInterview: React.FC = () => {
     } catch (error) {
       toast.error("Failed to submit answer");
       console.error(error);
+      
+      // Resume listening after error
+      if (continuousMode) {
+        voiceService.resumeListening();
+      }
     }
   };
 
+  const handleSubmitAnswer = async () => {
+    if (!currentResponse.trim()) {
+      toast.error("Please provide an answer");
+      return;
+    }
+    
+    await handleSubmitAnswerInternal(currentResponse.trim());
+  };
+
   const handleEndInterview = async () => {
+    if (continuousMode) {
+      stopContinuousListening();
+    }
     endAIInterview();
     await getAIFeedback();
     navigate("/interview-feedback");
@@ -623,20 +780,31 @@ const AIVoiceInterview: React.FC = () => {
                     />
                   ) : (
                     <>
-                      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 min-h-32">
+                      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 min-h-32 relative">
+                        {continuousMode && isListening && (
+                          <div className="absolute top-2 right-2">
+                            <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
+                              <Radio className="h-3 w-3 animate-pulse" />
+                              Continuous Mode
+                            </span>
+                          </div>
+                        )}
                         <p className="text-gray-800 dark:text-gray-200">
-                          {currentResponse || "Click 'Start Recording' and speak your answer..."}
+                          {currentResponse || (isListening 
+                            ? "Listening... Speak your answer (stops automatically after silence)" 
+                            : "Click 'Start Recording' and speak your answer..."
+                          )}
                         </p>
                       </div>
                       
                       {/* Voice Controls */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                           <Button
                             variant={isListening ? "destructive" : "default"}
                             onClick={toggleListening}
-                            className="gap-2"
-                            disabled={aiInterview.isProcessing}
+                            className={`gap-2 ${!isListening && 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'}`}
+                            disabled={aiInterview.isProcessing || !isVoiceReady}
                           >
                             {isListening ? (
                               <>
@@ -646,25 +814,61 @@ const AIVoiceInterview: React.FC = () => {
                             ) : (
                               <>
                                 <Mic className="h-4 w-4" />
-                                Start Recording
+                                {continuousMode ? 'Start Conversation' : 'Start Recording'}
                               </>
                             )}
                           </Button>
                           
-                          <AudioVisualizer level={voiceState.audioLevel} isActive={isListening} />
+                          <AudioVisualizer 
+                            level={voiceState.audioLevel} 
+                            isActive={isListening} 
+                            isContinuous={continuousMode}
+                          />
                           
                           {isListening && (
-                            <span className="text-sm text-blue-600 dark:text-blue-400 animate-pulse">
-                              Listening...
+                            <span className="text-sm text-emerald-600 dark:text-emerald-400 animate-pulse flex items-center gap-1">
+                              <Radio className="h-3 w-3" />
+                              {continuousMode ? 'Conversation active...' : 'Listening...'}
                             </span>
                           )}
                         </div>
+                        
+                        {/* Continuous mode toggle */}
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={continuousMode}
+                              onChange={(e) => {
+                                setContinuousMode(e.target.checked);
+                                if (!e.target.checked && isListening) {
+                                  voiceService.stopContinuousMode();
+                                }
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-muted-foreground">Auto-listen (ChatGPT style)</span>
+                          </label>
+                        </div>
                       </div>
+                      
+                      {!isVoiceReady && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Initializing voice service...
+                        </p>
+                      )}
                     </>
                   )}
                   
                   {/* Submit Button */}
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-muted-foreground">
+                      {continuousMode && isListening 
+                        ? "Answer will auto-submit after 2.5s of silence"
+                        : "Or click submit when ready"
+                      }
+                    </p>
                     <Button 
                       onClick={handleSubmitAnswer}
                       disabled={!currentResponse.trim() || aiInterview.isProcessing}

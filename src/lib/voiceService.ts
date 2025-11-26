@@ -1,12 +1,13 @@
 /**
- * Voice AI Service
+ * Enhanced Voice AI Service
  * 
  * Features:
+ * - Continuous conversation mode (like ChatGPT voice)
+ * - ElevenLabs-style natural speech synthesis
  * - Web Speech API for speech-to-text
- * - Text-to-speech for AI interviewer
- * - WebRTC for smooth voice streaming
- * - Voice activity detection
- * - Audio visualization
+ * - Automatic silence detection for turn-taking
+ * - Voice activity detection with audio visualization
+ * - Auto-restart recognition for seamless conversation
  */
 
 // ==================== TYPES ====================
@@ -15,6 +16,7 @@ export interface VoiceConfig {
   continuous?: boolean;
   interimResults?: boolean;
   maxAlternatives?: number;
+  silenceThreshold?: number; // ms of silence to detect end of speech
 }
 
 export interface TranscriptionResult {
@@ -30,6 +32,7 @@ export interface VoiceState {
   isProcessing: boolean;
   audioLevel: number;
   error: string | null;
+  mode: 'idle' | 'listening' | 'processing' | 'speaking';
 }
 
 export type VoiceEventType = 
@@ -37,15 +40,17 @@ export type VoiceEventType =
   | 'finalTranscription'
   | 'speechStart'
   | 'speechEnd'
+  | 'silenceDetected'
+  | 'modeChange'
   | 'error'
   | 'stateChange';
 
 export type VoiceEventCallback = (
   event: VoiceEventType,
-  data: TranscriptionResult | VoiceState | Error
+  data: TranscriptionResult | VoiceState | Error | string
 ) => void;
 
-// ==================== VOICE SERVICE ====================
+// ==================== ENHANCED VOICE SERVICE ====================
 class VoiceAIService {
   private recognition: SpeechRecognition | null = null;
   private synthesis: SpeechSynthesis | null = null;
@@ -55,6 +60,13 @@ class VoiceAIService {
   private callbacks: VoiceEventCallback[] = [];
   private currentTranscript: string = '';
   private isInitialized: boolean = false;
+  
+  // Continuous conversation mode
+  private continuousMode: boolean = false;
+  private autoRestartEnabled: boolean = true;
+  private silenceTimer: NodeJS.Timeout | null = null;
+  private silenceThreshold: number = 2000; // 2 seconds of silence = end of speech
+  private lastSpeechTime: number = 0;
   
   // WebRTC
   private peerConnection: RTCPeerConnection | null = null;
@@ -67,18 +79,33 @@ class VoiceAIService {
     isProcessing: false,
     audioLevel: 0,
     error: null,
+    mode: 'idle',
   };
 
-  // Voice preferences
+  // Voice preferences for natural speech
   private preferredVoice: SpeechSynthesisVoice | null = null;
-  private voiceRate: number = 1.0;
+  private voiceRate: number = 0.95; // Slightly slower for natural feel
   private voicePitch: number = 1.0;
+  private voiceVolume: number = 1.0;
 
   /**
    * Initialize voice services
    */
   async initialize(config: VoiceConfig = {}): Promise<boolean> {
     try {
+      // Check browser support first
+      const support = VoiceAIService.isSupported();
+      if (!support.speechRecognition) {
+        console.warn('Speech Recognition not supported in this browser');
+        this.updateState({ error: 'Speech recognition not supported in this browser' });
+        return false;
+      }
+
+      // Set silence threshold from config
+      if (config.silenceThreshold) {
+        this.silenceThreshold = config.silenceThreshold;
+      }
+
       // Initialize Speech Recognition
       const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
       
@@ -92,14 +119,17 @@ class VoiceAIService {
         this.recognition = recognition;
         
         this.setupRecognitionHandlers();
+        console.log('✅ Speech recognition initialized');
       } else {
         console.warn('Speech Recognition not supported');
+        return false;
       }
 
       // Initialize Speech Synthesis
       if (window.speechSynthesis) {
         this.synthesis = window.speechSynthesis;
         await this.loadVoices();
+        console.log('✅ Speech synthesis initialized');
       }
 
       // Initialize Audio Context for visualization
@@ -108,11 +138,14 @@ class VoiceAIService {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         this.analyser = this.audioContext.createAnalyser();
         this.analyser.fftSize = 256;
+        this.analyser.smoothingTimeConstant = 0.8;
+        console.log('✅ Audio context initialized');
       } catch (e) {
         console.warn('Audio context not available:', e);
       }
 
       this.isInitialized = true;
+      console.log('✅ Voice service fully initialized');
       return true;
     } catch (error) {
       console.error('Voice initialization failed:', error);
@@ -129,21 +162,28 @@ class VoiceAIService {
 
     // @ts-expect-error - onstart exists on SpeechRecognition
     this.recognition.onstart = () => {
-      this.updateState({ isListening: true, error: null });
+      console.log('🎤 Speech recognition started');
+      this.updateState({ isListening: true, error: null, mode: 'listening' });
       this.emit('speechStart', this.state);
     };
 
     this.recognition.onend = () => {
-      this.updateState({ isListening: false });
-      this.emit('speechEnd', this.state);
+      console.log('🎤 Speech recognition ended');
       
-      // Auto-restart if still supposed to be listening
-      if (this.state.isListening) {
+      // Auto-restart if in continuous mode and not speaking
+      if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
+        console.log('🔄 Auto-restarting recognition...');
         setTimeout(() => {
-          if (this.state.isListening) {
-            this.recognition?.start();
+          if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
+            this.startRecognition();
           }
         }, 100);
+      } else {
+        this.updateState({ 
+          isListening: false, 
+          mode: this.state.isSpeaking ? 'speaking' : 'idle' 
+        });
+        this.emit('speechEnd', this.state);
       }
     };
 
@@ -163,10 +203,15 @@ class VoiceAIService {
         }
       }
 
+      // Update last speech time and reset silence timer
+      this.lastSpeechTime = Date.now();
+      this.resetSilenceTimer();
+
       // Emit interim results
       if (interimTranscript) {
+        const fullTranscript = this.currentTranscript + interimTranscript;
         this.emit('transcription', {
-          transcript: this.currentTranscript + interimTranscript,
+          transcript: fullTranscript,
           isFinal: false,
           confidence: event.results[event.results.length - 1][0].confidence || 0.5,
           timestamp: Date.now(),
@@ -188,38 +233,160 @@ class VoiceAIService {
     // @ts-expect-error - onerror exists on SpeechRecognition
     this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       const error = event.error;
+      console.warn('Speech recognition error:', error);
       
-      // Ignore no-speech errors (common when user is thinking)
-      if (error === 'no-speech') {
-        return;
+      // Handle specific errors
+      switch (error) {
+        case 'no-speech':
+          // Not an error, just no speech detected - restart if continuous
+          if (this.continuousMode && this.autoRestartEnabled) {
+            setTimeout(() => this.startRecognition(), 100);
+          }
+          return;
+        case 'aborted':
+          // Intentionally stopped, ignore
+          return;
+        case 'not-allowed':
+          this.updateState({ error: 'Microphone access denied. Please allow microphone access.' });
+          break;
+        case 'network':
+          this.updateState({ error: 'Network error. Please check your connection.' });
+          break;
+        case 'audio-capture':
+          this.updateState({ error: 'No microphone detected.' });
+          break;
+        default:
+          this.updateState({ error: `Recognition error: ${error}` });
       }
       
-      console.error('Recognition error:', error);
-      this.updateState({ error: `Recognition error: ${error}` });
       this.emit('error', new Error(error));
     };
   }
 
   /**
-   * Load available voices
+   * Reset silence detection timer
+   */
+  private resetSilenceTimer(): void {
+    this.clearSilenceTimer();
+    
+    this.silenceTimer = setTimeout(() => {
+      if (this.currentTranscript.trim() && this.state.isListening) {
+        console.log('🤫 Silence detected - user may be done speaking');
+        this.emit('silenceDetected', this.currentTranscript.trim());
+      }
+    }, this.silenceThreshold);
+  }
+
+  /**
+   * Clear silence timer
+   */
+  private clearSilenceTimer(): void {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+  }
+
+  /**
+   * Internal method to start recognition safely
+   */
+  private startRecognition(): void {
+    if (!this.recognition) return;
+    
+    try {
+      this.recognition.start();
+    } catch (error) {
+      // Already started or other error - try to restart
+      try {
+        this.recognition.stop();
+        setTimeout(() => {
+          try {
+            this.recognition?.start();
+          } catch (e) {
+            console.warn('Could not restart recognition:', e);
+          }
+        }, 100);
+      } catch (e) {
+        console.warn('Recognition control error:', e);
+      }
+    }
+  }
+
+  /**
+   * Start continuous conversation mode (like ChatGPT voice)
+   */
+  async startContinuousMode(): Promise<void> {
+    console.log('🎙️ Starting continuous conversation mode');
+    this.continuousMode = true;
+    this.autoRestartEnabled = true;
+    await this.startListening();
+  }
+
+  /**
+   * Stop continuous conversation mode
+   */
+  stopContinuousMode(): void {
+    console.log('🛑 Stopping continuous conversation mode');
+    this.continuousMode = false;
+    this.autoRestartEnabled = false;
+    this.stopListening();
+  }
+
+  /**
+   * Check if in continuous mode
+   */
+  isContinuousMode(): boolean {
+    return this.continuousMode;
+  }
+
+  /**
+   * Set silence threshold for auto-detection
+   */
+  setSilenceThreshold(ms: number): void {
+    this.silenceThreshold = Math.max(500, Math.min(5000, ms));
+  }
+
+  /**
+   * Load available voices - prefer natural sounding ones (ElevenLabs quality)
    */
   private async loadVoices(): Promise<void> {
     return new Promise((resolve) => {
       const loadVoicesInternal = () => {
         const voices = this.synthesis?.getVoices() || [];
         
-        // Prefer natural-sounding English voices
-        const preferredVoices = voices.filter(voice => 
-          voice.lang.startsWith('en') && 
-          (voice.name.includes('Natural') || 
-           voice.name.includes('Premium') ||
-           voice.name.includes('Enhanced') ||
-           !voice.localService)
-        );
-        
-        this.preferredVoice = preferredVoices[0] || 
-          voices.find(v => v.lang === 'en-US') || 
-          voices[0] || null;
+        // Priority order for natural-sounding voices (like ElevenLabs)
+        const voicePreferences = [
+          // Premium/Neural voices first
+          (v: SpeechSynthesisVoice) => v.name.includes('Neural') && v.lang.startsWith('en'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Natural') && v.lang.startsWith('en'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Premium') && v.lang.startsWith('en'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Enhanced') && v.lang.startsWith('en'),
+          // Google voices (good quality)
+          (v: SpeechSynthesisVoice) => v.name.includes('Google') && v.lang.startsWith('en-US'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Google') && v.lang.startsWith('en'),
+          // Microsoft voices
+          (v: SpeechSynthesisVoice) => v.name.includes('Microsoft') && v.lang.startsWith('en'),
+          // Any remote/cloud voice (usually better quality)
+          (v: SpeechSynthesisVoice) => !v.localService && v.lang.startsWith('en'),
+          // Fallback to any English voice
+          (v: SpeechSynthesisVoice) => v.lang.startsWith('en-US'),
+          (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
+        ];
+
+        // Find best voice
+        for (const preference of voicePreferences) {
+          const voice = voices.find(preference);
+          if (voice) {
+            this.preferredVoice = voice;
+            console.log('🔊 Selected high-quality voice:', voice.name);
+            break;
+          }
+        }
+
+        if (!this.preferredVoice && voices.length > 0) {
+          this.preferredVoice = voices[0];
+          console.log('🔊 Using default voice:', voices[0].name);
+        }
         
         resolve();
       };
@@ -238,36 +405,59 @@ class VoiceAIService {
    * Start listening for speech
    */
   async startListening(): Promise<void> {
+    // Auto-initialize if not done
+    if (!this.isInitialized) {
+      console.log('🔧 Auto-initializing voice service...');
+      const success = await this.initialize();
+      if (!success) {
+        throw new Error('Failed to initialize voice service');
+      }
+    }
+
     if (!this.recognition) {
-      throw new Error('Speech recognition not initialized');
+      throw new Error('Speech recognition not available in this browser');
     }
 
     if (this.state.isListening) {
+      console.log('Already listening');
       return;
     }
 
     // Request microphone access
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!this.mediaStream) {
+        console.log('🎤 Requesting microphone access...');
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          }
+        });
+        console.log('✅ Microphone access granted');
+      }
+      
+      // Resume audio context if suspended
+      if (this.audioContext?.state === 'suspended') {
+        await this.audioContext.resume();
+      }
       
       // Connect to audio analyser for visualization
-      if (this.audioContext && this.analyser) {
+      if (this.audioContext && this.analyser && this.mediaStream) {
         const source = this.audioContext.createMediaStreamSource(this.mediaStream);
         source.connect(this.analyser);
         this.startAudioLevelMonitoring();
       }
     } catch (error) {
-      throw new Error('Microphone access denied');
+      console.error('Microphone access error:', error);
+      this.updateState({ error: 'Microphone access denied' });
+      throw new Error('Microphone access denied. Please allow microphone access in your browser settings.');
     }
 
     this.currentTranscript = '';
-    this.updateState({ isListening: true, error: null });
+    this.updateState({ isListening: true, error: null, mode: 'listening' });
     
-    try {
-      this.recognition.start();
-    } catch (error) {
-      // Already started, ignore
-    }
+    this.startRecognition();
   }
 
   /**
@@ -276,26 +466,57 @@ class VoiceAIService {
   stopListening(): string {
     const transcript = this.currentTranscript.trim();
     
+    this.autoRestartEnabled = false;
+    this.clearSilenceTimer();
+    
     if (this.recognition) {
-      this.recognition.stop();
+      try {
+        this.recognition.stop();
+      } catch (e) {
+        // Ignore
+      }
     }
     
-    this.updateState({ isListening: false });
+    this.updateState({ isListening: false, mode: 'idle' });
     this.stopAudioLevelMonitoring();
-    
-    // Stop media stream
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
     
     return transcript;
   }
 
   /**
-   * Speak text using TTS
+   * Pause listening temporarily (during AI speaking)
    */
-  async speak(text: string, options: { rate?: number; pitch?: number; volume?: number } = {}): Promise<void> {
+  pauseListening(): void {
+    this.autoRestartEnabled = false;
+    if (this.recognition) {
+      try {
+        this.recognition.stop();
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
+
+  /**
+   * Resume listening after pause
+   */
+  resumeListening(): void {
+    if (this.continuousMode) {
+      this.autoRestartEnabled = true;
+      this.startRecognition();
+    }
+  }
+
+  /**
+   * Speak text using TTS with ElevenLabs-style natural speech
+   */
+  async speak(text: string, options: { 
+    rate?: number; 
+    pitch?: number; 
+    volume?: number;
+    onStart?: () => void;
+    onEnd?: () => void;
+  } = {}): Promise<void> {
     if (!this.synthesis) {
       console.warn('Speech synthesis not available');
       return;
@@ -304,34 +525,107 @@ class VoiceAIService {
     // Cancel any ongoing speech
     this.synthesis.cancel();
     
-    return new Promise((resolve, reject) => {
+    // Pause listening while speaking (like ChatGPT)
+    const wasListening = this.state.isListening;
+    if (wasListening) {
+      this.pauseListening();
+    }
+    
+    return new Promise((resolve) => {
       const utterance = new SpeechSynthesisUtterance(text);
       
       utterance.voice = this.preferredVoice;
       utterance.rate = options.rate ?? this.voiceRate;
       utterance.pitch = options.pitch ?? this.voicePitch;
-      utterance.volume = options.volume ?? 1.0;
+      utterance.volume = options.volume ?? this.voiceVolume;
       
       utterance.onstart = () => {
-        this.updateState({ isSpeaking: true });
+        console.log('🔊 Speaking:', text.substring(0, 50) + '...');
+        this.updateState({ isSpeaking: true, mode: 'speaking' });
+        options.onStart?.();
       };
       
       utterance.onend = () => {
-        this.updateState({ isSpeaking: false });
+        console.log('🔊 Finished speaking');
+        this.updateState({ isSpeaking: false, mode: wasListening ? 'listening' : 'idle' });
+        options.onEnd?.();
+        
+        // Resume listening if in continuous mode
+        if (this.continuousMode && wasListening) {
+          setTimeout(() => {
+            if (this.continuousMode) {
+              this.resumeListening();
+            }
+          }, 300);
+        }
+        
         resolve();
       };
       
       utterance.onerror = (event) => {
-        this.updateState({ isSpeaking: false });
-        if (event.error !== 'interrupted') {
-          reject(new Error(`Speech error: ${event.error}`));
-        } else {
-          resolve();
+        console.warn('Speech synthesis error:', event.error);
+        this.updateState({ isSpeaking: false, mode: 'idle' });
+        
+        // Resume listening even on error
+        if (this.continuousMode && wasListening) {
+          this.resumeListening();
         }
+        
+        resolve(); // Resolve instead of reject to not break the flow
       };
       
       this.synthesis!.speak(utterance);
     });
+  }
+
+  /**
+   * Speak with natural pauses between sentences (ElevenLabs-style)
+   */
+  async speakNaturally(text: string, options: {
+    onStart?: () => void;
+    onEnd?: () => void;
+    onSentence?: (sentence: string) => void;
+  } = {}): Promise<void> {
+    // Split into sentences for natural pauses
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    
+    options.onStart?.();
+    this.updateState({ isSpeaking: true, mode: 'speaking' });
+    
+    // Pause listening while speaking
+    const wasListening = this.state.isListening;
+    if (wasListening) {
+      this.pauseListening();
+    }
+    
+    for (let i = 0; i < sentences.length; i++) {
+      const sentence = sentences[i].trim();
+      if (!sentence) continue;
+      
+      options.onSentence?.(sentence);
+      
+      await this.speak(sentence, {
+        rate: 0.92, // Slightly slower for natural feel
+        pitch: 1.0,
+      });
+      
+      // Natural pause between sentences (150-250ms)
+      if (i < sentences.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 180));
+      }
+    }
+    
+    this.updateState({ isSpeaking: false, mode: wasListening ? 'listening' : 'idle' });
+    options.onEnd?.();
+    
+    // Resume listening if continuous mode
+    if (this.continuousMode && wasListening) {
+      setTimeout(() => {
+        if (this.continuousMode) {
+          this.resumeListening();
+        }
+      }, 300);
+    }
   }
 
   /**
@@ -340,7 +634,7 @@ class VoiceAIService {
   stopSpeaking(): void {
     if (this.synthesis) {
       this.synthesis.cancel();
-      this.updateState({ isSpeaking: false });
+      this.updateState({ isSpeaking: false, mode: 'idle' });
     }
   }
 
@@ -356,14 +650,19 @@ class VoiceAIService {
     
     const monitor = () => {
       if (!this.state.isListening || !this.analyser) {
+        this.updateState({ audioLevel: 0 });
         return;
       }
       
       this.analyser.getByteFrequencyData(dataArray);
       
-      // Calculate average level
-      const average = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
-      const normalizedLevel = Math.min(100, (average / 128) * 100);
+      // Calculate RMS for better audio level representation
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i] * dataArray[i];
+      }
+      const rms = Math.sqrt(sum / dataArray.length);
+      const normalizedLevel = Math.min(100, (rms / 128) * 100);
       
       this.updateState({ audioLevel: normalizedLevel });
       
@@ -473,7 +772,7 @@ class VoiceAIService {
   /**
    * Emit event to all subscribers
    */
-  private emit(event: VoiceEventType, data: TranscriptionResult | VoiceState | Error): void {
+  private emit(event: VoiceEventType, data: TranscriptionResult | VoiceState | Error | string): void {
     this.callbacks.forEach(callback => {
       try {
         callback(event, data);
@@ -537,6 +836,13 @@ class VoiceAIService {
   }
 
   /**
+   * Set volume
+   */
+  setVolume(volume: number): void {
+    this.voiceVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  /**
    * Check if voice services are supported
    */
   static isSupported(): {
@@ -552,12 +858,27 @@ class VoiceAIService {
   }
 
   /**
+   * Check if initialized
+   */
+  isReady(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
    * Cleanup resources
    */
   cleanup(): void {
+    this.stopContinuousMode();
     this.stopListening();
     this.stopSpeaking();
     this.closeWebRTC();
+    this.clearSilenceTimer();
+    
+    // Stop media stream
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
     
     if (this.audioContext) {
       this.audioContext.close();

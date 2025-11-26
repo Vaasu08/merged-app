@@ -73,6 +73,12 @@ class VoiceAIService {
   private maxNetworkRetries: number = 3;
   private networkRetryDelay: number = 1000; // ms
   
+  // Rapid restart detection
+  private lastStartTime: number = 0;
+  private rapidRestartCount: number = 0;
+  private maxRapidRestarts: number = 5;
+  private rapidRestartWindow: number = 2000; // ms - if 5 restarts in 2 seconds, something's wrong
+  
   // WebRTC
   private peerConnection: RTCPeerConnection | null = null;
   private dataChannel: RTCDataChannel | null = null;
@@ -167,6 +173,34 @@ class VoiceAIService {
 
     // @ts-expect-error - onstart exists on SpeechRecognition
     this.recognition.onstart = () => {
+      const now = Date.now();
+      
+      // Check for rapid restart pattern (indicates a problem)
+      if (now - this.lastStartTime < this.rapidRestartWindow) {
+        this.rapidRestartCount++;
+        if (this.rapidRestartCount >= this.maxRapidRestarts) {
+          console.warn('⚠️ Rapid restart loop detected, stopping continuous mode');
+          this.autoRestartEnabled = false;
+          this.continuousMode = false;
+          this.updateState({ 
+            isListening: false, 
+            mode: 'idle',
+            error: 'Speech recognition keeps restarting. Please try again.'
+          });
+          this.emit('error', new Error('Speech recognition unstable - please try again'));
+          try {
+            this.recognition?.stop();
+          } catch (e) {
+            // Ignore
+          }
+          return;
+        }
+      } else {
+        // Reset if enough time has passed
+        this.rapidRestartCount = 0;
+      }
+      this.lastStartTime = now;
+      
       console.log('🎤 Speech recognition started');
       this.networkRetryCount = 0; // Reset retry counter on successful start
       this.updateState({ isListening: true, error: null, mode: 'listening' });
@@ -178,12 +212,28 @@ class VoiceAIService {
       
       // Auto-restart if in continuous mode and not speaking
       if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
-        console.log('🔄 Auto-restarting recognition...');
-        setTimeout(() => {
-          if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
-            this.startRecognition();
-          }
-        }, 100);
+        // Add increasing delay to prevent rapid restart loops
+        const timeSinceStart = Date.now() - this.lastStartTime;
+        const minSessionTime = 500; // Require at least 500ms of listening
+        
+        if (timeSinceStart < minSessionTime) {
+          // Session ended too quickly - something might be wrong
+          const delay = Math.min(1000 + (this.rapidRestartCount * 500), 3000);
+          console.log(`🔄 Quick session end, waiting ${delay}ms before restart...`);
+          setTimeout(() => {
+            if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
+              this.startRecognition();
+            }
+          }, delay);
+        } else {
+          // Normal restart
+          console.log('🔄 Auto-restarting recognition...');
+          setTimeout(() => {
+            if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
+              this.startRecognition();
+            }
+          }, 100);
+        }
       } else {
         this.updateState({ 
           isListening: false, 
@@ -357,6 +407,8 @@ class VoiceAIService {
     console.log('🎙️ Starting continuous conversation mode');
     this.continuousMode = true;
     this.autoRestartEnabled = true;
+    this.rapidRestartCount = 0; // Reset rapid restart counter
+    this.lastStartTime = 0;
     await this.startListening();
   }
 

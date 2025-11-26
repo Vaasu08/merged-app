@@ -46,13 +46,17 @@ export interface AnswerEvaluation {
   completeness: number; // 0-100
   technicalAccuracy: number; // 0-100
   communicationSkill: number; // 0-100
+  depth: number; // 0-100 - how deep the understanding is
   overallScore: number; // 0-100
+  confidence: 'low' | 'medium' | 'high'; // AI's confidence in evaluation
   needsFollowUp: boolean;
   followUpReason?: string;
   missingConcepts?: string[];
   feedback: string;
   keyPointsCovered: string[];
   suggestedImprovement?: string;
+  strongPoints?: string[]; // Specific things done well
+  weakPoints?: string[]; // Specific things to improve
 }
 
 export interface ConversationTurn {
@@ -370,37 +374,117 @@ class AIInterviewService {
         .map(turn => `${turn.role}: ${turn.content}`)
         .join('\n');
 
-      const prompt = `You are an expert technical interviewer evaluating a candidate's response.
+      // Determine scoring rubric based on difficulty
+      const difficultyMultiplier = question.difficulty === 'easy' ? 0.7 : question.difficulty === 'medium' ? 0.85 : 1.0;
+      const minExpectedLength = question.difficulty === 'easy' ? 30 : question.difficulty === 'medium' ? 60 : 100;
+      
+      const prompt = `You are an expert technical interviewer with 15+ years of experience evaluating candidates. Use a rigorous, fair, and consistent scoring rubric.
 
-QUESTION: ${question.question}
-QUESTION TYPE: ${question.type}
-TOPIC: ${question.topic}
-DIFFICULTY: ${question.difficulty}
+QUESTION DETAILS:
+- Question: ${question.question}
+- Type: ${question.type}
+- Topic: ${question.topic}
+- Difficulty: ${question.difficulty}
+- Expected depth: ${question.difficulty === 'easy' ? 'Basic understanding with examples' : question.difficulty === 'medium' ? 'Good understanding with real-world application' : 'Deep understanding with edge cases, trade-offs, and best practices'}
 
-CONVERSATION CONTEXT:
+CONVERSATION HISTORY:
 ${historyContext}
 
-CANDIDATE'S ANSWER: ${answer}
+CANDIDATE'S ANSWER:
+${answer}
 
-Evaluate the answer and respond with ONLY a JSON object (no markdown, no code blocks):
+SCORING RUBRIC (0-100 for each):
+
+1. CLARITY (How well-structured and understandable):
+   - 90-100: Crystal clear, logical flow, perfect structure
+   - 70-89: Clear with minor organizational issues
+   - 50-69: Somewhat clear but disorganized
+   - 0-49: Confusing or unclear
+
+2. COMPLETENESS (Coverage of key concepts):
+   - 90-100: Addresses all aspects thoroughly
+   - 70-89: Covers main points, minor gaps
+   - 50-69: Partial coverage, significant gaps
+   - 0-49: Incomplete or missing key points
+
+3. TECHNICAL ACCURACY (Correctness of information):
+   - 90-100: Fully accurate, no errors
+   - 70-89: Mostly accurate, minor inaccuracies
+   - 50-69: Some correct, some incorrect
+   - 0-49: Significant errors or misconceptions
+
+4. COMMUNICATION SKILL (Articulation and professionalism):
+   - 90-100: Excellent communication, professional
+   - 70-89: Good communication, minor issues
+   - 50-69: Adequate but could be better
+   - 0-49: Poor communication
+
+5. DEPTH (Level of understanding demonstrated):
+   - 90-100: Deep understanding with nuances, trade-offs, best practices
+   - 70-89: Good understanding with examples
+   - 50-69: Surface-level understanding
+   - 0-49: Minimal or superficial understanding
+
+IMPORTANT GUIDELINES:
+- Be fair but rigorous - this is a real interview
+- Consider answer length: minimum ${minExpectedLength} words expected for ${question.difficulty} question
+- Short answers (<30 words) rarely deserve >60 score unless exceptionally concise and complete
+- Reward practical examples, real-world experience, and critical thinking
+- Penalize vague statements, lack of specifics, or incorrect information
+- For ${question.difficulty} difficulty, adjust expectations accordingly
+
+Respond with ONLY valid JSON (no markdown, no code blocks, no extra text):
 {
-  "clarity": <0-100>,
-  "completeness": <0-100>,
-  "technicalAccuracy": <0-100>,
-  "communicationSkill": <0-100>,
-  "overallScore": <0-100>,
-  "needsFollowUp": <true if answer is unclear, incomplete, or shows knowledge gaps>,
-  "followUpReason": "<why follow-up is needed, or null>",
-  "missingConcepts": [<list of concepts the candidate should have mentioned>],
-  "feedback": "<constructive feedback for the candidate>",
-  "keyPointsCovered": [<list of good points the candidate made>],
-  "suggestedImprovement": "<how the answer could be better>"
+  "clarity": <0-100 number>,
+  "completeness": <0-100 number>,
+  "technicalAccuracy": <0-100 number>,
+  "communicationSkill": <0-100 number>,
+  "depth": <0-100 number>,
+  "overallScore": <0-100 weighted average: (clarity*0.15 + completeness*0.25 + technicalAccuracy*0.35 + communicationSkill*0.10 + depth*0.15)>,
+  "confidence": "<low|medium|high - your confidence in this evaluation>",
+  "needsFollowUp": <true if unclear, incomplete, wrong, or shows knowledge gaps that need probing>,
+  "followUpReason": "<specific reason for follow-up, or null if not needed>",
+  "missingConcepts": [<specific concepts/topics that should have been mentioned>],
+  "feedback": "<2-3 sentences of constructive, specific feedback>",
+  "keyPointsCovered": [<specific good points the candidate made>],
+  "strongPoints": [<specific things done well>],
+  "weakPoints": [<specific things to improve>],
+  "suggestedImprovement": "<actionable advice for improvement>"
 }`;
 
       const result = await this.model.generateContent(prompt);
-      const text = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
+      let text = result.response.text();
       
-      const evaluation = JSON.parse(text) as AnswerEvaluation;
+      // Clean up the response - remove markdown code blocks and extra whitespace
+      text = text.replace(/```json\n?|\n?```/g, '').trim();
+      text = text.replace(/```\n?|\n?```/g, '').trim();
+      
+      // Try to extract JSON if there's extra text
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        text = jsonMatch[0];
+      }
+      
+      let evaluation: AnswerEvaluation;
+      try {
+        evaluation = JSON.parse(text) as AnswerEvaluation;
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Text:', text);
+        throw parseError;
+      }
+      
+      // Validate and fix the evaluation
+      evaluation.clarity = Math.min(100, Math.max(0, evaluation.clarity || 50));
+      evaluation.completeness = Math.min(100, Math.max(0, evaluation.completeness || 50));
+      evaluation.technicalAccuracy = Math.min(100, Math.max(0, evaluation.technicalAccuracy || 50));
+      evaluation.communicationSkill = Math.min(100, Math.max(0, evaluation.communicationSkill || 50));
+      evaluation.depth = Math.min(100, Math.max(0, evaluation.depth || 50));
+      evaluation.overallScore = Math.min(100, Math.max(0, evaluation.overallScore || 50));
+      evaluation.confidence = evaluation.confidence || 'medium';
+      evaluation.keyPointsCovered = evaluation.keyPointsCovered || [];
+      evaluation.strongPoints = evaluation.strongPoints || [];
+      evaluation.weakPoints = evaluation.weakPoints || [];
+      
       return evaluation;
     } catch (error) {
       console.error('Evaluation failed:', error);
@@ -595,7 +679,7 @@ Provide a final assessment as JSON (no markdown):
   "improvements": [<3-5 areas to improve>],
   "detailedReview": "<2-3 paragraph detailed review>",
   "recommendation": "<strong-hire|hire|maybe|no-hire>"
-}`;
+}`
 
       const result = await this.model.generateContent(prompt);
       const text = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
@@ -634,22 +718,51 @@ Provide a final assessment as JSON (no markdown):
    */
   private getFallbackEvaluation(answer: string): AnswerEvaluation {
     const wordCount = answer.split(/\s+/).length;
-    const hasStructure = answer.includes('.') && answer.length > 50;
+    const sentenceCount = (answer.match(/[.!?]+/g) || []).length;
+    const hasStructure = sentenceCount >= 2 && answer.length > 50;
+    const hasTechnicalTerms = /\b(function|class|method|API|database|algorithm|server|client|architecture|design|pattern|framework)\b/i.test(answer);
+    const hasExamples = /\b(example|instance|such as|like|for example)\b/i.test(answer);
     
-    const baseScore = Math.min(70, 40 + wordCount * 0.5);
+    // More sophisticated scoring
+    const lengthScore = Math.min(100, (wordCount / 100) * 100);
+    const structureBonus = hasStructure ? 20 : 0;
+    const technicalBonus = hasTechnicalTerms ? 15 : 0;
+    const exampleBonus = hasExamples ? 10 : 0;
+    
+    const clarity = Math.min(100, (hasStructure ? 60 : 40) + (sentenceCount * 5));
+    const completeness = Math.min(100, (wordCount / 80) * 100);
+    const technicalAccuracy = hasTechnicalTerms ? 70 : 50;
+    const communicationSkill = Math.min(100, (hasStructure ? 65 : 45) + (sentenceCount * 3));
+    const depth = Math.min(100, 40 + technicalBonus + exampleBonus);
+    
+    const overallScore = Math.min(100, 
+      (clarity * 0.15) + 
+      (completeness * 0.25) + 
+      (technicalAccuracy * 0.35) + 
+      (communicationSkill * 0.10) + 
+      (depth * 0.15)
+    );
     
     return {
-      clarity: hasStructure ? 70 : 50,
-      completeness: Math.min(80, wordCount * 2),
-      technicalAccuracy: 60,
-      communicationSkill: hasStructure ? 70 : 50,
-      overallScore: baseScore,
-      needsFollowUp: wordCount < 30,
-      followUpReason: wordCount < 30 ? 'Answer was brief' : undefined,
+      clarity,
+      completeness,
+      technicalAccuracy,
+      communicationSkill,
+      depth,
+      overallScore: Math.round(overallScore),
+      confidence: 'low',
+      needsFollowUp: wordCount < 40 || !hasTechnicalTerms,
+      followUpReason: wordCount < 40 ? 'Answer needs more detail and depth' : !hasTechnicalTerms ? 'Missing technical specifics' : undefined,
       missingConcepts: [],
-      feedback: 'Response recorded. Consider providing more detailed explanations.',
+      feedback: `Your answer is ${wordCount < 40 ? 'brief' : 'recorded'}. ${!hasTechnicalTerms ? 'Include more technical details. ' : ''}${!hasExamples ? 'Add specific examples to strengthen your response.' : ''}`,
       keyPointsCovered: [],
-      suggestedImprovement: 'Try to structure your answer with specific examples and technical details.',
+      strongPoints: hasStructure ? ['Well-structured response'] : [],
+      weakPoints: [
+        ...(wordCount < 40 ? ['Answer is too brief'] : []),
+        ...(!hasTechnicalTerms ? ['Lacks technical depth'] : []),
+        ...(!hasExamples ? ['No concrete examples provided'] : [])
+      ],
+      suggestedImprovement: 'Expand your answer with: 1) More technical details, 2) Specific examples from your experience, 3) Better structure with clear points.',
     };
   }
 }

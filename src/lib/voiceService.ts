@@ -72,6 +72,8 @@ class VoiceAIService {
   private networkRetryCount: number = 0;
   private maxNetworkRetries: number = 3;
   private networkRetryDelay: number = 1000; // ms
+  private totalNetworkErrors: number = 0; // Track total errors in session
+  private maxTotalNetworkErrors: number = 10; // Stop after 10 total network errors
   
   // Rapid restart detection
   private lastStartTime: number = 0;
@@ -103,6 +105,12 @@ class VoiceAIService {
    * Initialize voice services
    */
   async initialize(config: VoiceConfig = {}): Promise<boolean> {
+    // Prevent double initialization
+    if (this.isInitialized) {
+      console.log('⚠️ Voice service already initialized, skipping');
+      return true;
+    }
+    
     try {
       // Check browser support first
       const support = VoiceAIService.isSupported();
@@ -206,7 +214,8 @@ class VoiceAIService {
       this.lastStartTime = now;
       
       console.log('🎤 Speech recognition started');
-      this.networkRetryCount = 0; // Reset network retry counter on successful start
+      // Don't reset networkRetryCount here - only reset on successful speech recognition
+      // This allows the retry counter to properly accumulate across restart attempts
       this.updateState({ isListening: true, error: null, mode: 'listening' });
       this.emit('speechStart', this.state);
     };
@@ -255,6 +264,10 @@ class VoiceAIService {
 
     // @ts-expect-error - onresult exists on SpeechRecognition
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // Reset network retry counters - we're receiving speech data, so connection is working
+      this.networkRetryCount = 0;
+      this.totalNetworkErrors = 0;
+      
       let interimTranscript = '';
       let finalTranscript = '';
 
@@ -306,6 +319,7 @@ class VoiceAIService {
         case 'no-speech':
           // Not an error, just no speech detected - restart if continuous
           this.networkRetryCount = 0; // Reset on successful connection
+          this.totalNetworkErrors = 0; // Connection is working
           this.rapidRestartCount = 0; // Also reset rapid restart since connection is working
           if (this.continuousMode && this.autoRestartEnabled) {
             setTimeout(() => this.startRecognition(), 300);
@@ -324,10 +338,28 @@ class VoiceAIService {
           break;
         case 'network':
           // Network errors are common with cloud speech recognition
-          // Try to recover automatically
+          // Track total errors to prevent infinite loops
+          this.totalNetworkErrors++;
+          
+          // Check if we've hit the global limit
+          if (this.totalNetworkErrors >= this.maxTotalNetworkErrors) {
+            console.warn('🛑 Too many network errors - speech recognition unavailable');
+            this.networkRetryCount = 0;
+            this.continuousMode = false;
+            this.autoRestartEnabled = false;
+            this.updateState({ 
+              error: 'Speech recognition unavailable. The Web Speech API requires an internet connection to work. Please check your connection.',
+              isListening: false,
+              mode: 'idle'
+            });
+            this.emit('error', new Error('Network error - speech recognition requires internet connection'));
+            return;
+          }
+          
+          // Try to recover automatically (limited retries per attempt)
           if (this.networkRetryCount < this.maxNetworkRetries) {
             this.networkRetryCount++;
-            console.log(`🌐 Network error (attempt ${this.networkRetryCount}/${this.maxNetworkRetries})`);
+            console.log(`🌐 Network error (attempt ${this.networkRetryCount}/${this.maxNetworkRetries}, total: ${this.totalNetworkErrors}/${this.maxTotalNetworkErrors})`);
             // Exponential backoff with longer delays
             const delay = this.networkRetryDelay * Math.pow(2, this.networkRetryCount - 1);
             console.log(`🔄 Retrying in ${delay}ms...`);
@@ -344,7 +376,7 @@ class VoiceAIService {
             this.continuousMode = false;
             this.autoRestartEnabled = false;
             this.updateState({ 
-              error: 'Speech recognition unavailable due to network issues. Please check your internet connection and try again.',
+              error: 'Speech recognition unavailable. The Web Speech API requires an internet connection. Try again when online.',
               isListening: false,
               mode: 'idle'
             });
@@ -434,10 +466,18 @@ class VoiceAIService {
    * Start continuous conversation mode (like ChatGPT voice)
    */
   async startContinuousMode(): Promise<void> {
+    // Stop any existing recognition first to prevent duplicates
+    if (this.state.isListening) {
+      console.log('⚠️ Already listening, stopping first...');
+      this.stopListening();
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
     console.log('🎙️ Starting continuous conversation mode');
     this.continuousMode = true;
     this.autoRestartEnabled = true;
     this.rapidRestartCount = 0; // Reset rapid restart counter
+    this.networkRetryCount = 0; // Reset network retry counter for fresh start
     this.lastStartTime = 0;
     await this.startListening();
   }
@@ -541,6 +581,17 @@ class VoiceAIService {
     if (this.state.isListening) {
       console.log('Already listening');
       return;
+    }
+
+    // Check network connectivity first (speech recognition requires internet)
+    if (!navigator.onLine) {
+      console.warn('⚠️ No internet connection detected');
+      this.updateState({ 
+        error: 'No internet connection. Speech recognition requires an internet connection.',
+        isListening: false,
+        mode: 'idle'
+      });
+      throw new Error('No internet connection. Speech recognition requires an internet connection to work.');
     }
 
     // Request microphone access

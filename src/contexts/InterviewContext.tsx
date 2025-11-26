@@ -267,11 +267,16 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     role: AIInterviewRole,
     difficulty: 'beginner' | 'intermediate' | 'senior' = 'intermediate'
   ) => {
+    console.log('🎯 startAIInterview called with role:', role, 'difficulty:', difficulty);
     try {
       setAIInterview(prev => ({ ...prev, isProcessing: true }));
       
+      console.log('🎯 Calling aiInterviewService.startSession...');
       const session = await aiInterviewService.startSession(role, difficulty);
+      console.log('🎯 Session created:', session);
+      
       const firstQuestion = session.questions[0];
+      console.log('🎯 First question:', firstQuestion);
       
       // Add interviewer's first question to conversation
       aiInterviewService.addConversationTurn('interviewer', firstQuestion.question, firstQuestion.id);
@@ -290,13 +295,15 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
           questionId: firstQuestion.id,
         }],
       });
+      console.log('🎯 aiInterview state updated');
       
       // Also set in main questions array for compatibility
       setQuestions(session.questions.map(q => q.question));
       setCurrentQuestionIndex(0);
     } catch (error) {
-      console.error('Failed to start AI interview:', error);
+      console.error('🎯 Failed to start AI interview:', error);
       setAIInterview(prev => ({ ...prev, isProcessing: false }));
+      throw error; // Re-throw so the component can handle it
     }
   };
 
@@ -305,22 +312,30 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     evaluation: AnswerEvaluation;
     isFollowUp: boolean;
   }> => {
+    console.log('📝 submitAIAnswer called with:', answer);
+    console.log('📝 aiInterview.currentQuestion:', aiInterview.currentQuestion);
+    
     if (!aiInterview.currentQuestion) {
+      console.error('❌ No current question!');
       throw new Error('No current question');
     }
 
+    console.log('✅ Setting isProcessing to true');
     setAIInterview(prev => ({ ...prev, isProcessing: true }));
 
     try {
       // Add candidate's answer to conversation
+      console.log('📝 Adding conversation turn...');
       aiInterviewService.addConversationTurn('candidate', answer, aiInterview.currentQuestion.id);
       
       // Evaluate the answer
+      console.log('📝 Evaluating answer...');
       const evaluation = await aiInterviewService.evaluateAnswer(
         aiInterview.currentQuestion,
         answer,
         aiInterview.conversationHistory
       );
+      console.log('📝 Evaluation result:', evaluation);
       
       // Store evaluation
       aiInterviewService.addConversationTurn(

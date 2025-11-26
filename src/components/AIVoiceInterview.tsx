@@ -106,45 +106,131 @@ const AudioVisualizer: React.FC<{ level: number; isActive: boolean; isContinuous
 
 // Evaluation display component
 const EvaluationDisplay: React.FC<{ evaluation: AnswerEvaluation }> = ({ evaluation }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600 dark:text-green-400";
+    if (score >= 60) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
+  };
+
+  const getScoreBadge = (score: number) => {
+    if (score >= 90) return { label: "Excellent", variant: "default" as const };
+    if (score >= 80) return { label: "Very Good", variant: "default" as const };
+    if (score >= 70) return { label: "Good", variant: "secondary" as const };
+    if (score >= 60) return { label: "Fair", variant: "secondary" as const };
+    return { label: "Needs Work", variant: "destructive" as const };
+  };
+
+  const scoreBadge = getScoreBadge(evaluation.overallScore);
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30 rounded-lg p-5 space-y-4 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Answer Quality</span>
-        <Badge variant={evaluation.overallScore >= 70 ? "default" : "secondary"}>
-          {evaluation.overallScore}/100
-        </Badge>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">Answer Quality</span>
+          {evaluation.confidence && (
+            <span className="text-xs text-muted-foreground">
+              (AI confidence: {evaluation.confidence})
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-2xl font-bold ${getScoreColor(evaluation.overallScore)}`}>
+            {evaluation.overallScore}
+          </span>
+          <span className="text-sm text-muted-foreground">/100</span>
+          <Badge variant={scoreBadge.variant}>{scoreBadge.label}</Badge>
+        </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <span className="text-muted-foreground">Clarity</span>
-          <Progress value={evaluation.clarity} className="h-1.5 mt-1" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Clarity</span>
+            <span className={`font-medium ${getScoreColor(evaluation.clarity)}`}>
+              {evaluation.clarity}
+            </span>
+          </div>
+          <Progress value={evaluation.clarity} className="h-2" />
         </div>
-        <div>
-          <span className="text-muted-foreground">Technical</span>
-          <Progress value={evaluation.technicalAccuracy} className="h-1.5 mt-1" />
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Technical</span>
+            <span className={`font-medium ${getScoreColor(evaluation.technicalAccuracy)}`}>
+              {evaluation.technicalAccuracy}
+            </span>
+          </div>
+          <Progress value={evaluation.technicalAccuracy} className="h-2" />
         </div>
-        <div>
-          <span className="text-muted-foreground">Completeness</span>
-          <Progress value={evaluation.completeness} className="h-1.5 mt-1" />
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Complete</span>
+            <span className={`font-medium ${getScoreColor(evaluation.completeness)}`}>
+              {evaluation.completeness}
+            </span>
+          </div>
+          <Progress value={evaluation.completeness} className="h-2" />
         </div>
-        <div>
-          <span className="text-muted-foreground">Communication</span>
-          <Progress value={evaluation.communicationSkill} className="h-1.5 mt-1" />
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Comm.</span>
+            <span className={`font-medium ${getScoreColor(evaluation.communicationSkill)}`}>
+              {evaluation.communicationSkill}
+            </span>
+          </div>
+          <Progress value={evaluation.communicationSkill} className="h-2" />
         </div>
+        {evaluation.depth !== undefined && (
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Depth</span>
+              <span className={`font-medium ${getScoreColor(evaluation.depth)}`}>
+                {evaluation.depth}
+              </span>
+            </div>
+            <Progress value={evaluation.depth} className="h-2" />
+          </div>
+        )}
       </div>
+      
+      {evaluation.strongPoints && evaluation.strongPoints.length > 0 && (
+        <div className="text-xs space-y-1">
+          <span className="text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Strong Points:
+          </span>
+          <ul className="ml-4 space-y-0.5 text-muted-foreground">
+            {evaluation.strongPoints.map((point, i) => (
+              <li key={i}>• {point}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      
+      {evaluation.weakPoints && evaluation.weakPoints.length > 0 && (
+        <div className="text-xs space-y-1">
+          <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Areas to Improve:
+          </span>
+          <ul className="ml-4 space-y-0.5 text-muted-foreground">
+            {evaluation.weakPoints.map((point, i) => (
+              <li key={i}>• {point}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       
       {evaluation.needsFollowUp && (
-        <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
+        <div className="flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded p-2 text-amber-700 dark:text-amber-300">
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-          <span>{evaluation.followUpReason || "A follow-up question will be asked"}</span>
+          <span><strong>Follow-up needed:</strong> {evaluation.followUpReason || "Clarification required"}</span>
         </div>
       )}
       
       {evaluation.keyPointsCovered && evaluation.keyPointsCovered.length > 0 && (
         <div className="text-xs">
-          <span className="text-green-600 dark:text-green-400 font-medium">Good points: </span>
-          {evaluation.keyPointsCovered.slice(0, 2).join(", ")}
+          <span className="text-blue-600 dark:text-blue-400 font-medium">Key points covered: </span>
+          <span className="text-muted-foreground">{evaluation.keyPointsCovered.join(", ")}</span>
         </div>
       )}
     </div>
@@ -272,16 +358,29 @@ const AIVoiceInterview: React.FC = () => {
               }
             } else if (event === 'error') {
               const error = data as Error;
-              // Only show user-facing errors (not network retries)
-              if (error.message && !error.message.includes('max retries')) {
-                // Don't spam user with network errors during retries
-                if (!error.message.toLowerCase().includes('network')) {
-                  toast.error(error.message || 'Voice error');
+              const errorMessage = error.message || 'Voice error';
+              
+              // Handle network/connection errors specifically
+              if (errorMessage.toLowerCase().includes('network') || 
+                  errorMessage.toLowerCase().includes('internet') ||
+                  errorMessage.toLowerCase().includes('connection')) {
+                // Only show this error once, not on every retry
+                if (errorMessage.includes('requires internet') || 
+                    errorMessage.includes('unavailable') ||
+                    errorMessage.includes('max retries')) {
+                  toast.error('Speech recognition requires an internet connection. Please check your connection and try again.', {
+                    duration: 5000,
+                  });
+                  // Disable continuous mode since we can't use voice
+                  setContinuousMode(false);
+                  setIsListening(false);
                 }
-              } else if (error.message?.includes('max retries')) {
-                // Show network error only after all retries failed
-                toast.error('Speech recognition connection lost. Click Start Recording to try again.');
+                // Skip showing retry attempts
+                return;
               }
+              
+              // Show other errors
+              toast.error(errorMessage);
             }
           });
         } else {
@@ -294,8 +393,11 @@ const AIVoiceInterview: React.FC = () => {
     
     return () => {
       unsubscribe?.();
-      voiceService.cleanup();
-      voiceInitialized.current = false;
+      // Don't cleanup voice service - it's a singleton
+      // Just stop listening if active
+      if (voiceState.isListening) {
+        voiceService.stopListening();
+      }
       if (autoSubmitTimeoutRef.current) {
         clearTimeout(autoSubmitTimeoutRef.current);
       }
@@ -369,7 +471,9 @@ const AIVoiceInterview: React.FC = () => {
     if (!selectedRole) return;
     
     try {
+      console.log('🎬 Starting interview with role:', selectedRole, 'difficulty:', selectedDifficulty);
       await startAIInterview(selectedRole, selectedDifficulty);
+      console.log('🎬 startAIInterview completed, aiInterview:', aiInterview);
       setSetupPhase('interview');
       toast.success("Interview started! Good luck!");
       
@@ -379,7 +483,7 @@ const AIVoiceInterview: React.FC = () => {
       }
     } catch (error) {
       toast.error("Failed to start interview");
-      console.error(error);
+      console.error('🎬 Start interview error:', error);
     }
   };
 
@@ -410,7 +514,13 @@ const AIVoiceInterview: React.FC = () => {
 
   // Internal submit handler for auto-submit
   const handleSubmitAnswerInternal = async (answer: string) => {
-    if (!answer.trim() || aiInterview.isProcessing) return;
+    console.log('🔄 handleSubmitAnswerInternal called with:', answer);
+    console.log('🔄 aiInterview.isProcessing:', aiInterview.isProcessing);
+    
+    if (!answer.trim() || aiInterview.isProcessing) {
+      console.log('❌ Blocked - empty answer or processing');
+      return;
+    }
     
     // Stop listening while processing
     if (continuousMode) {
@@ -421,7 +531,9 @@ const AIVoiceInterview: React.FC = () => {
     }
     
     try {
+      console.log('🚀 Calling submitAIAnswer...');
       const result = await submitAIAnswer(answer.trim());
+      console.log('✅ submitAIAnswer result:', result);
       
       setLastEvaluation(result.evaluation);
       setShowEvaluation(true);
@@ -448,8 +560,8 @@ const AIVoiceInterview: React.FC = () => {
         navigate("/interview-feedback");
       }
     } catch (error) {
-      toast.error("Failed to submit answer");
-      console.error(error);
+      console.error('❌ handleSubmitAnswerInternal error:', error);
+      toast.error(`Failed to submit answer: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Resume listening after error
       if (continuousMode) {
@@ -459,11 +571,18 @@ const AIVoiceInterview: React.FC = () => {
   };
 
   const handleSubmitAnswer = async () => {
+    console.log('📤 handleSubmitAnswer called');
+    console.log('📤 currentResponse:', currentResponse);
+    console.log('📤 aiInterview.isProcessing:', aiInterview.isProcessing);
+    console.log('📤 aiInterview.currentQuestion:', aiInterview.currentQuestion);
+    
     if (!currentResponse.trim()) {
       toast.error("Please provide an answer");
+      console.log('❌ No response to submit');
       return;
     }
     
+    console.log('✅ Submitting answer:', currentResponse.trim());
     await handleSubmitAnswerInternal(currentResponse.trim());
   };
 
@@ -662,6 +781,18 @@ const AIVoiceInterview: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Debug Panel - Remove in production */}
+        {import.meta.env.DEV && (
+          <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg text-xs font-mono">
+            <p>🐛 DEBUG:</p>
+            <p>currentQuestion: {aiInterview.currentQuestion ? 'EXISTS' : 'NULL'}</p>
+            <p>isProcessing: {String(aiInterview.isProcessing)}</p>
+            <p>currentResponse length: {currentResponse.length}</p>
+            <p>isListening: {String(isListening)}</p>
+            <p>continuousMode: {String(continuousMode)}</p>
+          </div>
+        )}
+        
         <div className="mb-4">
           <BackButton to="/interview-home" label="Back to Interview Home" />
         </div>
@@ -780,31 +911,29 @@ const AIVoiceInterview: React.FC = () => {
                 
                 {/* Response Area */}
                 <div className="space-y-4">
-                  {interviewMode === 'text' ? (
-                    <Textarea
-                      value={currentResponse}
-                      onChange={(e) => setCurrentResponse(e.target.value)}
-                      placeholder="Type your response here..."
-                      className="min-h-32"
-                    />
-                  ) : (
+                  {/* Always show text area for manual input */}
+                  <Textarea
+                    value={currentResponse}
+                    onChange={(e) => setCurrentResponse(e.target.value)}
+                    placeholder={interviewMode === 'text' 
+                      ? "Type your response here..." 
+                      : isListening 
+                        ? "Listening... or type manually"
+                        : "Click 'Start Recording' to speak, or type your answer here"
+                    }
+                    className="min-h-32"
+                    disabled={aiInterview.isProcessing}
+                  />
+                  
+                  {/* Voice controls (only in voice mode) */}
+                  {interviewMode !== 'text' && (
                     <>
-                      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 min-h-32 relative">
-                        {continuousMode && isListening && (
-                          <div className="absolute top-2 right-2">
-                            <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full">
-                              <Radio className="h-3 w-3 animate-pulse" />
-                              Continuous Mode
-                            </span>
-                          </div>
-                        )}
-                        <p className="text-gray-800 dark:text-gray-200">
-                          {currentResponse || (isListening 
-                            ? "Listening... Speak your answer (stops automatically after silence)" 
-                            : "Click 'Start Recording' and speak your answer..."
-                          )}
-                        </p>
-                      </div>
+                      {continuousMode && isListening && (
+                        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                          <Radio className="h-4 w-4 animate-pulse" />
+                          <span>Continuous Mode Active - stops after 2.5s of silence</span>
+                        </div>
+                      )}
                       
                       {/* Voice Controls */}
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

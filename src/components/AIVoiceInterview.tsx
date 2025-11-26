@@ -272,7 +272,16 @@ const AIVoiceInterview: React.FC = () => {
               }
             } else if (event === 'error') {
               const error = data as Error;
-              toast.error(error.message || 'Voice error');
+              // Only show user-facing errors (not network retries)
+              if (error.message && !error.message.includes('max retries')) {
+                // Don't spam user with network errors during retries
+                if (!error.message.toLowerCase().includes('network')) {
+                  toast.error(error.message || 'Voice error');
+                }
+              } else if (error.message?.includes('max retries')) {
+                // Show network error only after all retries failed
+                toast.error('Speech recognition connection lost. Click Start Recording to try again.');
+              }
             }
           });
         } else {

@@ -175,40 +175,51 @@ class VoiceAIService {
     this.recognition.onstart = () => {
       const now = Date.now();
       
-      // Check for rapid restart pattern (indicates a problem)
-      if (now - this.lastStartTime < this.rapidRestartWindow) {
-        this.rapidRestartCount++;
-        if (this.rapidRestartCount >= this.maxRapidRestarts) {
-          console.warn('⚠️ Rapid restart loop detected, stopping continuous mode');
-          this.autoRestartEnabled = false;
-          this.continuousMode = false;
-          this.updateState({ 
-            isListening: false, 
-            mode: 'idle',
-            error: 'Speech recognition keeps restarting. Please try again.'
-          });
-          this.emit('error', new Error('Speech recognition unstable - please try again'));
-          try {
-            this.recognition?.stop();
-          } catch (e) {
-            // Ignore
+      // Only count rapid restarts if NOT during a network retry sequence
+      // Network retries are expected and should not trigger loop detection
+      if (this.networkRetryCount === 0) {
+        // Check for rapid restart pattern (indicates a problem)
+        if (now - this.lastStartTime < this.rapidRestartWindow) {
+          this.rapidRestartCount++;
+          if (this.rapidRestartCount >= this.maxRapidRestarts) {
+            console.warn('⚠️ Rapid restart loop detected, stopping continuous mode');
+            this.autoRestartEnabled = false;
+            this.continuousMode = false;
+            this.updateState({ 
+              isListening: false, 
+              mode: 'idle',
+              error: 'Speech recognition keeps restarting. Please try again.'
+            });
+            this.emit('error', new Error('Speech recognition unstable - please try again'));
+            try {
+              this.recognition?.stop();
+            } catch (e) {
+              // Ignore
+            }
+            return;
           }
-          return;
+        } else {
+          // Reset if enough time has passed
+          this.rapidRestartCount = 0;
         }
-      } else {
-        // Reset if enough time has passed
-        this.rapidRestartCount = 0;
       }
       this.lastStartTime = now;
       
       console.log('🎤 Speech recognition started');
-      this.networkRetryCount = 0; // Reset retry counter on successful start
+      this.networkRetryCount = 0; // Reset network retry counter on successful start
       this.updateState({ isListening: true, error: null, mode: 'listening' });
       this.emit('speechStart', this.state);
     };
 
     this.recognition.onend = () => {
       console.log('🎤 Speech recognition ended');
+      
+      // Don't auto-restart from onend if we're handling a network error
+      // The network error handler will manage its own retry
+      if (this.networkRetryCount > 0) {
+        console.log('🔄 Network retry in progress, skipping onend restart');
+        return;
+      }
       
       // Auto-restart if in continuous mode and not speaking
       if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
@@ -226,13 +237,12 @@ class VoiceAIService {
             }
           }, delay);
         } else {
-          // Normal restart
-          console.log('🔄 Auto-restarting recognition...');
+          // Normal restart with small delay
           setTimeout(() => {
             if (this.continuousMode && this.autoRestartEnabled && !this.state.isSpeaking) {
               this.startRecognition();
             }
-          }, 100);
+          }, 200);
         }
       } else {
         this.updateState({ 
@@ -296,55 +306,75 @@ class VoiceAIService {
         case 'no-speech':
           // Not an error, just no speech detected - restart if continuous
           this.networkRetryCount = 0; // Reset on successful connection
+          this.rapidRestartCount = 0; // Also reset rapid restart since connection is working
           if (this.continuousMode && this.autoRestartEnabled) {
-            setTimeout(() => this.startRecognition(), 100);
+            setTimeout(() => this.startRecognition(), 300);
           }
           return;
         case 'aborted':
           // Intentionally stopped, ignore
+          this.networkRetryCount = 0;
           return;
         case 'not-allowed':
-          this.updateState({ error: 'Microphone access denied. Please allow microphone access.' });
+          this.networkRetryCount = 0;
+          this.continuousMode = false;
+          this.autoRestartEnabled = false;
+          this.updateState({ error: 'Microphone access denied. Please allow microphone access.', isListening: false, mode: 'idle' });
           this.emit('error', new Error(error));
           break;
         case 'network':
           // Network errors are common with cloud speech recognition
           // Try to recover automatically
-          console.log(`🌐 Network error (attempt ${this.networkRetryCount + 1}/${this.maxNetworkRetries})`);
-          
-          if (this.networkRetryCount < this.maxNetworkRetries && this.continuousMode && this.autoRestartEnabled) {
+          if (this.networkRetryCount < this.maxNetworkRetries) {
             this.networkRetryCount++;
-            // Exponential backoff
+            console.log(`🌐 Network error (attempt ${this.networkRetryCount}/${this.maxNetworkRetries})`);
+            // Exponential backoff with longer delays
             const delay = this.networkRetryDelay * Math.pow(2, this.networkRetryCount - 1);
             console.log(`🔄 Retrying in ${delay}ms...`);
             setTimeout(() => {
-              if (this.continuousMode && this.autoRestartEnabled) {
+              if (this.autoRestartEnabled) {
                 this.startRecognition();
               }
             }, delay);
             return; // Don't emit error yet, we're retrying
-          } else if (this.networkRetryCount >= this.maxNetworkRetries) {
+          } else {
+            // Max retries exceeded - stop trying
+            console.warn('🛑 Network error - max retries exceeded, stopping');
             this.networkRetryCount = 0;
-            this.updateState({ error: 'Network error. Speech recognition unavailable. Please check your connection and try again.' });
-            this.emit('error', new Error('Network error - max retries exceeded'));
+            this.continuousMode = false;
+            this.autoRestartEnabled = false;
+            this.updateState({ 
+              error: 'Speech recognition unavailable due to network issues. Please check your internet connection and try again.',
+              isListening: false,
+              mode: 'idle'
+            });
+            this.emit('error', new Error('Network error - speech recognition unavailable'));
           }
           return;
         case 'audio-capture':
-          this.updateState({ error: 'No microphone detected.' });
+          this.networkRetryCount = 0;
+          this.continuousMode = false;
+          this.autoRestartEnabled = false;
+          this.updateState({ error: 'No microphone detected.', isListening: false, mode: 'idle' });
           this.emit('error', new Error(error));
           break;
         case 'service-not-allowed':
           // Browser doesn't allow speech recognition or quota exceeded
-          this.updateState({ error: 'Speech recognition service not available. Try using Chrome.' });
+          this.networkRetryCount = 0;
+          this.continuousMode = false;
+          this.autoRestartEnabled = false;
+          this.updateState({ error: 'Speech recognition service not available. Try using Chrome.', isListening: false, mode: 'idle' });
           this.emit('error', new Error(error));
           break;
         default:
-          // For unknown errors, try to recover in continuous mode
-          if (this.continuousMode && this.autoRestartEnabled && this.networkRetryCount < this.maxNetworkRetries) {
+          // For unknown errors, try to recover once
+          if (this.networkRetryCount < 1) {
             this.networkRetryCount++;
+            console.log(`⚠️ Unknown error "${error}", retrying once...`);
             setTimeout(() => this.startRecognition(), this.networkRetryDelay);
             return;
           }
+          this.networkRetryCount = 0;
           this.updateState({ error: `Recognition error: ${error}` });
           this.emit('error', new Error(error));
       }

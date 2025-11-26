@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useInterview } from "@/contexts/InterviewContext";
 import { BackButton } from "@/components/BackButton";
+import { Badge } from "@/components/ui/badge";
+import { Brain, Sparkles } from "lucide-react";
 
 const InterviewHome = () => {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState(false);
-  const { setUserName } = useInterview();
+  const { setUserName, setInterviewMode } = useInterview();
   const navigate = useNavigate();
 
   const handleStart = () => {
@@ -20,6 +22,17 @@ const InterviewHome = () => {
     
     setUserName(name);
     navigate("/interview-welcome");
+  };
+
+  const handleStartAI = () => {
+    if (!name.trim()) {
+      setNameError(true);
+      return;
+    }
+    
+    setUserName(name);
+    setInterviewMode("audio");
+    navigate("/interview-session?ai=true");
   };
 
   return (
@@ -71,6 +84,24 @@ const InterviewHome = () => {
             >
               Get Started
             </Button>
+            
+            {/* AI Interview Button */}
+            <div className="relative mt-4">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-lg blur opacity-25 animate-pulse"></div>
+              <Button 
+                onClick={handleStartAI}
+                className="relative w-full bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 text-white gap-2"
+              >
+                <Brain className="h-4 w-4" />
+                Try AI Voice Interview
+                <Badge variant="secondary" className="ml-1 bg-white/20 text-white text-xs">
+                  NEW
+                </Badge>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Dynamic questions • Follow-ups • Real-time feedback
+            </p>
           </div>
         </div>
 
@@ -91,6 +122,42 @@ const InterviewHome = () => {
             <div className="text-blue-600 dark:text-blue-400 text-4xl mb-4">📹</div>
             <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Video Interview</h3>
             <p className="text-gray-600 dark:text-gray-300">Full simulation with video recording and body language analysis.</p>
+          </div>
+        </div>
+        
+        {/* AI Interview Features Section */}
+        <div className="mt-16 bg-gradient-to-r from-purple-900/10 via-pink-900/10 to-blue-900/10 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-blue-900/30 rounded-2xl p-8">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Sparkles className="h-6 w-6 text-purple-500" />
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+              AI Voice Interview Features
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+              <div className="text-3xl mb-2">🎯</div>
+              <h4 className="font-semibold mb-1 text-gray-900 dark:text-white">Role-Specific</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">FSD, ML Engineer, DSA & more</p>
+            </div>
+            
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+              <div className="text-3xl mb-2">🔄</div>
+              <h4 className="font-semibold mb-1 text-gray-900 dark:text-white">Follow-ups</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">AI asks clarifying questions</p>
+            </div>
+            
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+              <div className="text-3xl mb-2">🎤</div>
+              <h4 className="font-semibold mb-1 text-gray-900 dark:text-white">Voice-First</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Speak naturally, get transcribed</p>
+            </div>
+            
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+              <div className="text-3xl mb-2">📊</div>
+              <h4 className="font-semibold mb-1 text-gray-900 dark:text-white">Real-time Eval</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Instant answer feedback</p>
+            </div>
           </div>
         </div>
       </div>

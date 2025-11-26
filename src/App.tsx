@@ -72,13 +72,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Debug logging
-  console.log('🚀 App component rendering...');
-
   // Initialize performance monitoring
   useEffect(() => {
-    console.log('📊 Performance monitoring initialized');
-    
     // Prefetch critical external resources
     resourceHints.preconnect('https://fonts.googleapis.com');
     resourceHints.preconnect('https://fonts.gstatic.com', true);
@@ -102,8 +97,10 @@ const App = () => {
     // Send metrics to analytics after page load
     const timer = setTimeout(() => {
       performanceMonitor.sendToAnalytics();
-      const grade = performanceMonitor.getPerformanceGrade();
-      console.log(`⚡ Performance Grade: ${grade}`);
+      if (import.meta.env.DEV) {
+        const grade = performanceMonitor.getPerformanceGrade();
+        console.log(`⚡ Performance Grade: ${grade}`);
+      }
     }, 10000); // Wait 10 seconds for all metrics to be captured
 
     return () => clearTimeout(timer);

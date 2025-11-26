@@ -2,17 +2,41 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Defer non-critical work
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(() => {
-    // Register service worker
-    if ('serviceWorker' in navigator && import.meta.env.PROD) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // Silent fail - PWA is optional
-      });
-    }
-  });
+// Performance: Mark app initialization start
+if (typeof performance !== 'undefined' && performance.mark) {
+  performance.mark('app-init-start');
 }
+
+// Defer non-critical work using requestIdleCallback
+const deferWork = (callback: () => void) => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(callback, { timeout: 2000 });
+  } else {
+    setTimeout(callback, 100);
+  }
+};
+
+// Register service worker in background
+deferWork(() => {
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Silent fail - PWA is optional
+    });
+  }
+});
+
+// Preload critical chunks after initial render
+deferWork(() => {
+  // Hint browser to preload likely next pages
+  const likelyRoutes = ['/profile', '/resume', '/interview'];
+  likelyRoutes.forEach(route => {
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = route;
+    link.as = 'document';
+    document.head.appendChild(link);
+  });
+});
 
 // Error handling for root mounting
 const rootElement = document.getElementById("root");
@@ -21,8 +45,17 @@ if (!rootElement) {
 }
 
 try {
+  // Clear loading spinner
+  rootElement.innerHTML = '';
+  
   const root = createRoot(rootElement);
   root.render(<App />);
+  
+  // Performance: Mark app initialization complete
+  if (typeof performance !== 'undefined' && performance.mark) {
+    performance.mark('app-init-end');
+    performance.measure('app-init', 'app-init-start', 'app-init-end');
+  }
 } catch (error) {
   console.error("Failed to render app:", error);
   rootElement.innerHTML = `

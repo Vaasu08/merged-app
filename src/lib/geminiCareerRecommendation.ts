@@ -316,12 +316,14 @@ Return ONLY this JSON array (no markdown code blocks, no extra text):
 4. ACTIONABILITY: Include careers they can realistically enter with training (consider education/age)
 5. MODERNITY: Include at least 2 emerging careers (AI/ML, Sustainability, Digital Health, Creator Economy, Web3, etc.)
 6. VARIETY: Mix stable and dynamic, technical and people-focused, creative and analytical
-7. JSON PURITY: Return ONLY the JSON array - zero markdown, zero code blocks, zero extra text
+7. JSON PURITY: Return ONLY the JSON array - no markdown formatting, no triple-backtick code blocks, no extra text before or after
 8. PERSONALIZATION DEPTH: Each career's reasons should feel like you're having a 1-on-1 conversation with them
+9. MATCH SCORE ACCURACY: Ensure match scores reflect actual alignment (88-94% for perfect fits, 78-85% for strong contenders, 68-75% for solid options)
+10. ERROR HANDLING: If any question data is missing or unclear, make reasonable assumptions based on context
 
-═══════════════════════════════════════════════════════════════════
+Generate the 6 career recommendations now.`;
 
-Now analyze deeply and generate the 6 transformative career recommendations:`;
+    return prompt;
   }
 
   private parseRecommendations(text: string): JobRecommendation[] {

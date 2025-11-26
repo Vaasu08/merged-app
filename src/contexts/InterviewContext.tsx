@@ -1,7 +1,28 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { 
+  aiInterviewService, 
+  InterviewRole, 
+  InterviewSession as AISession,
+  InterviewQuestion,
+  AnswerEvaluation,
+  ConversationTurn
+} from "@/lib/aiInterviewService";
 
 export type InterviewMode = "text" | "audio" | "video";
 export type JobField = string;
+
+// AI Interview specific types
+export type AIInterviewRole = InterviewRole;
+
+interface AIInterviewState {
+  isAIMode: boolean;
+  session: AISession | null;
+  currentQuestion: InterviewQuestion | null;
+  lastEvaluation: AnswerEvaluation | null;
+  isProcessing: boolean;
+  followUpCount: number;
+  conversationHistory: ConversationTurn[];
+}
 
 interface InterviewContextType {
   userName: string;
@@ -50,6 +71,13 @@ interface InterviewContextType {
   resetInterview: () => void;
   addCustomJobField: (id: string, label: string) => void;
   customJobFields: Array<{ id: string; label: string; icon: string }>;
+  
+  // AI Interview methods
+  aiInterview: AIInterviewState;
+  startAIInterview: (role: AIInterviewRole, difficulty?: 'beginner' | 'intermediate' | 'senior') => Promise<void>;
+  submitAIAnswer: (answer: string) => Promise<{ nextQuestion: InterviewQuestion | null; evaluation: AnswerEvaluation; isFollowUp: boolean }>;
+  getAIFeedback: () => Promise<void>;
+  endAIInterview: () => void;
 }
 
 const defaultQuestions = {
@@ -162,6 +190,21 @@ const defaultContext: InterviewContextType = {
   resetInterview: () => {},
   addCustomJobField: () => {},
   customJobFields: [],
+  
+  // AI Interview defaults
+  aiInterview: {
+    isAIMode: false,
+    session: null,
+    currentQuestion: null,
+    lastEvaluation: null,
+    isProcessing: false,
+    followUpCount: 0,
+    conversationHistory: [],
+  },
+  startAIInterview: async () => {},
+  submitAIAnswer: async () => ({ nextQuestion: null, evaluation: {} as AnswerEvaluation, isFollowUp: false }),
+  getAIFeedback: async () => {},
+  endAIInterview: () => {},
 };
 
 const InterviewContext = createContext<InterviewContextType>(defaultContext);
@@ -207,6 +250,182 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
     detailedReview: "",
     postureScore: undefined,
   });
+
+  // AI Interview State
+  const [aiInterview, setAIInterview] = useState<AIInterviewState>({
+    isAIMode: false,
+    session: null,
+    currentQuestion: null,
+    lastEvaluation: null,
+    isProcessing: false,
+    followUpCount: 0,
+    conversationHistory: [],
+  });
+
+  // AI Interview Methods
+  const startAIInterview = async (
+    role: AIInterviewRole,
+    difficulty: 'beginner' | 'intermediate' | 'senior' = 'intermediate'
+  ) => {
+    try {
+      setAIInterview(prev => ({ ...prev, isProcessing: true }));
+      
+      const session = await aiInterviewService.startSession(role, difficulty);
+      const firstQuestion = session.questions[0];
+      
+      // Add interviewer's first question to conversation
+      aiInterviewService.addConversationTurn('interviewer', firstQuestion.question, firstQuestion.id);
+      
+      setAIInterview({
+        isAIMode: true,
+        session,
+        currentQuestion: firstQuestion,
+        lastEvaluation: null,
+        isProcessing: false,
+        followUpCount: 0,
+        conversationHistory: [{
+          role: 'interviewer',
+          content: firstQuestion.question,
+          timestamp: Date.now(),
+          questionId: firstQuestion.id,
+        }],
+      });
+      
+      // Also set in main questions array for compatibility
+      setQuestions(session.questions.map(q => q.question));
+      setCurrentQuestionIndex(0);
+    } catch (error) {
+      console.error('Failed to start AI interview:', error);
+      setAIInterview(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const submitAIAnswer = async (answer: string): Promise<{
+    nextQuestion: InterviewQuestion | null;
+    evaluation: AnswerEvaluation;
+    isFollowUp: boolean;
+  }> => {
+    if (!aiInterview.currentQuestion) {
+      throw new Error('No current question');
+    }
+
+    setAIInterview(prev => ({ ...prev, isProcessing: true }));
+
+    try {
+      // Add candidate's answer to conversation
+      aiInterviewService.addConversationTurn('candidate', answer, aiInterview.currentQuestion.id);
+      
+      // Evaluate the answer
+      const evaluation = await aiInterviewService.evaluateAnswer(
+        aiInterview.currentQuestion,
+        answer,
+        aiInterview.conversationHistory
+      );
+      
+      // Store evaluation
+      aiInterviewService.addConversationTurn(
+        'candidate',
+        answer,
+        aiInterview.currentQuestion.id,
+        evaluation
+      );
+      
+      // Get next question (might be follow-up or next in sequence)
+      const nextResult = await aiInterviewService.getNextQuestion(answer, evaluation);
+      
+      // Update conversation history
+      const updatedHistory: ConversationTurn[] = [
+        ...aiInterview.conversationHistory,
+        {
+          role: 'candidate',
+          content: answer,
+          timestamp: Date.now(),
+          questionId: aiInterview.currentQuestion.id,
+          evaluation,
+        },
+      ];
+      
+      if (nextResult) {
+        // Add next question to history
+        updatedHistory.push({
+          role: 'interviewer',
+          content: nextResult.question.question,
+          timestamp: Date.now(),
+          questionId: nextResult.question.id,
+        });
+        
+        aiInterviewService.addConversationTurn('interviewer', nextResult.question.question, nextResult.question.id);
+      }
+      
+      setAIInterview(prev => ({
+        ...prev,
+        currentQuestion: nextResult?.question || null,
+        lastEvaluation: evaluation,
+        isProcessing: false,
+        followUpCount: nextResult?.isFollowUp ? prev.followUpCount + 1 : 0,
+        conversationHistory: updatedHistory,
+      }));
+      
+      // Update main state for compatibility
+      addAnswer(answer);
+      if (nextResult && !nextResult.isFollowUp) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+      
+      return {
+        nextQuestion: nextResult?.question || null,
+        evaluation,
+        isFollowUp: nextResult?.isFollowUp || false,
+      };
+    } catch (error) {
+      console.error('Failed to submit AI answer:', error);
+      setAIInterview(prev => ({ ...prev, isProcessing: false }));
+      throw error;
+    }
+  };
+
+  const getAIFeedback = async () => {
+    try {
+      setAIInterview(prev => ({ ...prev, isProcessing: true }));
+      
+      const aiFeedback = await aiInterviewService.generateFinalFeedback();
+      
+      if (aiFeedback) {
+        setFeedback({
+          strengths: aiFeedback.strengths,
+          improvements: aiFeedback.improvements,
+          overallScore: aiFeedback.overallScore,
+          passed: aiFeedback.recommendation === 'hire' || aiFeedback.recommendation === 'strong-hire',
+          criteria: {
+            technicalKnowledge: aiFeedback.overallScore,
+            communication: aiFeedback.overallScore - 5 + Math.random() * 10,
+            problemSolving: aiFeedback.overallScore - 5 + Math.random() * 10,
+            culturalFit: aiFeedback.overallScore - 5 + Math.random() * 10,
+            experience: aiFeedback.overallScore - 5 + Math.random() * 10,
+          },
+          detailedReview: aiFeedback.detailedReview,
+        });
+      }
+      
+      setAIInterview(prev => ({ ...prev, isProcessing: false }));
+    } catch (error) {
+      console.error('Failed to get AI feedback:', error);
+      setAIInterview(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const endAIInterview = () => {
+    aiInterviewService.endSession();
+    setAIInterview({
+      isAIMode: false,
+      session: null,
+      currentQuestion: null,
+      lastEvaluation: null,
+      isProcessing: false,
+      followUpCount: 0,
+      conversationHistory: [],
+    });
+  };
 
   const handleSetJobField = (field: JobField) => {
     setJobField(field);
@@ -635,6 +854,12 @@ export const InterviewProvider = ({ children }: InterviewProviderProps) => {
         resetInterview,
         addCustomJobField,
         customJobFields,
+        // AI Interview
+        aiInterview,
+        startAIInterview,
+        submitAIAnswer,
+        getAIFeedback,
+        endAIInterview,
       }}
     >
       {children}

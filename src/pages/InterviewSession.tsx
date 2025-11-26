@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useInterview } from "@/contexts/InterviewContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { Mic, MicOff, Video, VideoOff, Send, Volume, Volume2, VolumeX } from "lu
 import { toast } from "sonner";
 import { BackButton } from "@/components/BackButton";
 import facialExpressionDetector, { ExpressionData, PostureData } from "@/lib/facialExpressionDetector";
+import AIVoiceInterview from "@/components/AIVoiceInterview";
 
 // Define TypeScript interfaces for speech recognition
 interface SpeechRecognitionEvent extends Event {
@@ -54,6 +55,19 @@ declare global {
 }
 
 const InterviewSession = () => {
+  const [searchParams] = useSearchParams();
+  const isAIMode = searchParams.get('ai') === 'true';
+  
+  // If AI mode, render the AI Voice Interview component
+  if (isAIMode) {
+    return <AIVoiceInterview />;
+  }
+  
+  return <ClassicInterviewSession />;
+};
+
+// Classic interview session (original implementation)
+const ClassicInterviewSession = () => {
   const { 
     userName, 
     jobField, 

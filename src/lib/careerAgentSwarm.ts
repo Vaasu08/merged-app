@@ -951,19 +951,666 @@ EXAMPLE FORMAT:
   }
 }
 
-// ==================== SWARM ORCHESTRATOR ====================
+// ==================== NEW SPECIALIZED AGENTS ====================
 
-export class CareerAgentSwarm {
+class ResearchAgent {
+  private model;
+  private agentId = 'researcher';
+  private agentName = 'Market Researcher';
+
+  constructor() {
+    this.model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.6,
+        topP: 0.85,
+        maxOutputTokens: 2048,
+      }
+    });
+  }
+
+  async analyzeCompany(companyName: string, targetRole?: string): Promise<{
+    overview: string;
+    culture: string[];
+    pros: string[];
+    cons: string[];
+    interviewTips: string[];
+    salaryRange?: string;
+  }> {
+    const prompt = `You are a career research specialist with access to comprehensive company data. Analyze ${companyName} for a candidate interested in ${targetRole || 'professional roles'}.
+
+Provide detailed insights on:
+1. Company Overview: Business model, products, market position
+2. Culture: Work environment, values, employee sentiment
+3. Pros: Benefits, growth opportunities, reputation
+4. Cons: Common challenges, areas to be aware of
+5. Interview Tips: Specific preparation advice for ${companyName}
+6. Salary Range: Typical compensation for ${targetRole || 'this role'}
+
+Return ONLY valid JSON:
+{
+  "overview": "Brief 2-3 sentence company summary",
+  "culture": ["Culture trait 1", "Culture trait 2", "Culture trait 3"],
+  "pros": ["Pro 1", "Pro 2", "Pro 3"],
+  "cons": ["Con 1", "Con 2"],
+  "interviewTips": ["Tip 1 specific to ${companyName}", "Tip 2", "Tip 3"],
+  "salaryRange": "$XXX,XXX - $XXX,XXX"
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      return {
+        overview: `${companyName} is a growing company in the tech industry.`,
+        culture: ['Collaborative environment', 'Innovation-focused', 'Work-life balance'],
+        pros: ['Growth opportunities', 'Competitive compensation', 'Modern tech stack'],
+        cons: ['Fast-paced environment', 'Limited documentation'],
+        interviewTips: [
+          'Research their products and recent news',
+          'Prepare questions about team structure',
+          'Showcase relevant project experience'
+        ],
+        salaryRange: 'Competitive market rates'
+      };
+    }
+  }
+
+  async analyzeTrends(industry: string, role: string): Promise<{
+    currentTrends: string[];
+    emergingSkills: string[];
+    marketDemand: string;
+    futureOutlook: string;
+    recommendations: string[];
+  }> {
+    const prompt = `You are an industry analyst tracking career trends for November 2025. Analyze the ${industry} industry for ${role} positions.
+
+Provide data-driven insights on:
+1. Current Trends: What's hot right now
+2. Emerging Skills: Skills gaining importance
+3. Market Demand: High/Medium/Low and why
+4. Future Outlook: 12-18 month forecast
+5. Recommendations: Actionable advice for job seekers
+
+Return ONLY valid JSON:
+{
+  "currentTrends": ["Trend 1", "Trend 2", "Trend 3"],
+  "emergingSkills": ["Skill 1", "Skill 2", "Skill 3"],
+  "marketDemand": "High - detailed explanation with data",
+  "futureOutlook": "2-3 sentence forecast",
+  "recommendations": ["Rec 1", "Rec 2", "Rec 3"]
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      return {
+        currentTrends: ['AI/ML integration', 'Remote-first culture', 'Focus on user experience'],
+        emergingSkills: ['Generative AI', 'Cloud architecture', 'Data analysis'],
+        marketDemand: 'High - Tech hiring remains strong with emphasis on AI skills',
+        futureOutlook: 'Continued growth in tech sector with AI-related roles leading demand.',
+        recommendations: [
+          'Build projects showcasing AI/ML capabilities',
+          'Network with professionals in target companies',
+          'Stay updated on latest industry tools'
+        ]
+      };
+    }
+  }
+
+  async generateMessage(researchType: string, data: Record<string, unknown>): Promise<AgentMessage> {
+    return {
+      agentId: this.agentId,
+      agentName: this.agentName,
+      timestamp: new Date(),
+      message: `Research complete: ${researchType}`,
+      actionItems: [
+        'Review company insights before applying',
+        'Tailor your resume to company culture',
+        'Prepare company-specific interview questions'
+      ],
+      data
+    };
+  }
+}
+
+class NetworkingAgent {
+  private model;
+  private agentId = 'networker';
+  private agentName = 'Networking Strategist';
+
+  constructor() {
+    this.model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.8,
+        topP: 0.9,
+        maxOutputTokens: 1536,
+      }
+    });
+  }
+
+  async generateLinkedInMessage(targetRole: string, targetPerson: string, context: string): Promise<{
+    subject: string;
+    message: string;
+    tips: string[];
+  }> {
+    const prompt = `You are a networking expert who has helped thousands build meaningful professional relationships. Create a compelling LinkedIn outreach message.
+
+TARGET CONTEXT:
+- Role: ${targetRole}
+- Person: ${targetPerson}
+- Context: ${context}
+
+BEST PRACTICES:
+- Personalize based on their recent activity or achievements
+- Be concise (150-200 words)
+- Show genuine interest, not just asking for help
+- Include a clear, low-pressure call-to-action
+- Professional but warm tone
+
+Return ONLY valid JSON:
+{
+  "subject": "Brief, engaging subject line",
+  "message": "Full personalized message",
+  "tips": ["Tip 1 for follow-up", "Tip 2 for building relationship", "Tip 3 for next steps"]
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      return {
+        subject: `Interested in ${targetRole} opportunities`,
+        message: `Hi ${targetPerson},\n\nI came across your profile and was impressed by your work in ${targetRole}. ${context}\n\nI'm currently exploring similar opportunities and would love to learn from your experience. Would you be open to a brief 15-minute virtual coffee chat?\n\nBest regards`,
+        tips: [
+          'Comment on their recent posts before reaching out',
+          'Send follow-up after 5-7 days if no response',
+          'Offer value - share relevant articles or insights'
+        ]
+      };
+    }
+  }
+
+  async generateNetworkingPlan(profile: UserProfile): Promise<{
+    weeklyGoals: {
+      newConnections: number;
+      messagesPerWeek: number;
+      eventAttendance: number;
+    };
+    targetGroups: string[];
+    strategies: string[];
+    templates: { situation: string; template: string }[];
+  }> {
+    const prompt = `You are a career networking strategist. Create a personalized networking plan for someone targeting ${profile.targetRole || profile.currentRole} positions.
+
+PROFILE:
+- Current Role: ${profile.currentRole || 'Job Seeker'}
+- Target Role: ${profile.targetRole || 'Career advancement'}
+- Skills: ${profile.skills.slice(0, 5).join(', ')}
+- Location: ${profile.location || 'Remote/Flexible'}
+
+Create a strategic networking plan with:
+1. Weekly Goals: Realistic targets for connections and engagement
+2. Target Groups: LinkedIn groups, communities, events to join
+3. Strategies: Specific tactics for building meaningful connections
+4. Templates: Message templates for different scenarios
+
+Return ONLY valid JSON:
+{
+  "weeklyGoals": {
+    "newConnections": 5,
+    "messagesPerWeek": 8,
+    "eventAttendance": 2
+  },
+  "targetGroups": ["Group 1", "Group 2", "Group 3"],
+  "strategies": ["Strategy 1", "Strategy 2", "Strategy 3"],
+  "templates": [
+    {"situation": "Informational interview request", "template": "Message template"},
+    {"situation": "Following up after event", "template": "Message template"},
+    {"situation": "Asking for referral", "template": "Message template"}
+  ]
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      return {
+        weeklyGoals: {
+          newConnections: 5,
+          messagesPerWeek: 8,
+          eventAttendance: 2
+        },
+        targetGroups: [
+          `${profile.targetRole || 'Tech'} Professionals Network`,
+          'Industry-specific LinkedIn groups',
+          'Local tech meetups and events'
+        ],
+        strategies: [
+          'Engage with content before reaching out',
+          'Offer value in initial messages',
+          'Follow up consistently but not aggressively',
+          'Attend virtual and in-person industry events'
+        ],
+        templates: [
+          {
+            situation: 'Informational interview request',
+            template: 'Hi [Name], I admire your work in [specific area]. I\'m exploring [target role] and would love 15 minutes of your insights. Available for a quick call?'
+          },
+          {
+            situation: 'Following up after event',
+            template: 'Great meeting you at [event]! Enjoyed our discussion about [topic]. Would love to continue the conversation over coffee.'
+          },
+          {
+            situation: 'Asking for referral',
+            template: 'Hi [Name], I noticed [Company] is hiring for [role]. Given my experience in [skills], do you think I\'d be a good fit? I\'d appreciate any insights.'
+          }
+        ]
+      };
+    }
+  }
+
+  async generateMessage(actionType: string, data: Record<string, unknown>): Promise<AgentMessage> {
+    return {
+      agentId: this.agentId,
+      agentName: this.agentName,
+      timestamp: new Date(),
+      message: `Networking guidance ready: ${actionType}`,
+      actionItems: [
+        'Start with low-pressure connections',
+        'Engage authentically with content',
+        'Track all networking activities'
+      ],
+      data
+    };
+  }
+}
+
+class NegotiationAgent {
+  private model;
+  private agentId = 'negotiator';
+  private agentName = 'Salary Negotiator';
+
+  constructor() {
+    this.model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.6,
+        topP: 0.85,
+        maxOutputTokens: 1536,
+      }
+    });
+  }
+
+  async analyzeSalaryOffer(offer: {
+    baseSalary: number;
+    bonus?: number;
+    equity?: string;
+    benefits?: string[];
+    location: string;
+    role: string;
+    company: string;
+  }, profile: UserProfile): Promise<{
+    analysis: string;
+    marketComparison: string;
+    totalCompensation: string;
+    negotiationPower: 'Strong' | 'Moderate' | 'Limited';
+    recommendations: string[];
+    counterOfferScript: string;
+  }> {
+    const yearsExp = profile.experience.length;
+    const prompt = `You are an expert salary negotiation coach. Analyze this job offer for a ${offer.role} position.
+
+OFFER DETAILS:
+- Base Salary: $${offer.baseSalary.toLocaleString()}
+- Bonus: ${offer.bonus ? '$' + offer.bonus.toLocaleString() : 'Not specified'}
+- Equity: ${offer.equity || 'Not specified'}
+- Benefits: ${offer.benefits?.join(', ') || 'Standard package'}
+- Company: ${offer.company}
+- Location: ${offer.location}
+
+CANDIDATE PROFILE:
+- Years Experience: ${yearsExp}
+- Skills: ${profile.skills.slice(0, 5).join(', ')}
+- Current Role: ${profile.currentRole || 'Job Seeker'}
+- Target Role: ${profile.targetRole || offer.role}
+
+Provide comprehensive analysis:
+1. Is this offer competitive for November 2025?
+2. Market comparison for ${offer.role} in ${offer.location}
+3. Total compensation estimate
+4. Negotiation power assessment
+5. Specific recommendations
+6. Counter-offer script
+
+Return ONLY valid JSON:
+{
+  "analysis": "Detailed 3-4 sentence analysis",
+  "marketComparison": "This offer is [above/at/below] market. Typical range: $XXX-$XXX",
+  "totalCompensation": "Total package worth approximately $XXX,XXX annually",
+  "negotiationPower": "Strong|Moderate|Limited",
+  "recommendations": ["Rec 1", "Rec 2", "Rec 3"],
+  "counterOfferScript": "Professional counter-offer script"
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      const isCompetitive = offer.baseSalary >= 80000;
+      return {
+        analysis: `The base salary of $${offer.baseSalary.toLocaleString()} ${isCompetitive ? 'appears competitive' : 'may be below market'} for a ${offer.role} with ${yearsExp} years of experience. Consider the total package including benefits and growth potential.`,
+        marketComparison: `Based on ${offer.location} market data, typical ${offer.role} salaries range from $${Math.round(offer.baseSalary * 0.85).toLocaleString()} to $${Math.round(offer.baseSalary * 1.25).toLocaleString()}.`,
+        totalCompensation: `Total package approximately $${Math.round(offer.baseSalary + (offer.bonus || 0) * 1.1).toLocaleString()} annually`,
+        negotiationPower: isCompetitive ? 'Moderate' : 'Strong',
+        recommendations: [
+          'Research comparable salaries on Levels.fyi and Glassdoor',
+          'Consider long-term growth potential and learning opportunities',
+          'Negotiate for sign-on bonus if base is firm',
+          'Discuss performance review timeline and raise structure'
+        ],
+        counterOfferScript: `Thank you for the offer. I'm excited about this opportunity. Based on my ${yearsExp} years of experience and market research for ${offer.role} roles in ${offer.location}, I was hoping for a base closer to $${Math.round(offer.baseSalary * 1.15).toLocaleString()}. Is there flexibility here?`
+      };
+    }
+  }
+
+  async generateNegotiationStrategy(profile: UserProfile, offerStage: 'pre-offer' | 'offer-received' | 'negotiating'): Promise<{
+    stage: string;
+    keyPoints: string[];
+    scripts: { scenario: string; script: string }[];
+    mistakes: string[];
+    timing: string;
+  }> {
+    const prompt = `You are a salary negotiation expert. Create a strategy for ${offerStage} stage.
+
+CANDIDATE:
+- Role: ${profile.targetRole || profile.currentRole}
+- Experience: ${profile.experience.length} positions
+- Skills: ${profile.skills.slice(0, 5).join(', ')}
+
+Provide:
+1. Key negotiation points for this stage
+2. Scripts for common scenarios
+3. Mistakes to avoid
+4. Timing guidance
+
+Return ONLY valid JSON:
+{
+  "stage": "${offerStage}",
+  "keyPoints": ["Point 1", "Point 2", "Point 3"],
+  "scripts": [
+    {"scenario": "Scenario 1", "script": "What to say"},
+    {"scenario": "Scenario 2", "script": "What to say"}
+  ],
+  "mistakes": ["Mistake 1", "Mistake 2"],
+  "timing": "When to negotiate"
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      const strategies = {
+        'pre-offer': {
+          stage: 'pre-offer',
+          keyPoints: [
+            'Delay salary discussion until offer stage',
+            'Focus on demonstrating value first',
+            'Research market rates thoroughly'
+          ],
+          scripts: [
+            {
+              scenario: 'Asked for salary expectations',
+              script: 'I\'m focused on finding the right fit first. I\'m confident we can agree on fair compensation once we determine I\'m the right candidate.'
+            },
+            {
+              scenario: 'Pressed for a number',
+              script: 'Based on my research and experience, I\'m targeting $XXX-$XXX range. However, I\'m open to discussing the full package once we move forward.'
+            }
+          ],
+          mistakes: ['Giving a number too early', 'Underselling yourself', 'Not researching market rates'],
+          timing: 'Avoid specific numbers until formal offer'
+        },
+        'offer-received': {
+          stage: 'offer-received',
+          keyPoints: [
+            'Thank them and ask for time to review',
+            'Evaluate total compensation, not just base',
+            'Identify your negotiation leverage'
+          ],
+          scripts: [
+            {
+              scenario: 'Receiving the offer',
+              script: 'Thank you so much! I\'m excited about this opportunity. I\'d like 24-48 hours to review everything carefully. Can we schedule a follow-up call?'
+            },
+            {
+              scenario: 'Researching before response',
+              script: 'I\'ve reviewed the offer thoroughly. While I\'m very interested, I was hoping we could discuss the compensation given my [specific skills/experience].'
+            }
+          ],
+          mistakes: ['Accepting immediately', 'Negotiating via email only', 'Not expressing enthusiasm'],
+          timing: 'Within 24-48 hours of receiving offer'
+        },
+        'negotiating': {
+          stage: 'negotiating',
+          keyPoints: [
+            'Be confident but collaborative',
+            'Use market data, not personal needs',
+            'Consider non-salary benefits'
+          ],
+          scripts: [
+            {
+              scenario: 'Making counter-offer',
+              script: 'Based on my [X years] experience and market rates for this role, I was hoping for $XXX. Is there flexibility here?'
+            },
+            {
+              scenario: 'If base is firm',
+              script: 'I understand budget constraints. Could we explore a sign-on bonus or earlier performance review instead?'
+            },
+            {
+              scenario: 'Closing negotiation',
+              script: 'I appreciate you working with me. If we can agree on [terms], I\'m ready to accept and start on [date].'
+            }
+          ],
+          mistakes: ['Being aggressive', 'Negotiating too long', 'Making ultimatums', 'Not knowing your walk-away point'],
+          timing: 'Complete negotiation within 5-7 days'
+        }
+      };
+
+      return strategies[offerStage];
+    }
+  }
+
+  async generateMessage(analysis: Record<string, unknown>): Promise<AgentMessage> {
+    return {
+      agentId: this.agentId,
+      agentName: this.agentName,
+      timestamp: new Date(),
+      message: 'Salary analysis and negotiation strategy ready',
+      actionItems: [
+        'Review market data before negotiating',
+        'Practice your negotiation script',
+        'Know your walk-away number'
+      ],
+      data: analysis
+    };
+  }
+}
+
+class BrandingAgent {
+  private model;
+  private agentId = 'branding';
+  private agentName = 'Personal Brand Strategist';
+
+  constructor() {
+    this.model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.8,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
+    });
+  }
+
+  async analyzePersonalBrand(profile: UserProfile): Promise<{
+    currentBrand: string;
+    strengths: string[];
+    gaps: string[];
+    targetBrand: string;
+    actionPlan: string[];
+  }> {
+    const prompt = `You are a personal branding expert for tech professionals. Analyze and improve this candidate's professional brand.
+
+PROFILE:
+- Name: ${profile.fullName}
+- Current Role: ${profile.currentRole || 'Job Seeker'}
+- Target Role: ${profile.targetRole || 'Career transition'}
+- Skills: ${profile.skills.join(', ')}
+- Experience: ${profile.experience.length} positions
+- Recent Companies: ${profile.experience.slice(0, 2).map(e => e.company).join(', ')}
+
+Analyze:
+1. Current Brand: How they're likely perceived
+2. Strengths: What stands out positively
+3. Gaps: What's missing or unclear
+4. Target Brand: What they should project for ${profile.targetRole}
+5. Action Plan: Specific steps to build brand
+
+Return ONLY valid JSON:
+{
+  "currentBrand": "2-3 sentence brand assessment",
+  "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+  "gaps": ["Gap 1", "Gap 2"],
+  "targetBrand": "Ideal professional positioning",
+  "actionPlan": ["Action 1", "Action 2", "Action 3", "Action 4"]
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      return {
+        currentBrand: `${profile.fullName} is positioned as a ${profile.currentRole || 'professional'} with expertise in ${profile.skills.slice(0, 3).join(', ')}.`,
+        strengths: [
+          `Strong technical foundation in ${profile.skills[0]}`,
+          `${profile.experience.length} positions show career progression`,
+          'Diverse skill set demonstrates adaptability'
+        ],
+        gaps: [
+          'Online presence could be stronger',
+          'Professional narrative needs refinement',
+          'Thought leadership opportunities untapped'
+        ],
+        targetBrand: `${profile.fullName} should position as an experienced ${profile.targetRole || 'professional'} who delivers measurable results through ${profile.skills.slice(0, 2).join(' and ')} expertise.`,
+        actionPlan: [
+          'Update LinkedIn with compelling headline and summary',
+          'Share 2-3 posts per week on industry topics',
+          'Create portfolio showcasing 3-5 best projects',
+          'Collect and display testimonials/recommendations',
+          'Start a technical blog or contribute to publications'
+        ]
+      };
+    }
+  }
+
+  async generateLinkedInProfile(profile: UserProfile): Promise<{
+    headline: string;
+    summary: string;
+    keywordOptimization: string[];
+    callToAction: string;
+  }> {
+    const prompt = `You are a LinkedIn optimization expert. Create a compelling profile for ${profile.targetRole || profile.currentRole} role.
+
+CANDIDATE:
+- Name: ${profile.fullName}
+- Target Role: ${profile.targetRole || profile.currentRole}
+- Skills: ${profile.skills.join(', ')}
+- Experience: ${profile.experience.length} positions
+
+Create:
+1. Compelling headline (under 120 characters)
+2. Engaging summary (3 paragraphs, 200-250 words)
+3. Keywords for SEO optimization
+4. Clear call-to-action
+
+Return ONLY valid JSON:
+{
+  "headline": "Compelling headline with role + key skills",
+  "summary": "3-paragraph summary highlighting value proposition",
+  "keywordOptimization": ["Keyword 1", "Keyword 2", "Keyword 3"],
+  "callToAction": "Clear next step for profile visitors"
+}`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      let responseText = result.response.text().trim();
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(responseText);
+    } catch (error) {
+      const topSkills = profile.skills.slice(0, 2).join(' & ');
+      return {
+        headline: `${profile.targetRole || profile.currentRole} | ${topSkills} Expert | Helping Companies Build Better Products`,
+        summary: `Experienced ${profile.targetRole || profile.currentRole} with a proven track record of delivering impactful solutions using ${topSkills}. ${profile.experience.length}+ years of experience across ${profile.experience.slice(0, 2).map(e => e.company).join(' and ')}.\n\nI specialize in ${profile.skills.slice(0, 3).join(', ')}, helping teams build scalable, user-focused products. My approach combines technical expertise with strategic thinking to solve complex business challenges.\n\nOpen to ${profile.targetRole || 'exciting opportunities'} where I can leverage my skills in ${topSkills} to drive meaningful results. Let's connect!`,
+        keywordOptimization: profile.skills.slice(0, 10),
+        callToAction: `Looking for ${profile.targetRole || 'new opportunities'}? Let's connect and explore how we can work together.`
+      };
+    }
+  }
+
+  async generateMessage(brandType: string, data: Record<string, unknown>): Promise<AgentMessage> {
+    return {
+      agentId: this.agentId,
+      agentName: this.agentName,
+      timestamp: new Date(),
+      message: `Personal brand strategy ready: ${brandType}`,
+      actionItems: [
+        'Update all professional profiles consistently',
+        'Start creating content in your niche',
+        'Engage authentically with your network'
+      ],
+      data
+    };
+  }
+}
+
+// ==================== CAREER AGENT SWARM ORCHESTRATOR ====================
+
+class CareerAgentSwarm {
   private plannerAgent: PlannerAgent;
   private recruiterAgent: RecruiterAgent;
   private coachAgent: CoachAgent;
   private interviewerAgent: InterviewerAgent;
+  private researchAgent: ResearchAgent;
+  private networkingAgent: NetworkingAgent;
+  private negotiationAgent: NegotiationAgent;
+  private brandingAgent: BrandingAgent;
 
   constructor() {
     this.plannerAgent = new PlannerAgent();
     this.recruiterAgent = new RecruiterAgent();
     this.coachAgent = new CoachAgent();
     this.interviewerAgent = new InterviewerAgent();
+    this.researchAgent = new ResearchAgent();
+    this.networkingAgent = new NetworkingAgent();
+    this.negotiationAgent = new NegotiationAgent();
+    this.brandingAgent = new BrandingAgent();
   }
 
   /**
@@ -1010,8 +1657,57 @@ export class CareerAgentSwarm {
       const coachMsg = await this.coachAgent.generateMessage(currentProgress, motivation);
       conversation.push(coachMsg);
 
+      // Phase 5: Research Agent analyzes market trends (runs in parallel with networking)
+      console.log('🔍 Phase 5: Research & Networking Agents...');
+      const [industryTrends, networkingPlan] = await Promise.all([
+        this.researchAgent.analyzeTrends(
+          profile.preferences?.industries?.[0] || 'Technology',
+          profile.targetRole || profile.currentRole || 'Professional'
+        ),
+        this.networkingAgent.generateNetworkingPlan(profile)
+      ]);
+      
+      const researchMsg = await this.researchAgent.generateMessage('market-trends', {
+        trends: industryTrends.currentTrends,
+        emergingSkills: industryTrends.emergingSkills,
+        marketDemand: industryTrends.marketDemand
+      });
+      conversation.push(researchMsg);
+
+      const networkMsg = await this.networkingAgent.generateMessage('networking-plan', {
+        weeklyGoals: networkingPlan.weeklyGoals,
+        targetGroups: networkingPlan.targetGroups
+      });
+      conversation.push(networkMsg);
+
+      // Phase 6: Branding Agent analyzes personal brand
+      console.log('🎨 Phase 6: Branding Agent optimizing profile...');
+      const brandAnalysis = await this.brandingAgent.analyzePersonalBrand(profile);
+      const brandMsg = await this.brandingAgent.generateMessage('brand-analysis', {
+        currentBrand: brandAnalysis.currentBrand,
+        strengths: brandAnalysis.strengths,
+        gaps: brandAnalysis.gaps,
+        actionPlan: brandAnalysis.actionPlan
+      });
+      conversation.push(brandMsg);
+
+      // Phase 7: Negotiation Agent prepares strategy (if applicable)
+      if (currentProgress.interviewsCompleted > 0) {
+        console.log('💰 Phase 7: Negotiation Agent preparing strategy...');
+        const negotiationStrategy = await this.negotiationAgent.generateNegotiationStrategy(
+          profile,
+          currentProgress.interviewsCompleted > 2 ? 'offer-received' : 'pre-offer'
+        );
+        const negotiationMsg = await this.negotiationAgent.generateMessage({
+          stage: negotiationStrategy.stage,
+          keyPoints: negotiationStrategy.keyPoints,
+          preparedness: 'ready'
+        });
+        conversation.push(negotiationMsg);
+      }
+
       const endTime = Date.now();
-      console.log(`✅ Swarm completed in ${endTime - startTime}ms`);
+      console.log(`✅ Enhanced Swarm completed in ${endTime - startTime}ms with ${conversation.length} agent insights`);
 
       return {
         userId: profile.fullName,
@@ -1031,7 +1727,7 @@ export class CareerAgentSwarm {
   /**
    * Get individual agent responses
    */
-  async getAgentInsight(agentType: 'planner' | 'recruiter' | 'coach' | 'interviewer', profile: UserProfile, context?: Record<string, unknown>): Promise<AgentMessage> {
+  async getAgentInsight(agentType: 'planner' | 'recruiter' | 'coach' | 'interviewer' | 'researcher' | 'networker' | 'negotiator' | 'branding', profile: UserProfile, context?: Record<string, unknown>): Promise<AgentMessage> {
     switch (agentType) {
       case 'planner':
         return this.plannerAgent.generateMessage('insight requested');
@@ -1055,7 +1751,100 @@ export class CareerAgentSwarm {
         const readiness = await this.interviewerAgent.assessReadiness(profile);
         return this.interviewerAgent.generateMessage(readiness);
       }
+      case 'researcher': {
+        const companyName = (context?.companyName as string) || 'target company';
+        const research = await this.researchAgent.analyzeCompany(companyName, profile.targetRole);
+        return this.researchAgent.generateMessage('company-analysis', research);
+      }
+      case 'networker': {
+        const plan = await this.networkingAgent.generateNetworkingPlan(profile);
+        return this.networkingAgent.generateMessage('networking-plan', plan);
+      }
+      case 'negotiator': {
+        const offer = context?.offer as {
+          baseSalary: number;
+          bonus?: number;
+          equity?: string;
+          benefits?: string[];
+          location: string;
+          role: string;
+          company: string;
+        };
+        if (offer) {
+          const analysis = await this.negotiationAgent.analyzeSalaryOffer(offer, profile);
+          return this.negotiationAgent.generateMessage(analysis);
+        }
+        const strategy = await this.negotiationAgent.generateNegotiationStrategy(profile, 'pre-offer');
+        return this.negotiationAgent.generateMessage(strategy);
+      }
+      case 'branding': {
+        const brandAnalysis = await this.brandingAgent.analyzePersonalBrand(profile);
+        return this.brandingAgent.generateMessage('brand-analysis', brandAnalysis);
+      }
     }
+  }
+
+  /**
+   * Research Agent: Analyze company or industry trends
+   */
+  async researchCompany(companyName: string, targetRole?: string) {
+    return await this.researchAgent.analyzeCompany(companyName, targetRole);
+  }
+
+  async analyzeTrends(industry: string, role: string) {
+    return await this.researchAgent.analyzeTrends(industry, role);
+  }
+
+  /**
+   * Networking Agent: Generate outreach messages and networking plans
+   */
+  async generateLinkedInMessage(targetRole: string, targetPerson: string, context: string) {
+    return await this.networkingAgent.generateLinkedInMessage(targetRole, targetPerson, context);
+  }
+
+  async getNetworkingPlan(profile: UserProfile) {
+    return await this.networkingAgent.generateNetworkingPlan(profile);
+  }
+
+  /**
+   * Negotiation Agent: Analyze offers and generate negotiation strategies
+   */
+  async analyzeSalaryOffer(offer: {
+    baseSalary: number;
+    bonus?: number;
+    equity?: string;
+    benefits?: string[];
+    location: string;
+    role: string;
+    company: string;
+  }, profile: UserProfile) {
+    return await this.negotiationAgent.analyzeSalaryOffer(offer, profile);
+  }
+
+  async getNegotiationStrategy(profile: UserProfile, stage: 'pre-offer' | 'offer-received' | 'negotiating') {
+    return await this.negotiationAgent.generateNegotiationStrategy(profile, stage);
+  }
+
+  /**
+   * Branding Agent: Personal brand analysis and LinkedIn optimization
+   */
+  async analyzePersonalBrand(profile: UserProfile) {
+    return await this.brandingAgent.analyzePersonalBrand(profile);
+  }
+
+  async generateLinkedInProfile(profile: UserProfile) {
+    return await this.brandingAgent.generateLinkedInProfile(profile);
+  }
+
+  /**
+   * Interviewer Agent: Direct access to interview prep methods
+   */
+  async assessInterviewReadiness(profile: UserProfile) {
+    return await this.interviewerAgent.assessReadiness(profile);
+  }
+
+  async generateInterviewQuestions(profile: UserProfile, count: number = 5) {
+    return await this.interviewerAgent.generateMockQuestions(profile, count);
   }
 }
 

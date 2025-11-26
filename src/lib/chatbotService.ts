@@ -247,7 +247,7 @@ ${message}
 
       console.log('📤 Sending enhanced prompt to Gemini');
       
-      // Use Gemini 2.0 Flash for better responses
+      // Use Gemini 2.0 Flash Exp for better responses
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ quiz, onComplete, onClose
     } else if (timeRemaining === 0 && !isCompleted) {
       handleSubmit();
     }
-  }, [timeRemaining, isCompleted]);
+  }, [timeRemaining, isCompleted, handleSubmit]);
 
   const handleAnswerSelect = (questionId: string, answerIndex: number) => {
     setAnswers(prev => ({ ...prev, [questionId]: answerIndex }));
@@ -71,7 +71,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ quiz, onComplete, onClose
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     setIsCompleted(true);
     
     let correctAnswers = 0;
@@ -102,7 +102,7 @@ const QuizInterface: React.FC<QuizInterfaceProps> = ({ quiz, onComplete, onClose
     });
 
     onComplete(finalScore, quiz.questions.length, timeSpent);
-  };
+  }, [quiz.questions, answers, startTime, toast, onComplete]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

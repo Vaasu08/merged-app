@@ -1,19 +1,35 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HORIZON | AI-Powered Career Discovery Platform</title>
-    <meta name="description" content="Discover your ideal career with HORIZON's AI-powered career advisor. Get personalized recommendations based on your skills, explore growth opportunities, and plan your future." />
-    <meta name="author" content="HORIZON" />
 
-    <meta property="og:title" content="HORIZON | AI-Powered Career Discovery Platform" />
-    <meta property="og:description" content="Discover your ideal career with HORIZON's AI-powered career advisor. Get personalized recommendations and plan your future." />
-    <meta property="og:type" content="website" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Preconnect to external domains for faster resource loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- DNS prefetch for API endpoints -->
+  <link rel="dns-prefetch" href="https://api.groq.com" />
+  <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
+
+  <title>HORIZON | AI-Powered Career Discovery Platform</title>
+  <meta name="description"
+    content="Discover your ideal career with HORIZON's AI-powered career advisor. Get personalized recommendations based on your skills, explore growth opportunities, and plan your future." />
+  <meta name="author" content="HORIZON" />
+
+  <meta property="og:title" content="HORIZON | AI-Powered Career Discovery Platform" />
+  <meta property="og:description"
+    content="Discover your ideal career with HORIZON's AI-powered career advisor. Get personalized recommendations and plan your future." />
+  <meta property="og:type" content="website" />
+
+  <!-- Preload critical resources -->
+  <link rel="modulepreload" href="/src/main.tsx" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

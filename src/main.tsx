@@ -2,6 +2,18 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+// Defer non-critical work
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => {
+    // Register service worker
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // Silent fail - PWA is optional
+      });
+    }
+  });
+}
+
 // Error handling for root mounting
 const rootElement = document.getElementById("root");
 if (!rootElement) {

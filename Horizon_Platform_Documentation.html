@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Horizon Career Platform - Complete Documentation</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Horizon Career Platform - Complete Documentation</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#horizon-career-platform---complete-documentation"
+id="toc-horizon-career-platform---complete-documentation">Horizon Career
+Platform - Complete Documentation</a>
+<ul>
+<li><a href="#table-of-contents" id="toc-table-of-contents">Table of
+Contents</a></li>
+<li><a href="#executive-summary" id="toc-executive-summary">1. Executive
+Summary</a>
+<ul>
+<li><a href="#key-highlights" id="toc-key-highlights">Key
+Highlights</a></li>
+</ul></li>
+<li><a href="#project-overview" id="toc-project-overview">2. Project
+Overview</a>
+<ul>
+<li><a href="#vision" id="toc-vision">Vision</a></li>
+<li><a href="#mission" id="toc-mission">Mission</a></li>
+<li><a href="#target-users" id="toc-target-users">Target Users</a></li>
+</ul></li>
+<li><a href="#architecture" id="toc-architecture">3. Architecture</a>
+<ul>
+<li><a href="#system-architecture" id="toc-system-architecture">System
+Architecture</a></li>
+<li><a href="#tech-stack-layers" id="toc-tech-stack-layers">Tech Stack
+Layers</a></li>
+</ul></li>
+<li><a href="#features-modules" id="toc-features-modules">4. Features
+&amp; Modules</a>
+<ul>
+<li><a href="#career-discovery-module"
+id="toc-career-discovery-module">4.1 Career Discovery Module</a></li>
+<li><a href="#resume-builder-ats-optimizer"
+id="toc-resume-builder-ats-optimizer">4.2 Resume Builder &amp; ATS
+Optimizer</a></li>
+<li><a href="#interview-preparation-module"
+id="toc-interview-preparation-module">4.3 Interview Preparation
+Module</a></li>
+<li><a href="#ai-career-agent-swarm" id="toc-ai-career-agent-swarm">4.4
+AI Career Agent Swarm</a></li>
+<li><a href="#job-listings-integration"
+id="toc-job-listings-integration">4.5 Job Listings Integration</a></li>
+<li><a href="#skill-graph-visualizer"
+id="toc-skill-graph-visualizer">4.6 Skill Graph Visualizer</a></li>
+<li><a href="#learning-roadmap-generator"
+id="toc-learning-roadmap-generator">4.7 Learning Roadmap
+Generator</a></li>
+<li><a href="#ai-chatbot" id="toc-ai-chatbot">4.8 AI Chatbot</a></li>
+</ul></li>
+<li><a href="#technology-stack" id="toc-technology-stack">5. Technology
+Stack</a>
+<ul>
+<li><a href="#frontend-dependencies"
+id="toc-frontend-dependencies">Frontend Dependencies</a></li>
+<li><a href="#backend-dependencies"
+id="toc-backend-dependencies">Backend Dependencies</a></li>
+</ul></li>
+<li><a href="#installation-setup" id="toc-installation-setup">6.
+Installation &amp; Setup</a>
+<ul>
+<li><a href="#prerequisites"
+id="toc-prerequisites">Prerequisites</a></li>
+<li><a href="#step-by-step-installation"
+id="toc-step-by-step-installation">Step-by-Step Installation</a></li>
+</ul></li>
+<li><a href="#database-schema" id="toc-database-schema">7. Database
+Schema</a>
+<ul>
+<li><a href="#core-tables" id="toc-core-tables">Core Tables</a></li>
+<li><a href="#relationships"
+id="toc-relationships">Relationships</a></li>
+</ul></li>
+<li><a href="#api-documentation" id="toc-api-documentation">8. API
+Documentation</a>
+<ul>
+<li><a href="#backend-api-endpoints"
+id="toc-backend-api-endpoints">Backend API Endpoints</a></li>
+</ul></li>
+<li><a href="#ai-integration" id="toc-ai-integration">9. AI
+Integration</a>
+<ul>
+<li><a href="#google-gemini-configuration"
+id="toc-google-gemini-configuration">Google Gemini
+Configuration</a></li>
+<li><a href="#langchain-multi-agent-system"
+id="toc-langchain-multi-agent-system">LangChain Multi-Agent
+System</a></li>
+</ul></li>
+<li><a href="#user-guide" id="toc-user-guide">10. User Guide</a>
+<ul>
+<li><a href="#getting-started" id="toc-getting-started">Getting
+Started</a></li>
+</ul></li>
+<li><a href="#development-guide" id="toc-development-guide">11.
+Development Guide</a>
+<ul>
+<li><a href="#project-structure" id="toc-project-structure">Project
+Structure</a></li>
+<li><a href="#code-style" id="toc-code-style">Code Style</a></li>
+<li><a href="#adding-new-features" id="toc-adding-new-features">Adding
+New Features</a></li>
+<li><a href="#testing" id="toc-testing">Testing</a></li>
+</ul></li>
+<li><a href="#deployment" id="toc-deployment">12. Deployment</a>
+<ul>
+<li><a href="#frontend-deployment-vercelnetlify"
+id="toc-frontend-deployment-vercelnetlify">Frontend Deployment
+(Vercel/Netlify)</a></li>
+<li><a href="#backend-deployment-railwayherokurender"
+id="toc-backend-deployment-railwayherokurender">Backend Deployment
+(Railway/Heroku/Render)</a></li>
+<li><a href="#database-supabase" id="toc-database-supabase">Database
+(Supabase)</a></li>
+</ul></li>
+<li><a href="#troubleshooting" id="toc-troubleshooting">13.
+Troubleshooting</a>
+<ul>
+<li><a href="#common-issues" id="toc-common-issues">Common
+Issues</a></li>
+<li><a href="#performance-optimization"
+id="toc-performance-optimization">Performance Optimization</a></li>
+</ul></li>
+<li><a href="#future-roadmap" id="toc-future-roadmap">14. Future
+Roadmap</a>
+<ul>
+<li><a href="#phase-1-enhanced-ai-q1-2026"
+id="toc-phase-1-enhanced-ai-q1-2026">Phase 1: Enhanced AI (Q1
+2026)</a></li>
+<li><a href="#phase-2-enterprise-features-q2-2026"
+id="toc-phase-2-enterprise-features-q2-2026">Phase 2: Enterprise
+Features (Q2 2026)</a></li>
+<li><a href="#phase-3-advanced-analytics-q3-2026"
+id="toc-phase-3-advanced-analytics-q3-2026">Phase 3: Advanced Analytics
+(Q3 2026)</a></li>
+<li><a href="#phase-4-mobile-apps-q4-2026"
+id="toc-phase-4-mobile-apps-q4-2026">Phase 4: Mobile Apps (Q4
+2026)</a></li>
+<li><a href="#phase-5-community-features-2027"
+id="toc-phase-5-community-features-2027">Phase 5: Community Features
+(2027)</a></li>
+</ul></li>
+<li><a href="#appendix-a-environment-variables-reference"
+id="toc-appendix-a-environment-variables-reference">Appendix A:
+Environment Variables Reference</a>
+<ul>
+<li><a href="#frontend-.env" id="toc-frontend-.env">Frontend
+(.env)</a></li>
+<li><a href="#backend-server.env" id="toc-backend-server.env">Backend
+(server/.env)</a></li>
+</ul></li>
+<li><a href="#appendix-b-api-keys-setup"
+id="toc-appendix-b-api-keys-setup">Appendix B: API Keys Setup</a>
+<ul>
+<li><a href="#google-gemini-api-key"
+id="toc-google-gemini-api-key">Google Gemini API Key</a></li>
+<li><a href="#supabase-setup" id="toc-supabase-setup">Supabase
+Setup</a></li>
+<li><a href="#adzuna-api-optional" id="toc-adzuna-api-optional">Adzuna
+API (Optional)</a></li>
+</ul></li>
+<li><a href="#appendix-c-database-queries"
+id="toc-appendix-c-database-queries">Appendix C: Database Queries</a>
+<ul>
+<li><a href="#common-queries" id="toc-common-queries">Common
+Queries</a></li>
+</ul></li>
+<li><a href="#appendix-d-contributing-guidelines"
+id="toc-appendix-d-contributing-guidelines">Appendix D: Contributing
+Guidelines</a>
+<ul>
+<li><a href="#pull-request-process" id="toc-pull-request-process">Pull
+Request Process</a></li>
+<li><a href="#commit-message-format"
+id="toc-commit-message-format">Commit Message Format</a></li>
+<li><a href="#code-review-checklist" id="toc-code-review-checklist">Code
+Review Checklist</a></li>
+</ul></li>
+<li><a href="#appendix-e-support-contact"
+id="toc-appendix-e-support-contact">Appendix E: Support &amp;
+Contact</a>
+<ul>
+<li><a href="#getting-help" id="toc-getting-help">Getting Help</a></li>
+<li><a href="#reporting-bugs" id="toc-reporting-bugs">Reporting
+Bugs</a></li>
+<li><a href="#feature-requests" id="toc-feature-requests">Feature
+Requests</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="horizon-career-platform---complete-documentation">Horizon Career
+Platform - Complete Documentation</h1>
+<p><strong>Version:</strong> 1.0.0<br />
+<strong>Date:</strong> November 22, 2025<br />
+<strong>Author:</strong> Development Team<br />
+<strong>Repository:</strong> https://github.com/Vaasu08/merged-app</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#executive-summary">Executive Summary</a></li>
+<li><a href="#project-overview">Project Overview</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#features--modules">Features &amp; Modules</a></li>
+<li><a href="#technology-stack">Technology Stack</a></li>
+<li><a href="#installation--setup">Installation &amp; Setup</a></li>
+<li><a href="#database-schema">Database Schema</a></li>
+<li><a href="#api-documentation">API Documentation</a></li>
+<li><a href="#ai-integration">AI Integration</a></li>
+<li><a href="#user-guide">User Guide</a></li>
+<li><a href="#development-guide">Development Guide</a></li>
+<li><a href="#deployment">Deployment</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#future-roadmap">Future Roadmap</a></li>
+</ol>
+<hr />
+<h2 id="executive-summary">1. Executive Summary</h2>
+<p><strong>Horizon</strong> is an AI-powered career development platform
+that revolutionizes how professionals discover career paths, prepare for
+interviews, optimize resumes, and plan their professional growth. Built
+with cutting-edge technologies including Google Gemini AI, LangChain,
+and React, Horizon provides a comprehensive suite of tools for modern
+job seekers.</p>
+<h3 id="key-highlights">Key Highlights</h3>
+<ul>
+<li><strong>AI-Powered Career Matching</strong>: Advanced algorithms
+analyze skills and recommend optimal career paths</li>
+<li><strong>Multi-Agent AI System</strong>: 8 specialized AI agents for
+comprehensive career planning</li>
+<li><strong>ATS Optimization</strong>: Score resumes against Applicant
+Tracking Systems with detailed feedback</li>
+<li><strong>Interview Simulation</strong>: Realistic mock interviews
+with real-time AI feedback</li>
+<li><strong>Skill Visualization</strong>: Interactive D3.js-powered
+skill graphs</li>
+<li><strong>Data Persistence</strong>: Complete history tracking with
+Supabase database</li>
+<li><strong>Real-time Job Search</strong>: Integration with multiple job
+listing APIs</li>
+</ul>
+<hr />
+<h2 id="project-overview">2. Project Overview</h2>
+<h3 id="vision">Vision</h3>
+<p>To democratize access to professional career guidance through
+artificial intelligence, making world-class career coaching available to
+everyone, anywhere, anytime.</p>
+<h3 id="mission">Mission</h3>
+<p>Provide an integrated platform that: - Identifies optimal career
+paths based on individual skills and interests - Prepares candidates for
+interviews with realistic simulations - Optimizes resumes for maximum
+ATS compatibility - Tracks professional development progress - Connects
+users with relevant job opportunities</p>
+<h3 id="target-users">Target Users</h3>
+<ul>
+<li><strong>Job Seekers</strong>: Professionals looking for new
+opportunities</li>
+<li><strong>Career Changers</strong>: Individuals transitioning between
+industries</li>
+<li><strong>Students &amp; Graduates</strong>: Early-career
+professionals entering the workforce</li>
+<li><strong>Recruiters</strong>: HR professionals seeking qualified
+candidates</li>
+</ul>
+<hr />
+<h2 id="architecture">3. Architecture</h2>
+<h3 id="system-architecture">System Architecture</h3>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                   Frontend (React)                       │
+│  ┌──────────┬──────────┬──────────┬──────────────────┐ │
+│  │ Career   │ Resume   │ Interview│ Job Listings     │ │
+│  │ Discovery│ Builder  │ Prep     │ &amp; Agent Swarm    │ │
+│  └──────────┴──────────┴──────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   API Layer (Express)                    │
+│  ┌──────────┬──────────┬──────────┬──────────────────┐ │
+│  │ Gemini   │ Resume   │ Interview│ Roadmap          │ │
+│  │ AI APIs  │ APIs     │ APIs     │ Generation       │ │
+│  └──────────┴──────────┴──────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                Database (Supabase/PostgreSQL)            │
+│  ┌──────────┬──────────┬──────────┬──────────────────┐ │
+│  │ Users    │ Resumes  │ Sessions │ Applications     │ │
+│  │ Profiles │ ATS      │ Roadmaps │ Assessments      │ │
+│  └──────────┴──────────┴──────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│              External Services                           │
+│  ┌──────────┬──────────┬──────────┬──────────────────┐ │
+│  │ Google   │ LangChain│ Job APIs │ TensorFlow       │ │
+│  │ Gemini   │ Agents   │ (Adzuna) │ (Face Detection) │ │
+│  └──────────┴──────────┴──────────┴──────────────────┘ │
+└─────────────────────────────────────────────────────────┘</code></pre>
+<h3 id="tech-stack-layers">Tech Stack Layers</h3>
+<h4 id="frontend-layer">Frontend Layer</h4>
+<ul>
+<li><strong>Framework</strong>: React 18.3.1</li>
+<li><strong>Build Tool</strong>: Vite 5.4.21</li>
+<li><strong>Routing</strong>: React Router DOM 6.30.1</li>
+<li><strong>State Management</strong>: TanStack Query 5.83.0</li>
+<li><strong>UI Components</strong>: Radix UI, Tailwind CSS</li>
+<li><strong>Visualization</strong>: D3.js 7.9.0, Recharts 2.15.4</li>
+<li><strong>Animation</strong>: Framer Motion 12.23.24</li>
+</ul>
+<h4 id="backend-layer">Backend Layer</h4>
+<ul>
+<li><strong>Runtime</strong>: Node.js 18+ (20+ recommended)</li>
+<li><strong>Framework</strong>: Express 4.21.2</li>
+<li><strong>AI Integration</strong>: Google Generative AI,
+LangChain</li>
+<li><strong>File Processing</strong>: Multer, PDF-Parse,
+Tesseract.js</li>
+</ul>
+<h4 id="database-layer">Database Layer</h4>
+<ul>
+<li><strong>Primary DB</strong>: Supabase (PostgreSQL)</li>
+<li><strong>Authentication</strong>: Supabase Auth</li>
+<li><strong>Storage</strong>: Supabase Storage</li>
+</ul>
+<h4 id="ai-ml-layer">AI &amp; ML Layer</h4>
+<ul>
+<li><strong>LLM</strong>: Google Gemini (2.0-flash-exp, 1.5-flash)</li>
+<li><strong>Multi-Agent</strong>: LangChain + LangGraph</li>
+<li><strong>Computer Vision</strong>: TensorFlow.js, MediaPipe</li>
+<li><strong>NLP</strong>: Built-in Gemini capabilities</li>
+</ul>
+<hr />
+<h2 id="features-modules">4. Features &amp; Modules</h2>
+<h3 id="career-discovery-module">4.1 Career Discovery Module</h3>
+<p><strong>Description</strong>: AI-powered career path analysis and
+recommendation system.</p>
+<p><strong>Components</strong>: - Career Assessment Quiz (30+ questions)
+- Skill-based matching algorithm - Industry trend analysis - Role
+proximity visualization - Career recommendation cards with match
+scores</p>
+<p><strong>Key Files</strong>: -
+<code>/src/components/CareerRecommendations.tsx</code> -
+<code>/src/lib/careerRecommendationEngine.ts</code> -
+<code>/src/data/careerData.ts</code></p>
+<p><strong>Features</strong>: - Dynamic assessment questions - Real-time
+skill analysis - Personalized career paths - Salary insights - Growth
+predictions</p>
+<h3 id="resume-builder-ats-optimizer">4.2 Resume Builder &amp; ATS
+Optimizer</h3>
+<p><strong>Description</strong>: Advanced resume creation and
+optimization system with ATS scoring.</p>
+<p><strong>Components</strong>: - Resume template editor - AI content
+enhancement - ATS scoring engine - PDF export functionality - Version
+control system</p>
+<p><strong>Key Files</strong>: -
+<code>/src/pages/ResumeBuilder.tsx</code> -
+<code>/src/lib/aiResumeService.ts</code> -
+<code>/src/lib/atsScorer.ts</code> -
+<code>/src/lib/atsScorerAI.ts</code></p>
+<p><strong>Features</strong>: - <strong>AI-Powered Content
+Generation</strong>: - Professional summaries (60-85 words,
+keyword-optimized) - Achievement-focused bullet points (STAR method) -
+Skill categorization (Technical, Tools, Soft Skills)</p>
+<ul>
+<li><strong>ATS Scoring (100-point scale)</strong>:
+<ul>
+<li>Keyword matching (30 points)</li>
+<li>Formatting analysis (20 points)</li>
+<li>Content quality (25 points)</li>
+<li>Experience relevance (25 points)</li>
+</ul></li>
+<li><strong>10+ Detailed Suggestions</strong>:
+<ul>
+<li>Missing keywords identification</li>
+<li>Format optimization tips</li>
+<li>Content enhancement recommendations</li>
+<li>Quantifiable metrics suggestions</li>
+</ul></li>
+<li><strong>Database Persistence</strong>:
+<ul>
+<li>All resumes saved automatically</li>
+<li>Version history tracking</li>
+<li>Primary resume designation</li>
+<li>ATS scores stored with timestamps</li>
+</ul></li>
+</ul>
+<h3 id="interview-preparation-module">4.3 Interview Preparation
+Module</h3>
+<p><strong>Description</strong>: Comprehensive interview simulation with
+AI-powered feedback.</p>
+<p><strong>Components</strong>: - Role-based interview setup - Real-time
+question delivery - Audio/video recording - AI feedback generation -
+Performance analytics</p>
+<p><strong>Key Files</strong>: -
+<code>/src/pages/InterviewHome.tsx</code> -
+<code>/src/pages/InterviewSession.tsx</code> -
+<code>/src/pages/InterviewFeedback.tsx</code> -
+<code>/src/contexts/InterviewContext.tsx</code></p>
+<p><strong>Features</strong>: - <strong>Interview Types</strong>: -
+Technical interviews - Behavioral interviews - Case study interviews -
+System design interviews</p>
+<ul>
+<li><strong>Real-time Features</strong>:
+<ul>
+<li>Live transcription</li>
+<li>Facial expression analysis (TensorFlow.js)</li>
+<li>Response timing tracking</li>
+<li>Confidence scoring</li>
+</ul></li>
+<li><strong>Feedback Metrics</strong>:
+<ul>
+<li>Overall readiness score (0-100)</li>
+<li>Strengths identification</li>
+<li>Areas for improvement</li>
+<li>Question-by-question analysis</li>
+<li>Follow-up question suggestions</li>
+</ul></li>
+</ul>
+<h3 id="ai-career-agent-swarm">4.4 AI Career Agent Swarm</h3>
+<p><strong>Description</strong>: Multi-agent AI system for comprehensive
+career planning.</p>
+<p><strong>Agents</strong>: 1. <strong>Skill Analyzer</strong>:
+Evaluates technical and soft skills 2. <strong>Career Path
+Advisor</strong>: Recommends optimal career trajectories 3.
+<strong>Resume Optimizer</strong>: Enhances resume content 4.
+<strong>Interview Coach</strong>: Provides interview preparation
+guidance 5. <strong>Job Market Analyst</strong>: Analyzes industry
+trends 6. <strong>Learning Path Designer</strong>: Creates personalized
+learning roadmaps 7. <strong>Salary Negotiator</strong>: Provides
+compensation insights 8. <strong>Network Builder</strong>: Suggests
+networking strategies</p>
+<p><strong>Key Files</strong>: -
+<code>/src/lib/careerAgentSwarm.ts</code> -
+<code>/src/pages/AgentSwarm.tsx</code></p>
+<p><strong>Technology</strong>: - LangChain for agent orchestration -
+LangGraph for workflow management - Google Gemini for LLM capabilities -
+State management for multi-step workflows</p>
+<h3 id="job-listings-integration">4.5 Job Listings Integration</h3>
+<p><strong>Description</strong>: Real-time job search with multiple API
+integrations.</p>
+<p><strong>Features</strong>: - Job search by keywords and location -
+Filtering by salary, type, and experience - Direct application links -
+Job saving functionality - Application tracking</p>
+<p><strong>Key Files</strong>: - <code>/src/pages/JobListings.tsx</code>
+- <code>/src/lib/adzunaService.ts</code></p>
+<p><strong>Data Sources</strong>: - Adzuna API - Future: LinkedIn,
+Indeed, Glassdoor</p>
+<h3 id="skill-graph-visualizer">4.6 Skill Graph Visualizer</h3>
+<p><strong>Description</strong>: Interactive D3.js visualization of
+skill relationships.</p>
+<p><strong>Features</strong>: - Force-directed graph layout - Skill node
+clustering - Role proximity analysis - Interactive zoom and pan - Skill
+dependency mapping</p>
+<p><strong>Key Files</strong>: - <code>/src/pages/SkillGraph.tsx</code>
+- <code>/src/components/SkillGraphVisualizer.tsx</code></p>
+<h3 id="learning-roadmap-generator">4.7 Learning Roadmap Generator</h3>
+<p><strong>Description</strong>: Personalized learning path creation
+with phase tracking.</p>
+<p><strong>Features</strong>: - AI-generated roadmaps - Phase-based
+learning structure - Resource recommendations - Progress tracking -
+Timeline estimation</p>
+<p><strong>Key Files</strong>: - <code>/src/pages/RoadmapView.tsx</code>
+- <code>/src/contexts/RoadmapContext.tsx</code> -
+<code>/src/components/roadmap/</code></p>
+<h3 id="ai-chatbot">4.8 AI Chatbot</h3>
+<p><strong>Description</strong>: 24/7 career guidance chatbot.</p>
+<p><strong>Features</strong>: - Natural language understanding -
+Context-aware responses - Career advice - Resume tips - Interview
+preparation help</p>
+<p><strong>Key Files</strong>: -
+<code>/src/components/Chatbot.tsx</code> -
+<code>/src/lib/chatbotService.ts</code></p>
+<hr />
+<h2 id="technology-stack">5. Technology Stack</h2>
+<h3 id="frontend-dependencies">Frontend Dependencies</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@google/generative-ai&quot;</span><span class="fu">:</span> <span class="st">&quot;^0.24.1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@langchain/core&quot;</span><span class="fu">:</span> <span class="st">&quot;^1.0.6&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@langchain/google-genai&quot;</span><span class="fu">:</span> <span class="st">&quot;^1.0.3&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@langchain/groq&quot;</span><span class="fu">:</span> <span class="st">&quot;^1.0.1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@langchain/langgraph&quot;</span><span class="fu">:</span> <span class="st">&quot;^1.0.2&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@radix-ui/react-*&quot;</span><span class="fu">:</span> <span class="st">&quot;Latest versions&quot;</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@supabase/supabase-js&quot;</span><span class="fu">:</span> <span class="st">&quot;^2.57.4&quot;</span><span class="fu">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@tensorflow/tfjs&quot;</span><span class="fu">:</span> <span class="st">&quot;^4.22.0&quot;</span><span class="fu">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;d3&quot;</span><span class="fu">:</span> <span class="st">&quot;^7.9.0&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;react&quot;</span><span class="fu">:</span> <span class="st">&quot;^18.3.1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;react-router-dom&quot;</span><span class="fu">:</span> <span class="st">&quot;^6.30.1&quot;</span><span class="fu">,</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;framer-motion&quot;</span><span class="fu">:</span> <span class="st">&quot;^12.23.24&quot;</span><span class="fu">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;jspdf&quot;</span><span class="fu">:</span> <span class="st">&quot;^3.0.3&quot;</span><span class="fu">,</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;pdfjs-dist&quot;</span><span class="fu">:</span> <span class="st">&quot;^5.4.394&quot;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="backend-dependencies">Backend Dependencies</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;@supabase/supabase-js&quot;</span><span class="fu">:</span> <span class="st">&quot;^2.57.4&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cors&quot;</span><span class="fu">:</span> <span class="st">&quot;^2.8.5&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;dotenv&quot;</span><span class="fu">:</span> <span class="st">&quot;^16.6.1&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;express&quot;</span><span class="fu">:</span> <span class="st">&quot;^4.21.2&quot;</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;multer&quot;</span><span class="fu">:</span> <span class="st">&quot;^2.0.2&quot;</span><span class="fu">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;openai&quot;</span><span class="fu">:</span> <span class="st">&quot;^6.7.0&quot;</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;pdf-parse&quot;</span><span class="fu">:</span> <span class="st">&quot;^2.4.5&quot;</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tesseract.js&quot;</span><span class="fu">:</span> <span class="st">&quot;^5.1.1&quot;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr />
+<h2 id="installation-setup">6. Installation &amp; Setup</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li><strong>Node.js</strong>: v20+ (v18.19.1 minimum, but 20+
+recommended for all features)</li>
+<li><strong>npm</strong>: v9.2.0+</li>
+<li><strong>Git</strong>: Latest version</li>
+<li><strong>Supabase Account</strong>: For authentication and
+database</li>
+<li><strong>Google Gemini API Key</strong>: For AI features</li>
+</ul>
+<h3 id="step-by-step-installation">Step-by-Step Installation</h3>
+<h4 id="clone-repository">1. Clone Repository</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/Vaasu08/merged-app.git</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> merged-app</span></code></pre></div>
+<h4 id="install-dependencies">2. Install Dependencies</h4>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontend dependencies</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Backend dependencies</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> server</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ..</span></code></pre></div>
+<h4 id="environment-configuration">3. Environment Configuration</h4>
+<p>Create <code>.env</code> in root directory:</p>
+<pre class="env"><code># Google Gemini AI
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: Job Search APIs
+VITE_ADZUNA_APP_ID=your_adzuna_app_id
+VITE_ADZUNA_API_KEY=your_adzuna_api_key</code></pre>
+<p>Create <code>server/.env</code>:</p>
+<pre class="env"><code># Server Configuration
+PORT=4000
+CORS_ORIGIN=http://localhost:8080
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key</code></pre>
+<h4 id="database-setup">4. Database Setup</h4>
+<p>Run the SQL scripts in your Supabase SQL editor:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Execute in order:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">1.</span> database-setup.sql</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2.</span> database-business-data.sql</span></code></pre></div>
+<p><strong>Tables Created</strong>: - <code>profiles</code> - User
+profile information - <code>resumes</code> - Resume storage and
+versioning - <code>ats_scores</code> - ATS scoring history -
+<code>interview_sessions</code> - Interview session data -
+<code>interview_feedback</code> - Detailed interview feedback -
+<code>roadmaps</code> - Learning roadmap data -
+<code>roadmap_phases</code> - Roadmap phase tracking -
+<code>career_assessments</code> - Career assessment results -
+<code>job_applications</code> - Job application tracking</p>
+<h4 id="start-development-servers">5. Start Development Servers</h4>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Terminal 1 - Frontend (Port 8080)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run dev</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Terminal 2 - Backend (Port 4000)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run server:dev</span></code></pre></div>
+<h4 id="access-application">6. Access Application</h4>
+<ul>
+<li><strong>Frontend</strong>: http://localhost:8080</li>
+<li><strong>Backend API</strong>: http://localhost:4000</li>
+<li><strong>Network Access</strong>: http://[your-ip]:8080</li>
+</ul>
+<hr />
+<h2 id="database-schema">7. Database Schema</h2>
+<h3 id="core-tables">Core Tables</h3>
+<h4 id="profiles">profiles</h4>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> profiles (</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">REFERENCES</span> auth.users(<span class="kw">id</span>),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  email TEXT <span class="kw">UNIQUE</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  full_name TEXT,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  avatar_url TEXT,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  bio TEXT,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  location TEXT,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  phone TEXT,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  linkedin_url TEXT,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  github_url TEXT,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  portfolio_url TEXT,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  years_of_experience <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  target_role TEXT,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  target_industry TEXT,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  skills TEXT[], <span class="co">-- Array of skills</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW(),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  updated_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW()</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h4 id="resumes">resumes</h4>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> resumes (</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> uuid_generate_v4(),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  user_id UUID <span class="kw">REFERENCES</span> profiles(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  title TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  content JSONB <span class="kw">NOT</span> <span class="kw">NULL</span>, <span class="co">-- Resume data structure</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  version <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">1</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  is_primary <span class="dt">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">FALSE</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW(),</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  updated_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW()</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h4 id="ats_scores">ats_scores</h4>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> ats_scores (</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> uuid_generate_v4(),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  user_id UUID <span class="kw">REFERENCES</span> profiles(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  resume_id UUID <span class="kw">REFERENCES</span> resumes(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  job_description TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  overall_score <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>, <span class="co">-- 0-100</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  keyword_score <span class="dt">INTEGER</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  formatting_score <span class="dt">INTEGER</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  content_score <span class="dt">INTEGER</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  experience_score <span class="dt">INTEGER</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  suggestions JSONB, <span class="co">-- Array of improvement suggestions</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  missing_keywords TEXT[],</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW()</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h4 id="interview_sessions">interview_sessions</h4>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> interview_sessions (</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> uuid_generate_v4(),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  user_id UUID <span class="kw">REFERENCES</span> profiles(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">role</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  difficulty TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  duration <span class="dt">INTEGER</span>, <span class="co">-- in seconds</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  questions JSONB, <span class="co">-- Array of questions asked</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  responses JSONB, <span class="co">-- Array of user responses</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  overall_score <span class="dt">INTEGER</span>, <span class="co">-- 0-100</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  status TEXT <span class="kw">DEFAULT</span> <span class="st">&#39;in_progress&#39;</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW(),</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  completed_at <span class="dt">TIMESTAMP</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h4 id="roadmaps">roadmaps</h4>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> roadmaps (</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> uuid_generate_v4(),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  user_id UUID <span class="kw">REFERENCES</span> profiles(<span class="kw">id</span>) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  target_role TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  current_role TEXT,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  timeframe TEXT,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  phases JSONB <span class="kw">NOT</span> <span class="kw">NULL</span>, <span class="co">-- Array of learning phases</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW(),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  updated_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW()</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h3 id="relationships">Relationships</h3>
+<pre><code>profiles (1) ──── (Many) resumes
+profiles (1) ──── (Many) ats_scores
+profiles (1) ──── (Many) interview_sessions
+profiles (1) ──── (Many) roadmaps
+resumes (1) ──── (Many) ats_scores</code></pre>
+<hr />
+<h2 id="api-documentation">8. API Documentation</h2>
+<h3 id="backend-api-endpoints">Backend API Endpoints</h3>
+<h4 id="health-check">Health Check</h4>
+<pre><code>GET /health
+Response: { status: &#39;ok&#39;, timestamp: ISO8601 }</code></pre>
+<h4 id="gemini-ai-endpoints">Gemini AI Endpoints</h4>
+<h5 id="generate-text">Generate Text</h5>
+<pre><code>POST /api/gemini/generate
+Body: {
+  prompt: string,
+  model?: string,
+  temperature?: number,
+  maxTokens?: number
+}
+Response: {
+  text: string,
+  model: string,
+  duration: number
+}</code></pre>
+<h5 id="generate-roadmap">Generate Roadmap</h5>
+<pre><code>POST /api/roadmap/generate
+Body: {
+  targetRole: string,
+  currentRole: string,
+  skills: string[],
+  timeframe: string
+}
+Response: {
+  roadmap: {
+    phases: Array&lt;{
+      title: string,
+      duration: string,
+      topics: string[],
+      resources: Array&lt;{ title, url }&gt;
+    }&gt;
+  }
+}</code></pre>
+<h5 id="resume-enhancement">Resume Enhancement</h5>
+<pre><code>POST /api/resume/enhance
+Body: {
+  personalInfo: { name, email, phone, location },
+  summary: string,
+  skills: string[],
+  experience: Array&lt;{ company, position, ... }&gt;,
+  education: Array&lt;{ institution, degree, ... }&gt;,
+  targetRole: string,
+  jobDescription: string
+}
+Response: {
+  enhancedSummary: string,
+  enhancedExperience: Array&lt;{ bulletPoints: string[] }&gt;,
+  optimizedSkills: {
+    technical: string[],
+    tools: string[],
+    soft: string[]
+  }
+}</code></pre>
+<h5 id="ats-scoring">ATS Scoring</h5>
+<pre><code>POST /api/ats/score
+Body: {
+  resumeText: string,
+  jobDescription: string
+}
+Response: {
+  overallScore: number, // 0-100
+  breakdown: {
+    keywordMatch: number,
+    formatting: number,
+    contentQuality: number,
+    experienceRelevance: number
+  },
+  suggestions: string[], // 10+ detailed suggestions
+  missingKeywords: string[]
+}</code></pre>
+<h4 id="cache-management">Cache Management</h4>
+<pre><code>GET /api/cache/stats
+Response: { size: number, entries: number }
+
+DELETE /api/cache/clear
+Response: { message: &#39;Cache cleared&#39;, itemsCleared: number }</code></pre>
+<hr />
+<h2 id="ai-integration">9. AI Integration</h2>
+<h3 id="google-gemini-configuration">Google Gemini Configuration</h3>
+<h4 id="models-used">Models Used</h4>
+<p><strong>Primary Model</strong>: <code>gemini-2.0-flash-exp</code> -
+Use case: Production-ready tasks - Speed: Ultra-fast responses - Cost:
+Optimized for high volume</p>
+<p><strong>Fallback Model</strong>: <code>gemini-1.5-flash</code> - Use
+case: Backup when primary unavailable - Reliability: Proven
+stability</p>
+<h4 id="service-architecture">Service Architecture</h4>
+<p><strong>Frontend Service</strong>
+(<code>/src/lib/geminiService.ts</code>):</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">interface</span> GeminiOptions {</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  model<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  temperature<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span> <span class="co">// 0.0 - 1.0</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  topK<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  topP<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  maxOutputTokens<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  useCache<span class="op">?:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  systemInstruction<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Main methods</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>geminiService<span class="op">.</span><span class="fu">generateText</span>(prompt<span class="op">,</span> options)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>geminiService<span class="op">.</span><span class="fu">generateJSON</span>(prompt<span class="op">,</span> options)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>geminiService<span class="op">.</span><span class="fu">generateStream</span>(prompt<span class="op">,</span> options)</span></code></pre></div>
+<p><strong>Backend Service</strong>
+(<code>/server/src/geminiClient.js</code>):</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Main methods</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">generateText</span>(prompt<span class="op">,</span> config)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">generateJSON</span>(prompt<span class="op">,</span> schema<span class="op">,</span> config)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">getCacheStats</span>()</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">clearCache</span>()</span></code></pre></div>
+<h4 id="caching-strategy">Caching Strategy</h4>
+<ul>
+<li><strong>TTL</strong>: 10 minutes</li>
+<li><strong>Key Generation</strong>: MD5 hash of (model + prompt +
+config)</li>
+<li><strong>Storage</strong>: In-memory Map (upgradeable to Redis)</li>
+<li><strong>Cleanup</strong>: Automatic on expired entries</li>
+</ul>
+<h4 id="rate-limiting">Rate Limiting</h4>
+<ul>
+<li><strong>Limit</strong>: Tracked per minute</li>
+<li><strong>Reset</strong>: Every 60 seconds</li>
+<li><strong>Retry Logic</strong>: Exponential backoff (3 attempts)</li>
+</ul>
+<h3 id="langchain-multi-agent-system">LangChain Multi-Agent System</h3>
+<h4 id="agent-configuration">Agent Configuration</h4>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Agent Swarm Setup</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> agents <span class="op">=</span> [</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">SkillAnalyzerAgent</span>()<span class="op">,</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">CareerPathAdvisorAgent</span>()<span class="op">,</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">ResumeOptimizerAgent</span>()<span class="op">,</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">InterviewCoachAgent</span>()<span class="op">,</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">JobMarketAnalystAgent</span>()<span class="op">,</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">LearningPathDesignerAgent</span>()<span class="op">,</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">SalaryNegotiatorAgent</span>()<span class="op">,</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="fu">NetworkBuilderAgent</span>()</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="co">// LangGraph Workflow</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> workflow <span class="op">=</span> <span class="kw">new</span> <span class="fu">StateGraph</span>({</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  channels<span class="op">:</span> {</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    userInput<span class="op">:</span> { value<span class="op">:</span> <span class="dt">null</span> }<span class="op">,</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    agentResults<span class="op">:</span> { value<span class="op">:</span> [] }<span class="op">,</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    finalOutput<span class="op">:</span> { value<span class="op">:</span> <span class="dt">null</span> }</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h4 id="agent-execution-flow">Agent Execution Flow</h4>
+<pre><code>User Input → Agent Selection → Parallel Execution → Result Aggregation → Response</code></pre>
+<hr />
+<h2 id="user-guide">10. User Guide</h2>
+<h3 id="getting-started">Getting Started</h3>
+<h4 id="sign-up-login">1. Sign Up / Login</h4>
+<ol type="1">
+<li>Navigate to http://localhost:8080</li>
+<li>Click “Sign Up” or “Login”</li>
+<li>Use email/password or OAuth providers</li>
+<li>Complete profile setup</li>
+</ol>
+<h4 id="career-discovery">2. Career Discovery</h4>
+<ol type="1">
+<li>Go to “Career Recommendations”</li>
+<li>Take the career assessment quiz</li>
+<li>Review personalized career paths</li>
+<li>Explore skill graphs</li>
+<li>Check salary insights</li>
+</ol>
+<h4 id="resume-building">3. Resume Building</h4>
+<ol type="1">
+<li>Navigate to “Resume Builder”</li>
+<li>Upload existing resume or start from scratch</li>
+<li>Fill in personal information</li>
+<li>Add experience, education, skills</li>
+<li>Click “Enhance with AI” for optimizations</li>
+<li>Export as PDF</li>
+</ol>
+<h4 id="ats-scoring-1">4. ATS Scoring</h4>
+<ol type="1">
+<li>Go to “ATS Assessment”</li>
+<li>Upload your resume</li>
+<li>Paste job description</li>
+<li>Click “Analyze Resume”</li>
+<li>Review scores and suggestions</li>
+<li>Apply recommended changes</li>
+</ol>
+<h4 id="interview-preparation">5. Interview Preparation</h4>
+<ol type="1">
+<li>Visit “Interview Prep”</li>
+<li>Select role and difficulty</li>
+<li>Start mock interview session</li>
+<li>Answer questions (voice/text)</li>
+<li>Receive detailed feedback</li>
+<li>Track progress over time</li>
+</ol>
+<h4 id="job-search">6. Job Search</h4>
+<ol type="1">
+<li>Navigate to “Job Listings”</li>
+<li>Enter keywords and location</li>
+<li>Apply filters (salary, type, experience)</li>
+<li>Click jobs to view details</li>
+<li>Save interesting positions</li>
+<li>Track applications</li>
+</ol>
+<h4 id="learning-roadmap">7. Learning Roadmap</h4>
+<ol type="1">
+<li>Go to “Roadmap”</li>
+<li>Enter target role and current skills</li>
+<li>Generate personalized roadmap</li>
+<li>Track phase completion</li>
+<li>Access recommended resources</li>
+</ol>
+<hr />
+<h2 id="development-guide">11. Development Guide</h2>
+<h3 id="project-structure">Project Structure</h3>
+<pre><code>merged-app/
+├── src/
+│   ├── components/       # React components
+│   │   ├── ui/          # Radix UI components
+│   │   ├── roadmap/     # Roadmap-specific components
+│   │   └── *.tsx        # Feature components
+│   ├── pages/           # Route pages
+│   ├── lib/             # Utility libraries
+│   │   ├── geminiService.ts
+│   │   ├── careerAgentSwarm.ts
+│   │   ├── atsScorer.ts
+│   │   └── ...
+│   ├── contexts/        # React contexts
+│   ├── hooks/           # Custom hooks
+│   ├── types/           # TypeScript types
+│   └── data/            # Static data
+├── server/
+│   └── src/
+│       ├── app.js       # Express server
+│       └── geminiClient.js
+├── public/              # Static assets
+├── database-setup.sql   # Database schema
+└── package.json</code></pre>
+<h3 id="code-style">Code Style</h3>
+<ul>
+<li><strong>TypeScript</strong>: Strict mode enabled</li>
+<li><strong>ESLint</strong>: Configured with React plugins</li>
+<li><strong>Formatting</strong>: Consistent indentation (2 spaces)</li>
+<li><strong>Naming</strong>: camelCase for variables, PascalCase for
+components</li>
+</ul>
+<h3 id="adding-new-features">Adding New Features</h3>
+<h4 id="create-component">1. Create Component</h4>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/components/NewFeature.tsx</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { useState } <span class="im">from</span> <span class="st">&#39;react&#39;</span><span class="op">;</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">NewFeature</span>() {</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [state<span class="op">,</span> setState] <span class="op">=</span> <span class="fu">useState</span>()<span class="op">;</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>div<span class="op">&gt;</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>      {<span class="co">/* Component JSX */</span>}</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;/</span>div<span class="op">&gt;</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="add-route">2. Add Route</h4>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/App.tsx</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> NewFeature <span class="im">from</span> <span class="st">&#39;./pages/NewFeature&#39;</span><span class="op">;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">// In Routes:</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>Route path<span class="op">=</span><span class="st">&quot;/new-feature&quot;</span> element<span class="op">=</span>{<span class="op">&lt;</span>NewFeature <span class="op">/&gt;</span>} <span class="op">/&gt;</span></span></code></pre></div>
+<h4 id="create-api-endpoint-if-needed">3. Create API Endpoint (if
+needed)</h4>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">// server/src/app.js</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>app<span class="op">.</span><span class="fu">post</span>(<span class="st">&#39;/api/new-feature&#39;</span><span class="op">,</span> <span class="kw">async</span> (req<span class="op">,</span> res) <span class="kw">=&gt;</span> {</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle request</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    res<span class="op">.</span><span class="fu">json</span>({ <span class="dt">success</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (error) {</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    res<span class="op">.</span><span class="fu">status</span>(<span class="dv">500</span>)<span class="op">.</span><span class="fu">json</span>({ <span class="dt">error</span><span class="op">:</span> error<span class="op">.</span><span class="at">message</span> })<span class="op">;</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h4 id="add-database-table-if-needed">4. Add Database Table (if
+needed)</h4>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- In database-setup.sql</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> new_feature_data (</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span> UUID <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">DEFAULT</span> uuid_generate_v4(),</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  user_id UUID <span class="kw">REFERENCES</span> profiles(<span class="kw">id</span>),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">data</span> JSONB,</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  created_at <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> NOW()</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h3 id="testing">Testing</h3>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run linter</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run lint</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Build for production</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Preview production build</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run preview</span></code></pre></div>
+<hr />
+<h2 id="deployment">12. Deployment</h2>
+<h3 id="frontend-deployment-vercelnetlify">Frontend Deployment
+(Vercel/Netlify)</h3>
+<h4 id="vercel">Vercel</h4>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Vercel CLI</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> i <span class="at">-g</span> vercel</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Deploy</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="ex">vercel</span> <span class="at">--prod</span></span></code></pre></div>
+<p><strong>Environment Variables</strong>: -
+<code>VITE_GEMINI_API_KEY</code> - <code>VITE_SUPABASE_URL</code> -
+<code>VITE_SUPABASE_ANON_KEY</code></p>
+<h4 id="netlify">Netlify</h4>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Netlify CLI</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> i <span class="at">-g</span> netlify-cli</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Build and deploy</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="ex">netlify</span> deploy <span class="at">--prod</span> <span class="at">--dir</span><span class="op">=</span>dist</span></code></pre></div>
+<h3 id="backend-deployment-railwayherokurender">Backend Deployment
+(Railway/Heroku/Render)</h3>
+<h4 id="railway">Railway</h4>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Railway CLI</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> i <span class="at">-g</span> @railway/cli</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Login and deploy</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="ex">railway</span> login</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="ex">railway</span> init</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="ex">railway</span> up</span></code></pre></div>
+<h4 id="environment-variables-server">Environment Variables
+(Server):</h4>
+<ul>
+<li><code>PORT</code></li>
+<li><code>GEMINI_API_KEY</code></li>
+<li><code>SUPABASE_URL</code></li>
+<li><code>SUPABASE_SERVICE_ROLE_KEY</code></li>
+<li><code>CORS_ORIGIN</code></li>
+</ul>
+<h3 id="database-supabase">Database (Supabase)</h3>
+<p>Already managed - just ensure: - Row Level Security (RLS) enabled -
+Proper authentication policies - Regular backups configured</p>
+<hr />
+<h2 id="troubleshooting">13. Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="issue-pdfjs-dist-not-found">Issue: “pdfjs-dist not found”</h4>
+<p><strong>Solution</strong>:</p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install pdfjs-dist <span class="at">--save</span></span></code></pre></div>
+<h4 id="issue-node-engine-mismatch">Issue: “Node engine mismatch”</h4>
+<p><strong>Solution</strong>: Upgrade to Node.js 20+</p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nvm</span> install 20</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="ex">nvm</span> use 20</span></code></pre></div>
+<h4 id="issue-gemini-api-rate-limit">Issue: “Gemini API rate limit”</h4>
+<p><strong>Solution</strong>: Implement request queuing or upgrade API
+tier</p>
+<h4 id="issue-cors-errors">Issue: “CORS errors”</h4>
+<p><strong>Solution</strong>: Update <code>server/.env</code>:</p>
+<pre class="env"><code>CORS_ORIGIN=http://localhost:8080,https://your-domain.com</code></pre>
+<h4 id="issue-supabase-connection-failed">Issue: “Supabase connection
+failed”</h4>
+<p><strong>Solution</strong>: Verify credentials in <code>.env</code>
+and check Supabase dashboard</p>
+<h4 id="issue-build-fails-with-typescript-errors">Issue: “Build fails
+with TypeScript errors”</h4>
+<p><strong>Solution</strong>:</p>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run lint</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Fix reported errors</span></span></code></pre></div>
+<h3 id="performance-optimization">Performance Optimization</h3>
+<ol type="1">
+<li><strong>Enable Gemini caching</strong> (already implemented)</li>
+<li><strong>Lazy load components</strong>:</li>
+</ol>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> AgentSwarm <span class="op">=</span> <span class="fu">lazy</span>(() <span class="kw">=&gt;</span> <span class="im">import</span>(<span class="st">&#39;./pages/AgentSwarm&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<ol start="3" type="1">
+<li><strong>Optimize images</strong>: Use WebP format</li>
+<li><strong>Code splitting</strong>: Vite handles automatically</li>
+<li><strong>Database indexing</strong>: Add indexes on frequently
+queried columns</li>
+</ol>
+<hr />
+<h2 id="future-roadmap">14. Future Roadmap</h2>
+<h3 id="phase-1-enhanced-ai-q1-2026">Phase 1: Enhanced AI (Q1 2026)</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />GPT-4 integration as alternative
+LLM</label></li>
+<li><label><input type="checkbox" />Voice-based interview
+simulation</label></li>
+<li><label><input type="checkbox" />Real-time interview
+translation</label></li>
+<li><label><input type="checkbox" />Custom agent creation
+UI</label></li>
+</ul>
+<h3 id="phase-2-enterprise-features-q2-2026">Phase 2: Enterprise
+Features (Q2 2026)</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Team collaboration
+tools</label></li>
+<li><label><input type="checkbox" />Admin dashboard</label></li>
+<li><label><input type="checkbox" />Bulk resume processing</label></li>
+<li><label><input type="checkbox" />White-label solution</label></li>
+<li><label><input type="checkbox" />API for third-party
+integrations</label></li>
+</ul>
+<h3 id="phase-3-advanced-analytics-q3-2026">Phase 3: Advanced Analytics
+(Q3 2026)</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Career trajectory
+prediction</label></li>
+<li><label><input type="checkbox" />Salary trend analysis</label></li>
+<li><label><input type="checkbox" />Market demand
+forecasting</label></li>
+<li><label><input type="checkbox" />Skill gap heat maps</label></li>
+</ul>
+<h3 id="phase-4-mobile-apps-q4-2026">Phase 4: Mobile Apps (Q4 2026)</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />React Native iOS app</label></li>
+<li><label><input type="checkbox" />React Native Android
+app</label></li>
+<li><label><input type="checkbox" />Offline mode support</label></li>
+<li><label><input type="checkbox" />Push notifications</label></li>
+</ul>
+<h3 id="phase-5-community-features-2027">Phase 5: Community Features
+(2027)</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Peer resume reviews</label></li>
+<li><label><input type="checkbox" />Mentor matching</label></li>
+<li><label><input type="checkbox" />Discussion forums</label></li>
+<li><label><input type="checkbox" />Success stories sharing</label></li>
+<li><label><input type="checkbox" />Referral system</label></li>
+</ul>
+<hr />
+<h2 id="appendix-a-environment-variables-reference">Appendix A:
+Environment Variables Reference</h2>
+<h3 id="frontend-.env">Frontend (.env)</h3>
+<pre class="env"><code>VITE_GEMINI_API_KEY=          # Required for AI features
+VITE_SUPABASE_URL=            # Required for auth/database
+VITE_SUPABASE_ANON_KEY=       # Required for auth/database
+VITE_ADZUNA_APP_ID=           # Optional for job search
+VITE_ADZUNA_API_KEY=          # Optional for job search</code></pre>
+<h3 id="backend-server.env">Backend (server/.env)</h3>
+<pre class="env"><code>PORT=4000                     # Server port
+GEMINI_API_KEY=               # Required for AI
+SUPABASE_URL=                 # Required for database
+SUPABASE_SERVICE_ROLE_KEY=    # Required for database admin
+CORS_ORIGIN=                  # Comma-separated allowed origins</code></pre>
+<hr />
+<h2 id="appendix-b-api-keys-setup">Appendix B: API Keys Setup</h2>
+<h3 id="google-gemini-api-key">Google Gemini API Key</h3>
+<ol type="1">
+<li>Visit: https://makersuite.google.com/app/apikey</li>
+<li>Click “Create API Key”</li>
+<li>Copy and paste into <code>.env</code> files</li>
+</ol>
+<h3 id="supabase-setup">Supabase Setup</h3>
+<ol type="1">
+<li>Create project: https://supabase.com/dashboard</li>
+<li>Go to Settings → API</li>
+<li>Copy:
+<ul>
+<li>Project URL → <code>SUPABASE_URL</code></li>
+<li>Anon Public Key → <code>SUPABASE_ANON_KEY</code></li>
+<li>Service Role Key → <code>SUPABASE_SERVICE_ROLE_KEY</code></li>
+</ul></li>
+</ol>
+<h3 id="adzuna-api-optional">Adzuna API (Optional)</h3>
+<ol type="1">
+<li>Register: https://developer.adzuna.com/</li>
+<li>Create application</li>
+<li>Copy App ID and API Key</li>
+</ol>
+<hr />
+<h2 id="appendix-c-database-queries">Appendix C: Database Queries</h2>
+<h3 id="common-queries">Common Queries</h3>
+<h4 id="get-users-primary-resume">Get User’s Primary Resume</h4>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> resumes</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> user_id <span class="op">=</span> <span class="st">&#39;user-uuid&#39;</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="kw">AND</span> is_primary <span class="op">=</span> <span class="kw">true</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> updated_at <span class="kw">DESC</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">1</span>;</span></code></pre></div>
+<h4 id="get-recent-ats-scores">Get Recent ATS Scores</h4>
+<div class="sourceCode" id="cb43"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  a.overall_score,</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  a.created_at,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  r.title <span class="kw">as</span> resume_title</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ats_scores a</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> resumes r <span class="kw">ON</span> a.resume_id <span class="op">=</span> r.<span class="kw">id</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> a.user_id <span class="op">=</span> <span class="st">&#39;user-uuid&#39;</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> a.created_at <span class="kw">DESC</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">10</span>;</span></code></pre></div>
+<h4 id="get-interview-performance-trend">Get Interview Performance
+Trend</h4>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  DATE_TRUNC(<span class="st">&#39;week&#39;</span>, created_at) <span class="kw">as</span> week,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">AVG</span>(overall_score) <span class="kw">as</span> avg_score,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">as</span> session_count</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> interview_sessions</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> user_id <span class="op">=</span> <span class="st">&#39;user-uuid&#39;</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="kw">AND</span> status <span class="op">=</span> <span class="st">&#39;completed&#39;</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> week</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> week <span class="kw">DESC</span>;</span></code></pre></div>
+<hr />
+<h2 id="appendix-d-contributing-guidelines">Appendix D: Contributing
+Guidelines</h2>
+<h3 id="pull-request-process">Pull Request Process</h3>
+<ol type="1">
+<li>Fork the repository</li>
+<li>Create feature branch:
+<code>git checkout -b feature/amazing-feature</code></li>
+<li>Commit changes:
+<code>git commit -m 'Add amazing feature'</code></li>
+<li>Push to branch:
+<code>git push origin feature/amazing-feature</code></li>
+<li>Open Pull Request</li>
+</ol>
+<h3 id="commit-message-format">Commit Message Format</h3>
+<pre><code>type(scope): subject
+
+body
+
+footer</code></pre>
+<p><strong>Types</strong>: feat, fix, docs, style, refactor, test,
+chore</p>
+<h3 id="code-review-checklist">Code Review Checklist</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Code follows style
+guidelines</label></li>
+<li><label><input type="checkbox" />Tests pass</label></li>
+<li><label><input type="checkbox" />Documentation updated</label></li>
+<li><label><input type="checkbox" />No console.log
+statements</label></li>
+<li><label><input type="checkbox" />Error handling
+implemented</label></li>
+<li><label><input type="checkbox" />Type safety maintained</label></li>
+</ul>
+<hr />
+<h2 id="appendix-e-support-contact">Appendix E: Support &amp;
+Contact</h2>
+<h3 id="getting-help">Getting Help</h3>
+<ul>
+<li><strong>Documentation</strong>: This file</li>
+<li><strong>Issues</strong>:
+https://github.com/Vaasu08/merged-app/issues</li>
+<li><strong>Discussions</strong>:
+https://github.com/Vaasu08/merged-app/discussions</li>
+</ul>
+<h3 id="reporting-bugs">Reporting Bugs</h3>
+<p>Include: 1. Steps to reproduce 2. Expected behavior 3. Actual
+behavior 4. Screenshots (if applicable) 5. Environment (OS, Node
+version, browser)</p>
+<h3 id="feature-requests">Feature Requests</h3>
+<p>Submit via GitHub Issues with: - Clear description - Use case -
+Expected benefits - Implementation suggestions (optional)</p>
+<hr />
+<p><strong>Document Version</strong>: 1.0.0<br />
+<strong>Last Updated</strong>: November 22, 2025<br />
+<strong>Maintained By</strong>: Horizon Development Team</p>
+<hr />
+<p><em>End of Documentation</em></p>
+</body>
+</html>

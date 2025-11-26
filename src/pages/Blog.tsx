@@ -174,8 +174,7 @@ const Blog = () => {
               loop
               muted
               playsInline
-              className="h-10 w-auto rounded-lg shadow-lg"
-              style={{ maxWidth: '150px' }}
+              className="h-10 w-auto rounded-lg shadow-lg max-w-[150px]"
             >
               <source src="/Duck_s_Resume_for_Career_Guidance.mp4" type="video/mp4" />
             </video>

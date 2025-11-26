@@ -549,13 +549,13 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                       <input
                         key={`edu-current-${index}`}
                         type="checkbox"
-                        id={`current-education-checkbox-${index}`}
+                        id={`edu-current-checkbox-${index}`}
                         checked={edu.is_current}
                         onChange={(e) => updateEducation(index, 'is_current', e.target.checked)}
                         className="h-4 w-4"
                         aria-label="Currently studying"
                       />
-                      <Label htmlFor={`current-education-checkbox-${index}`}>Currently studying</Label>
+                      <Label htmlFor={`edu-current-checkbox-${index}`}>Currently studying</Label>
                     </div>
                     <div className="space-y-2 mt-4">
                       <Label>Description</Label>

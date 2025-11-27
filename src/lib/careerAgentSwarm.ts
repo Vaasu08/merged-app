@@ -1837,6 +1837,57 @@ class CareerAgentSwarm {
   }
 
   /**
+   * Generate cold email variations for a specific job using the backend cold email API.
+   * Designed to be called by the Recruiter/Networking agents or UI flows.
+   */
+  async generateColdEmailsForJob(
+    userId: string,
+    profile: UserProfile,
+    job: JobListing,
+    options: {
+      tone?: 'formal' | 'friendly' | 'concise' | 'persuasive' | 'bold';
+      recruiterName?: string;
+      save?: boolean;
+    } = {}
+  ): Promise<{
+    emails: Array<{ variantIndex: number; subject: string; body: string; cta: string }>;
+    savedIds?: string[];
+    note?: string;
+  }> {
+    const tone = options.tone || 'formal';
+
+    const payload = {
+      userId,
+      jobRole: job.title,
+      company: job.company,
+      jobDescription: job.description,
+      jobUrl: job.redirect_url,
+      tone,
+      recruiterName: options.recruiterName,
+      save: options.save ?? true,
+    };
+
+    const res = await fetch('/api/generate-cold-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to generate cold emails for job');
+    }
+
+    const data = await res.json();
+    return {
+      emails: data.emails || [],
+      savedIds: data.savedIds,
+      note: data.note,
+    };
+  }
+
+  /**
    * Interviewer Agent: Direct access to interview prep methods
    */
   async assessInterviewReadiness(profile: UserProfile) {

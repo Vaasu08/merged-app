@@ -52,6 +52,7 @@ const JobListings = lazy(() => import("./pages/JobListings"));
 const SkillGraph = lazy(() => import("./pages/SkillGraph"));
 const AgentSwarm = lazy(() => import("./pages/AgentSwarm"));
 const ATSScorerTest = lazy(() => import("@/components/ATSScorerTest"));
+const ColdEmailPage = lazy(() => import("./pages/ColdEmail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +140,9 @@ const App = () => {
 
                           {/* Job Listings */}
                           <Route path="/job-listings" element={<JobListings />} />
+
+                          {/* Cold Email Generator */}
+                          <Route path="/cold-email" element={<ColdEmailPage />} />
 
                           {/* Skill Graph Visualizer */}
                           <Route path="/skill-graph" element={<SkillGraph />} />

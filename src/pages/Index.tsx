@@ -25,6 +25,7 @@ import { useInView as useIntersectionObserver } from 'react-intersection-observe
 import careerHeroImage from '@/assets/career-hero.jpg';
 import GlitchText from '@/components/GlitchText'
 import HowItWorks from '@/components/HowItWorks'
+import { ColdEmailGenerator } from '@/components/ColdEmailGenerator'
 
 
 const Index = () => {
@@ -905,6 +906,20 @@ const Index = () => {
                       navigate('/login');
                     }
                   }
+                },
+                {
+                  title: "Cold Email Generator",
+                  description: "Instantly craft personalized cold emails for any role using your profile, resume, and job description.",
+                  icon: MessageSquare,
+                  color: "from-emerald-500 to-teal-500",
+                  features: ["Multiple Tones", "2–3 Variants", "Supabase Drafts", "Agent Integration"],
+                  status: "Beta",
+                  onClick: () => {
+                    const el = document.getElementById('cold-email-generator');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }
                 }
               ].map((feature, index) => (
                 <motion.div
@@ -1009,6 +1024,40 @@ const Index = () => {
                 </motion.div>
               ))}
             </motion.div>
+          </div>
+
+          {/* Cold Email Generator Section */}
+          <div
+            id="cold-email-generator"
+            className="mt-20 max-w-5xl mx-auto px-4 sm:px-0"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7 }}
+              viewport={{ once: true }}
+              className="mb-6 text-center"
+            >
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                Cold Email Generator
+              </h3>
+              <p className="text-sm sm:text-base text-white/80 max-w-2xl mx-auto">
+                Turn any job description into 2–3 ready-to-send outreach emails, tailored to your
+                profile and tone preference.
+              </p>
+            </motion.div>
+
+            {user?.id ? (
+              <ColdEmailGenerator
+                userId={user.id}
+                defaultJobRole="Software Engineer"
+                defaultCompany="Your Dream Company"
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-white/30 bg-white/5 p-6 text-center text-sm text-white/80">
+                Log in to use the Cold Email Generator and save your drafts.
+              </div>
+            )}
           </div>
         </div>
 

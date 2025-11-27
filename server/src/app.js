@@ -96,6 +96,21 @@ const JobSearchSchema = z.object({
   country: z.string().optional(),
 });
 
+// Cold email generation schema
+const ColdEmailBodySchema = z.object({
+  userId: z.string().min(1),
+  jobRole: z.string().min(1),
+  company: z.string().min(1),
+  jobDescription: z.string().min(30).max(8000).optional(),
+  jobUrl: z.string().url().optional(),
+  tone: z.enum(['formal', 'friendly', 'concise', 'persuasive', 'bold']),
+  recruiterName: z.string().optional(),
+  save: z.boolean().optional().default(false),
+}).refine((data) => data.jobDescription || data.jobUrl, {
+  message: 'Either jobDescription or jobUrl is required',
+  path: ['jobDescription'],
+});
+
 // ==================== CACHING ====================
 const jobCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -738,6 +753,206 @@ app.post('/api/jobs/search', async (req, res) => {
       count: 0,
       mean: 0,
       note: 'Unable to fetch jobs - returned empty results'
+    });
+  }
+});
+
+// ==================== COLD EMAIL GENERATION ROUTE ====================
+app.post('/api/generate-cold-email', async (req, res) => {
+  const parse = ColdEmailBodySchema.safeParse(req.body);
+  if (!parse.success) {
+    return res.status(400).json({ error: 'Invalid request', details: parse.error.flatten() });
+  }
+
+  const {
+    userId,
+    jobRole,
+    company,
+    jobDescription,
+    jobUrl,
+    tone,
+    recruiterName,
+    save,
+  } = parse.data;
+
+  // Basic prompt-safe fallbacks
+  const safeJobDescription = jobDescription || `No full job description provided. Assume a standard ${jobRole} role at ${company}. Focus on relevant skills, impact, and value for the company.`;
+
+  try {
+    // Fetch minimal user profile snapshot if Supabase is configured
+    let profileSnapshot = null;
+    if (supabase) {
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email, location, current_position, experience, skills:interests')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Supabase user profile fetch warning (non-fatal):', error);
+      } else if (profile) {
+        profileSnapshot = profile;
+      }
+    }
+
+    const prompt = `
+You are an ELITE cold email writer helping candidates land interviews.
+Write highly personalized cold outreach emails to recruiters or hiring managers.
+
+Candidate Profile (may be partial):
+- User ID: ${userId}
+- Name: ${profileSnapshot?.full_name || 'The candidate'}
+- Current Role: ${profileSnapshot?.current_position || 'Job seeker'}
+- Location: ${profileSnapshot?.location || 'Not specified'}
+- Skills / Interests: ${(profileSnapshot?.skills || []).join(', ') || 'Not specified'}
+
+Target Job:
+- Role: ${jobRole}
+- Company: ${company}
+- Recruiter Name (optional): ${recruiterName || 'Unknown'}
+- Job URL (optional): ${jobUrl || 'Not provided'}
+- Job Description (trimmed):
+"""
+${safeJobDescription.slice(0, 1200)}
+"""
+
+TONE: ${tone} (one of: formal, friendly, concise, persuasive, bold)
+
+TASK:
+Generate 2–3 distinct cold email variations that:
+- Are 120–220 words each
+- Clearly reference the company and role
+- Use 2–3 RELEVANT skills or experiences from the candidate profile or reasonable assumptions for this role
+- Feel genuinely personalized (not generic)
+- Include ONE clear, low-friction call-to-action (CTA) at the end
+- If recruiterName is known, greet them by name (e.g. "Hi Sarah,"); otherwise use "Hi Hiring Manager," or "Hi [Company] Team,"
+
+OUTPUT FORMAT (JSON ONLY, no markdown, no comments):
+{
+  "emails": [
+    {
+      "variantIndex": 0,
+      "subject": "string",
+      "body": "string",
+      "cta": "string"
+    }
+  ]
+}
+
+Rules:
+- Return between 2 and 3 email objects in the "emails" array.
+- Each subject must be specific and non-spammy.
+- Each body must end with the CTA string (or naturally include it in the final sentence).
+- Do NOT invent specific employment dates, companies, or technologies that are not typical for this role.
+`.trim();
+
+    // Use Gemini JSON generation with robust parsing
+    const aiResponse = await generateJSON(prompt, {
+      temperature: 0.7,
+      maxOutputTokens: 1400,
+      useCache: false,
+    });
+
+    let emails = Array.isArray(aiResponse?.emails) ? aiResponse.emails : [];
+
+    // Normalize and validate emails
+    emails = emails
+      .filter((e) => e && typeof e.subject === 'string' && typeof e.body === 'string')
+      .map((e, index) => ({
+        variantIndex: typeof e.variantIndex === 'number' ? e.variantIndex : index,
+        subject: e.subject.trim().slice(0, 200),
+        body: e.body.trim(),
+        cta: (e.cta && typeof e.cta === 'string' ? e.cta.trim() : 'Would you be open to a brief 15–20 minute call next week?'),
+      }));
+
+    // Fallback: if AI response is empty or malformed, generate a simple template-based email
+    if (emails.length === 0) {
+      const fallbackBody = `
+Hi ${recruiterName || 'Hiring Manager'},
+
+I hope you're doing well. My name is ${profileSnapshot?.full_name || 'a candidate'} and I'm very interested in the ${jobRole} opportunity at ${company}. With experience in modern software development practices and a strong focus on delivering high-quality solutions, I believe I can add value to your team.
+
+I'd love to learn more about what you're looking for in this role and share how my background could be a strong match.
+
+Would you be open to a brief 15–20 minute call sometime next week?
+
+Best regards,
+${profileSnapshot?.full_name || 'Your candidate'}
+`.trim();
+
+      emails = [
+        {
+          variantIndex: 0,
+          subject: `Exploring ${jobRole} opportunities at ${company}`,
+          body: fallbackBody,
+          cta: 'Would you be open to a brief 15–20 minute call sometime next week?',
+        },
+      ];
+    }
+
+    let savedIds = [];
+
+    if (save && supabase) {
+      const rows = emails.map((e) => ({
+        user_id: userId,
+        job_role: jobRole,
+        company,
+        recruiter_name: recruiterName || null,
+        tone,
+        subject: e.subject,
+        body: e.body,
+        cta: e.cta,
+        variant_index: e.variantIndex,
+        job_url: jobUrl || null,
+        job_snapshot: safeJobDescription.slice(0, 2000),
+        profile_snapshot: profileSnapshot,
+      }));
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('cold_emails')
+        .insert(rows)
+        .select('id');
+
+      if (insertError) {
+        console.warn('Supabase cold_emails insert warning (non-fatal):', insertError);
+      } else if (inserted) {
+        savedIds = inserted.map((row) => row.id);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      emails,
+      savedIds,
+    });
+  } catch (error) {
+    console.error('Error generating cold email:', error);
+
+    // Graceful fallback template
+    const fallbackBody = `
+Hi ${recruiterName || 'Hiring Manager'},
+
+I hope you're doing well. My name is ${profileSnapshot?.full_name || 'a candidate'} and I'm reaching out about the ${jobRole} role at ${company}. Based on the description, it looks like a great fit for my background in modern software development and collaborating with cross-functional teams.
+
+If the role is still open, I would welcome the chance to briefly connect and share more about how I can contribute.
+
+Would you be open to a short call sometime next week?
+
+Best regards,
+${profileSnapshot?.full_name || 'Your candidate'}
+`.trim();
+
+    return res.status(200).json({
+      success: true,
+      emails: [
+        {
+          variantIndex: 0,
+          subject: `Interest in ${jobRole} at ${company}`,
+          body: fallbackBody,
+          cta: 'Would you be open to a short call sometime next week?',
+        },
+      ],
+      note: 'Generated using fallback template due to AI error',
     });
   }
 });

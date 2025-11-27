@@ -1,349 +1,344 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ResumeUpload from '@/components/ResumeUpload';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ModeToggle } from '@/components/mode-toggle';
-import { parseCV } from '@/lib/cvParser';
-import { ATSScorerAI, ATSScorerFallback } from '@/lib/atsScorerAI';
-import { mlATSClient } from '@/lib/mlATSClient';
-import { Loader2, Sparkles, Brain, AlertCircle, CheckCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { BackButton } from '@/components/BackButton';
+import { FileText, Upload, Loader2, ArrowLeft, Sparkles, Zap, Brain } from 'lucide-react';
+import { ATSScorerHybrid } from '@/lib/atsScorerHybrid';
+import { ATSScorerFallback } from '@/lib/atsScorerAI';
+import { pdfParser } from '@/lib/pdfParser';
+import { toast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
-export default function ATSAssessment() {
+// Helper functions for resume parsing
+const extractSkills = (text: string): string[] => {
+  const skillPatterns = [
+    'javascript', 'typescript', 'python', 'java', 'c\\+\\+', 'c#', 'ruby', 'go', 'rust', 'php', 'swift', 'kotlin',
+    'react', 'angular', 'vue', 'next\\.?js', 'node\\.?js', 'express', 'django', 'flask', 'spring', 'rails',
+    'html', 'css', 'sass', 'tailwind', 'bootstrap', 'material-?ui',
+    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins', 'ci/cd',
+    'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch', 'graphql', 'rest',
+    'git', 'github', 'gitlab', 'jira', 'agile', 'scrum',
+    'machine learning', 'deep learning', 'tensorflow', 'pytorch', 'nlp',
+    'sql', 'nosql', 'api', 'microservices', 'serverless'
+  ];
+  
+  const found: string[] = [];
+  const lowerText = text.toLowerCase();
+  
+  skillPatterns.forEach(skill => {
+    const regex = new RegExp(`\\b${skill}\\b`, 'i');
+    if (regex.test(lowerText)) {
+      found.push(skill.replace(/\\./g, '.').replace(/\\+/g, '+'));
+    }
+  });
+  
+  return [...new Set(found)];
+};
+
+const extractExperience = (text: string): number => {
+  const yearPatterns = [
+    /(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/i,
+    /experience[:\s]+(\d+)\+?\s*years?/i,
+    /(senior|lead|principal|staff)/i
+  ];
+  
+  for (const pattern of yearPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+  }
+  
+  // Estimate from job history
+  const dateMatches = text.match(/\b(20\d{2}|19\d{2})\b/g);
+  if (dateMatches && dateMatches.length >= 2) {
+    const years = dateMatches.map(y => parseInt(y, 10));
+    const range = Math.max(...years) - Math.min(...years);
+    return Math.min(range, 20);
+  }
+  
+  return 0;
+};
+
+const extractEducation = (text: string): string[] => {
+  const eduPatterns = [
+    /(?:bachelor|b\.?s\.?|b\.?a\.?|b\.?e\.?|b\.?tech)/i,
+    /(?:master|m\.?s\.?|m\.?a\.?|m\.?e\.?|m\.?tech|mba)/i,
+    /(?:ph\.?d|doctorate|doctor)/i,
+    /(?:computer science|engineering|information technology|data science)/i
+  ];
+  
+  const found: string[] = [];
+  eduPatterns.forEach(pattern => {
+    const match = text.match(pattern);
+    if (match) {
+      found.push(match[0]);
+    }
+  });
+  
+  return found;
+};
+
+const extractKeywords = (text: string): string[] => {
+  const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used', 'that', 'this', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which', 'who', 'whom', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very']);
+  return [...new Set(words.filter(w => w.length > 3 && !stopWords.has(w)))];
+};
+
+const ATSAssessment = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [useAI, setUseAI] = useState(false); // Start with ML backend
-  const [useML, setUseML] = useState(true); // ML backend by default
-  const [aiAvailable, setAiAvailable] = useState(true);
-  const [mlAvailable, setMlAvailable] = useState(false);
-  const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [useAI, setUseAI] = useState(true);
 
-  // Check ML backend and API key validity on component mount
-  useEffect(() => {
-    const checkAvailability = async () => {
-      // Check ML backend
-      try {
-        const mlReady = await mlATSClient.isAvailable();
-        setMlAvailable(mlReady);
-        setUseML(mlReady);
-      } catch (error) {
-        console.warn('ML backend check failed:', error);
-        setMlAvailable(false);
-        setUseML(false);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      
+      if (file.type === 'application/pdf') {
+        try {
+          toast({
+            title: "Processing PDF",
+            description: "Extracting text from your resume...",
+          });
+          
+          const text = await pdfParser.parseFile(file);
+          setResumeText(text);
+          
+          toast({
+            title: "PDF Processed",
+            description: "Resume text extracted successfully!",
+          });
+        } catch (error) {
+          console.error('PDF parsing error:', error);
+          toast({
+            title: "PDF Error",
+            description: "Could not extract text from PDF. Please paste your resume text manually.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          setResumeText(text);
+        };
+        reader.readAsText(file);
       }
-
-      // Check AI API key
-      try {
-        const aiScorer = new ATSScorerAI();
-        const isValid = await aiScorer.testConnection();
-        setApiKeyValid(isValid);
-        setAiAvailable(isValid);
-      } catch (error) {
-        console.warn('API key validation failed:', error);
-        setApiKeyValid(false);
-        setAiAvailable(false);
-        setUseAI(false);
-      }
-    };
-
-    checkAvailability();
-  }, []);
+    }
+  };
 
   const handleAnalyze = async () => {
-    if (!file) {
+    if (!resumeText.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please upload your resume first',
-        variant: 'destructive',
+        title: "Resume Required",
+        description: "Please upload or paste your resume text.",
+        variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
+    setIsAnalyzing(true);
+
     try {
-      let scores;
+      let result;
       
-      // Try ML backend first if enabled
-      if (useML && mlAvailable) {
+      if (useAI) {
+        // Use Hybrid ATS scoring (rule-based + AI suggestions)
         try {
-          const mlResult = await mlATSClient.scoreResume(file, jobDescription || undefined);
-          
-          // Convert ML response to ATSScores format - map ML fields to expected format
-          // Grade based on score
-          const grade = mlResult.overall_score >= 85 ? 'A' 
-            : mlResult.overall_score >= 75 ? 'B'
-            : mlResult.overall_score >= 60 ? 'C'
-            : mlResult.overall_score >= 45 ? 'D'
-            : 'F';
-          
-          scores = {
-            overall: mlResult.overall_score,
-            grade: grade,
-            // Map ML breakdown fields to expected display fields
-            keywordMatch: mlResult.breakdown.keywords,
-            skillsMatch: mlResult.breakdown.skills,
-            experience: mlResult.breakdown.experience,
-            education: mlResult.breakdown.structure,  // Structure includes education
-            formatting: mlResult.breakdown.formatting,
-            // Also keep raw values for flexibility
-            keywords: mlResult.breakdown.keywords,
-            skills: mlResult.breakdown.skills,
-            structure: mlResult.breakdown.structure,
-            // Convert suggestions to expected format with priorities
-            suggestions: mlResult.suggestions.map(s => ({
-              type: s.category,
-              priority: s.priority,
-              message: s.suggestion,
-            })),
-            confidence: mlResult.confidence,
-            modelVersion: mlResult.model_version,
-          };
-          
           toast({
-            title: 'ML Analysis Complete',
-            description: `Resume scored using ML model v${mlResult.model_version || '2.0'} (${(mlResult.confidence * 100).toFixed(0)}% confidence)`,
+            title: "🔄 Analyzing Resume",
+            description: "Using hybrid AI scoring for accurate results...",
           });
-        } catch (mlError) {
-          console.warn('ML scoring failed, falling back:', mlError);
-          setMlAvailable(false);
-          
-          // Fallback to AI or rule-based
-          const parsedData = await parseCV(file);
-          scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
-          
-          toast({
-            title: 'Using Standard Analysis',
-            description: 'ML backend unavailable, using fallback scoring',
-            variant: 'default',
-          });
-        }
-      } else if (useAI && aiAvailable) {
-        // Parse resume for AI scoring
-        const parsedData = await parseCV(file);
-        
-        try {
-          // Use AI-powered scoring
-          const aiScorer = new ATSScorerAI();
-          scores = await aiScorer.calculateScore(parsedData, jobDescription || undefined);
-          
-          toast({
-            title: 'AI Analysis Complete',
-            description: 'Resume analyzed using advanced AI technology!',
-          });
+          result = await ATSScorerHybrid.analyzeResume(resumeText, jobDescription || undefined);
+          result.usedAI = true;
         } catch (aiError) {
-          console.warn('AI scoring failed, falling back to rule-based:', aiError);
-          setAiAvailable(false);
-          
-          // Fallback to rule-based scoring
-          scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
-          
-          const errorMessage = aiError instanceof Error ? aiError.message : '';
-          const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('429');
-          
+          console.warn('Hybrid scoring failed, using fallback:', aiError);
+          // Parse resume for fallback - create a complete ParsedCV object
+          const parsedData = {
+            text: resumeText,
+            skills: extractSkills(resumeText),
+            experienceYears: extractExperience(resumeText),
+            education: extractEducation(resumeText),
+            keywords: extractKeywords(resumeText),
+            contactInfo: {},
+            experience: [],
+            confidence: 50,
+            sections: {}
+          };
+          result = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
+          result.usedAI = false;
           toast({
-            title: isQuotaError ? 'AI Quota Reached' : 'Using Standard Analysis',
-            description: isQuotaError 
-              ? 'AI quota exceeded. Using rule-based scoring.'
-              : 'Using rule-based scoring',
-            variant: 'default',
+            title: "Using Fallback Scoring",
+            description: "Groq AI unavailable, using rule-based analysis.",
           });
         }
       } else {
-        // Use rule-based scoring
-        const parsedData = await parseCV(file);
-        scores = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
-        
-        toast({
-          title: 'Analysis Complete',
-          description: 'Resume analyzed using standard scoring',
-        });
+        // Use rule-based fallback scoring
+        const parsedData = {
+          text: resumeText,
+          skills: extractSkills(resumeText),
+          experienceYears: extractExperience(resumeText),
+          education: extractEducation(resumeText),
+          keywords: extractKeywords(resumeText),
+          contactInfo: {},
+          experience: [],
+          confidence: 50,
+          sections: {}
+        };
+        result = ATSScorerFallback.calculateScore(parsedData, jobDescription || undefined);
+        result.usedAI = false;
       }
       
-      // Navigate to results with data
+      // Navigate to results page with the analysis data
       navigate('/ats-results', { 
         state: { 
-          scores, 
-          parsedData: file, 
-          usedAI: useAI && aiAvailable,
-          usedML: useML && mlAvailable,
-          modelVersion: useML && mlAvailable ? '2.0' : undefined
+          result,
+          resumeText,
+          jobDescription
         } 
       });
       
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to analyze resume. Please try again.',
-        variant: 'destructive',
+        title: "Analysis Failed",
+        description: "There was an error analyzing your resume. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl relative">
-      <div className="mb-6">
-        <BackButton to="/resume" />
-      </div>
-      <div className="absolute top-4 right-4">
-        <ModeToggle />
-      </div>
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">ATS Resume Assessment</h1>
-        <p className="text-lg text-muted-foreground">
-          Get instant feedback on your resume's ATS compatibility
-        </p>
-        
-        {/* Service Status */}
-        <div className="mt-4 space-y-2">
-          {mlAvailable && (
-            <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400">
-              <CheckCircle className="h-4 w-4" />
-              <span>ML Backend is available (Port 8000)</span>
+    <div className="min-h-screen bg-gradient-to-br from-horizon-blue via-horizon-purple to-horizon-pink p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Back Button */}
+        <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl text-white flex items-center justify-center gap-2">
+              <FileText className="w-8 h-8" />
+              ATS Resume Assessment
+            </CardTitle>
+            <CardDescription className="text-white/70 text-lg">
+              Get your resume scored and optimized for Applicant Tracking Systems
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Scoring Method Toggle */}
+            <div className="flex items-center justify-center gap-4 p-4 bg-white/5 rounded-lg">
+              <span className="text-white/70 text-sm">Scoring Method:</span>
+              <div className="flex gap-2">
+                <Button
+                  variant={useAI ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUseAI(true)}
+                  className={useAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-white/10 border-white/20 text-white"}
+                >
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  AI Powered
+                </Button>
+                <Button
+                  variant={!useAI ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUseAI(false)}
+                  className={!useAI ? "bg-gradient-to-r from-blue-500 to-cyan-500" : "bg-white/10 border-white/20 text-white"}
+                >
+                  <Zap className="w-4 h-4 mr-1" />
+                  Rule-Based
+                </Button>
+              </div>
             </div>
-          )}
-          {apiKeyValid === null ? (
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Checking AI service availability...</span>
-            </div>
-          ) : apiKeyValid ? (
-            <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400">
-              <CheckCircle className="h-4 w-4" />
-              <span>AI service is available</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 text-orange-600 dark:text-orange-400">
-              <AlertCircle className="h-4 w-4" />
-              <span>AI service unavailable - using standard analysis</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Scoring Mode Toggles */}
-        <div className="flex items-center justify-center gap-6 mt-6">
-          {/* ML Backend Toggle */}
-          {mlAvailable && (
-            <div className="flex items-center gap-3">
-              <Switch
-                id="ml-mode"
-                checked={useML}
-                onCheckedChange={(checked) => {
-                  setUseML(checked);
-                  if (checked) setUseAI(false);
-                }}
-                disabled={!mlAvailable}
+
+            {/* Resume Upload Section */}
+            <div className="space-y-4">
+              <Label className="text-white text-lg">Your Resume</Label>
+              
+              {/* File Upload */}
+              <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center hover:border-white/50 transition-colors">
+                <Input
+                  type="file"
+                  accept=".pdf,.txt,.doc,.docx"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="resume-upload"
+                />
+                <label htmlFor="resume-upload" className="cursor-pointer">
+                  <Upload className="w-12 h-12 mx-auto text-white/50 mb-2" />
+                  <p className="text-white/70">
+                    {uploadedFile ? uploadedFile.name : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-white/50 text-sm mt-1">PDF, TXT, DOC, DOCX</p>
+                </label>
+              </div>
+
+              {/* Text Area */}
+              <Textarea
+                placeholder="Or paste your resume text here..."
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                className="min-h-[200px] bg-white/5 border-white/20 text-white placeholder:text-white/40"
               />
-              <Label htmlFor="ml-mode" className="flex items-center gap-2 cursor-pointer">
-                <Brain className="w-4 h-4 text-blue-500" />
-                <span className="font-medium">ML Model</span>
-              </Label>
             </div>
-          )}
-          
-          {/* AI Toggle */}
-          <div className="flex items-center gap-3">
-            <Switch
-              id="ai-mode"
-              checked={useAI}
-              onCheckedChange={(checked) => {
-                setUseAI(checked);
-                if (checked) setUseML(false);
-              }}
-              disabled={!aiAvailable || apiKeyValid === null}
-            />
-            <Label htmlFor="ai-mode" className="flex items-center gap-2 cursor-pointer">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <span className="font-medium">AI Analysis</span>
-              {!aiAvailable && (
-                <AlertCircle className="w-4 h-4 text-orange-500" />
+
+            {/* Job Description Section (Optional) */}
+            <div className="space-y-4">
+              <Label className="text-white text-lg">Job Description (Optional)</Label>
+              <Textarea
+                placeholder="Paste the job description to get tailored recommendations..."
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                className="min-h-[150px] bg-white/5 border-white/20 text-white placeholder:text-white/40"
+              />
+            </div>
+
+            {/* Analyze Button */}
+            <Button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || !resumeText.trim()}
+              className="w-full bg-gradient-to-r from-horizon-orange to-horizon-pink hover:opacity-90 text-white py-6 text-lg"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Analyzing Resume...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-5 h-5 mr-2" />
+                  Analyze My Resume
+                </>
               )}
-            </Label>
-          </div>
-        </div>
-        
-        <div className="text-sm text-muted-foreground mt-2">
-          {useML && mlAvailable ? (
-            <span className="text-blue-600 font-medium">
-              🎯 Using Industry-Grade XGBoost ML model v2.0 (98.8% accuracy, 2.32pt MAE)
-            </span>
-          ) : useAI && aiAvailable ? (
-            <span className="text-purple-600 font-medium">
-              🤖 Using advanced AI for semantic analysis and personalized feedback
-            </span>
-          ) : (
-            <span className="text-muted-foreground">
-              📊 Using standard rule-based analysis
-            </span>
-          )}
-        </div>
-      </div>
+            </Button>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>1. Upload Your Resume</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResumeUpload onFileSelect={setFile} />
+            {/* Info Section */}
+            <div className="bg-white/5 rounded-lg p-4 space-y-2">
+              <h3 className="text-white font-semibold">What you'll get:</h3>
+              <ul className="text-white/70 text-sm space-y-1">
+                <li>• Overall ATS compatibility score</li>
+                <li>• Keyword analysis and optimization tips</li>
+                <li>• Format and structure recommendations</li>
+                <li>• Industry-specific suggestions</li>
+                <li>• Actionable improvement checklist</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>2. Job Description (Optional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Paste the job description here for targeted analysis..."
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              rows={10}
-            />
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-center">
-          <Button
-            size="lg"
-            onClick={handleAnalyze}
-            disabled={!file || loading}
-            className={`${
-              useAI && aiAvailable 
-                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' 
-                : 'bg-primary hover:bg-primary/90'
-            }`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {useAI && aiAvailable ? 'AI Analyzing...' : 'Analyzing...'}
-              </>
-            ) : (
-              <>
-                {useAI && aiAvailable ? (
-                  <>
-                    <Brain className="mr-2 h-4 w-4" />
-                    AI Analyze Resume
-                  </>
-                ) : (
-                  'Analyze Resume'
-                )}
-              </>
-            )}
-          </Button>
-        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ATSAssessment;

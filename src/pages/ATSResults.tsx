@@ -29,18 +29,24 @@ interface ATSScores {
   experience?: number;
   education?: number;
   formatting?: number;
+  usedAI?: boolean;
 }
 
 export default function ATSResults() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { scores, parsedData, usedAI, usedML, modelVersion } = location.state as { 
-    scores: ATSScores; 
-    parsedData: unknown; 
-    usedAI: boolean;
-    usedML?: boolean;
-    modelVersion?: string;
+  
+  // Handle both old and new data formats
+  const { result, scores: legacyScores, resumeText, jobDescription } = location.state as { 
+    result?: ATSScores; 
+    scores?: ATSScores;
+    resumeText?: string;
+    jobDescription?: string;
   } || {};
+  
+  // Use result or fallback to legacy scores
+  const scores = result || legacyScores;
+  const usedAI = scores?.usedAI ?? true;
 
 
   useEffect(() => {
@@ -48,11 +54,12 @@ export default function ATSResults() {
       navigate('/ats-assessment');
     } else {
       console.log('📋 ATSResults received:', {
+        overall: scores.overall,
         suggestionCount: scores.suggestions?.length || 0,
-        suggestions: scores.suggestions
+        usedAI
       });
     }
-  }, [scores, navigate]);
+  }, [scores, navigate, usedAI]);
 
   useEffect(() => {
     // Non-blocking ping to backend scores endpoint to ensure connectivity
@@ -62,7 +69,6 @@ export default function ATSResults() {
         await getScores();
       } catch (e) {
         // Silently ignore to avoid impacting the results view
-        // You can surface a toast here if desired
       }
     })();
   }, []);
@@ -81,15 +87,10 @@ export default function ATSResults() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold">Assessment Results</h1>
-            {usedML ? (
-              <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-                <Brain className="w-3 h-3 mr-1" />
-                ML Model v{modelVersion || '2.0'}
-              </Badge>
-            ) : usedAI ? (
+            {usedAI ? (
               <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
                 <Brain className="w-3 h-3 mr-1" />
-                AI-Powered
+                Hybrid AI Scoring
               </Badge>
             ) : (
               <Badge variant="secondary">
@@ -99,11 +100,9 @@ export default function ATSResults() {
             )}
           </div>
           <p className="text-muted-foreground">
-            {usedML
-              ? `Industry-grade ML analysis with 98.8% accuracy and non-linear ATS scoring`
-              : usedAI 
-                ? "Advanced AI analysis with semantic understanding and personalized feedback"
-                : "Standard rule-based analysis of your resume's ATS compatibility"
+            {usedAI 
+              ? "Accurate rule-based scoring combined with AI-powered suggestions"
+              : "Standard rule-based analysis of your resume's ATS compatibility"
             }
           </p>
         </div>

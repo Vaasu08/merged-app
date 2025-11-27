@@ -137,6 +137,12 @@ function getCacheStats() {
 // Health check
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// GET /api/scores - Return saved ATS scores (placeholder for now)
+app.get('/api/scores', (_req, res) => {
+  // Return empty array as we're not persisting scores yet
+  res.json([]);
+});
+
 // Cache statistics endpoint
 app.get('/api/cache/stats', (_req, res) => {
   const jobCacheStats = getCacheStats();

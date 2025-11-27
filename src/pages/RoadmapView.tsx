@@ -26,8 +26,30 @@ export default function RoadmapView() {
     }
   }, [roadmap, navigate]);
 
+  // Safety checks for malformed roadmap data
   if (!roadmap) {
     return null;
+  }
+
+  if (!roadmap.phases || !Array.isArray(roadmap.phases) || roadmap.phases.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invalid Roadmap Data</CardTitle>
+            <CardDescription>
+              The roadmap data is incomplete or malformed. Please go back and regenerate your roadmap.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/roadmap')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Roadmap Generator
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const togglePhaseComplete = (phaseNumber: number) => {
@@ -75,22 +97,22 @@ export default function RoadmapView() {
     setCurrentQuiz(null);
   };
 
-  const progressPercentage = (completedPhases.length / roadmap.phases.length) * 100;
+  const progressPercentage = roadmap.phases ? (completedPhases.length / roadmap.phases.length) * 100 : 0;
 
   const handleDownload = () => {
     // Create text version of roadmap
-    let content = `${roadmap.title}\n${'='.repeat(roadmap.title.length)}\n\n`;
-    content += `${roadmap.overview}\n\n`;
-    content += `Duration: ${roadmap.duration_days} days\n`;
-    content += `Difficulty: ${roadmap.difficulty}\n\n`;
+    let content = `${roadmap.title || 'Roadmap'}\n${'='.repeat((roadmap.title || 'Roadmap').length)}\n\n`;
+    content += `${roadmap.overview || ''}\n\n`;
+    content += `Duration: ${roadmap.duration_days || 0} days\n`;
+    content += `Difficulty: ${roadmap.difficulty || 'N/A'}\n\n`;
     
-    roadmap.phases.forEach((phase) => {
+    (roadmap.phases || []).forEach((phase) => {
       content += `\n## Phase ${phase.phase_number}: ${phase.title}\n`;
       content += `Duration: ${phase.duration_days} days\n`;
       content += `${phase.description}\n\n`;
-      content += `Topics:\n${phase.topics.map(t => `- ${t}`).join('\n')}\n\n`;
+      content += `Topics:\n${(phase.topics || []).map(t => `- ${t}`).join('\n')}\n\n`;
       
-      if (phase.resources.length > 0) {
+      if (phase.resources && phase.resources.length > 0) {
         content += `Resources:\n`;
         phase.resources.forEach(r => {
           content += `- ${r.name} (${r.type})`;

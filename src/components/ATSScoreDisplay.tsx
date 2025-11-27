@@ -9,11 +9,14 @@ interface ATSScoreDisplayProps {
   score: number;
   grade: string;
   breakdown: {
-    keywordMatch: number;
-    skillsMatch: number;
+    keywordMatch?: number;
+    keywords?: number;
+    skillsMatch?: number;
+    skills?: number;
     experience: number;
-    education: number;
+    education?: number;
     formatting: number;
+    structure?: number;
   };
 }
 
@@ -27,15 +30,22 @@ export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDis
     return 'text-red-600 dark:text-red-400';
   };
 
-
+  // Map breakdown to display - handle both old and new formats
+  const normalizedBreakdown = {
+    keywordMatch: breakdown.keywordMatch ?? breakdown.keywords ?? 0,
+    skillsMatch: breakdown.skillsMatch ?? breakdown.skills ?? 0,
+    experience: breakdown.experience ?? 0,
+    education: breakdown.education ?? breakdown.structure ?? 0,
+    formatting: breakdown.formatting ?? 0,
+  };
 
 
   const categories = [
-    { key: 'keywordMatch', label: 'Keyword Match', weight: '40%' },
-    { key: 'skillsMatch', label: 'Skills Alignment', weight: '25%' },
-    { key: 'experience', label: 'Experience', weight: '20%' },
-    { key: 'education', label: 'Education', weight: '10%' },
-    { key: 'formatting', label: 'Formatting', weight: '5%' },
+    { key: 'keywordMatch', label: 'Keyword Match', weight: '35%' },
+    { key: 'skillsMatch', label: 'Skills Alignment', weight: '18%' },
+    { key: 'experience', label: 'Experience', weight: '25%' },
+    { key: 'education', label: 'Education/Structure', weight: '12%' },
+    { key: 'formatting', label: 'Formatting', weight: '10%' },
   ];
 
 
@@ -85,10 +95,10 @@ export default function ATSScoreDisplay({ score, grade, breakdown }: ATSScoreDis
                     {label} <span className="text-xs text-gray-500 dark:text-gray-400">({weight})</span>
                   </span>
                   <span className="font-semibold">
-                    {breakdown[key as keyof typeof breakdown]?.toFixed(1)}%
+                    {normalizedBreakdown[key as keyof typeof normalizedBreakdown]?.toFixed(1)}%
                   </span>
                 </div>
-                <Progress value={breakdown[key as keyof typeof breakdown]} />
+                <Progress value={normalizedBreakdown[key as keyof typeof normalizedBreakdown]} />
               </div>
             ))}
           </div>

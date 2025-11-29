@@ -11,10 +11,14 @@ import { CareerPath } from '@/types/career';
 import { useAuth } from '@/components/AuthProvider';
 import { getUserSkills, saveUserSkills } from '@/lib/profile';
 import { HorizonLogo } from '@/components/HorizonLogo';
+import AnimatedTestimonials from '@/components/AnimatedTestimonials';
+
+
+import PricingSection from '@/components/PricingSection';
 import { analyzeAssessmentAnswersWithGemini, JobRecommendation } from '@/lib/geminiCareerRecommendation';
-import { 
-  Brain, Target, TrendingUp, Users, ArrowRight, Sparkles, 
-  Zap, Star, Award, Globe, Code, BarChart3, Rocket, 
+import {
+  Brain, Target, TrendingUp, Users, ArrowRight, Sparkles,
+  Zap, Star, Award, Globe, Code, BarChart3, Rocket,
   CheckCircle, Play, Pause, Volume2, VolumeX, Maximize2, User,
   Menu, X, MessageSquare
 } from 'lucide-react';
@@ -33,7 +37,7 @@ const Index = () => {
   // If it throws, wrap the entire component usage or handle it differently
   const authContext = useAuth();
   const user = authContext?.user ?? null;
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState<'welcome' | 'skills' | 'recommendations'>('welcome');
@@ -66,13 +70,13 @@ const Index = () => {
       try {
         const skills = await getUserSkills(user.id);
         setSelectedSkills(skills);
-        
+
         // Check if we're coming from Profile page with specific intent to show recommendations
         const navigationState = location.state as { showRecommendations?: boolean; skills?: string[]; fromProfile?: boolean } | null;
         if (navigationState?.showRecommendations) {
           const skillsToUse = navigationState.skills || skills;
           console.log('Navigation from profile detected, showing recommendations for skills:', skillsToUse);
-          
+
           if (skillsToUse.length >= 3) {
             setSelectedSkills(skillsToUse); // Ensure skills are set
             const recommendations = getCareerRecommendations(skillsToUse);
@@ -94,7 +98,7 @@ const Index = () => {
             return;
           }
         }
-        
+
         // Auto-determine the correct step based on existing skills
         if (skills.length >= 3) {
           // User has enough skills, show recommendations automatically
@@ -136,7 +140,7 @@ const Index = () => {
     const backupSync = async () => {
       if (!user?.id) return;
       if (!skillsLoadedRef.current) return; // wait until initial load is done
-      
+
       try {
         console.log(`Backup syncing ${selectedSkills.length} skills for user ${user.id}`);
         await saveUserSkills(user.id, selectedSkills);
@@ -146,7 +150,7 @@ const Index = () => {
         // Don't show toast for backup sync failures to avoid spam
       }
     };
-    
+
     // Only do backup sync with slight delay to avoid conflicts with immediate saves
     const timeoutId = setTimeout(backupSync, 1000);
     return () => clearTimeout(timeoutId);
@@ -161,7 +165,7 @@ const Index = () => {
     try {
       const recommendations = getCareerRecommendations(selectedSkills);
       console.log('Generated recommendations:', recommendations.length);
-      
+
       if (recommendations.length === 0) {
         toast.error('No career matches found. Try adding more skills or different skill types.');
         return;
@@ -170,15 +174,15 @@ const Index = () => {
       // Set the recommendations and navigate to recommendations view
       setCareerPaths(recommendations);
       setCurrentStep('recommendations');
-      
+
       // Show success message with career count
       const topMatch = recommendations[0];
       toast.success(`Analysis complete! Found ${recommendations.length} career matches. Top match: ${topMatch.title} (${topMatch.matchPercentage}% match)`, {
         duration: 5000
       });
-      
+
       console.log('Analysis complete, now showing recommendations screen');
-      
+
     } catch (error) {
       console.error('Error during analysis:', error);
       toast.error('Failed to complete analysis. Please try again.');
@@ -190,8 +194,8 @@ const Index = () => {
   };
 
   const handleToggleStep = (stepId: string) => {
-    setCompletedSteps(prev => 
-      prev.includes(stepId) 
+    setCompletedSteps(prev =>
+      prev.includes(stepId)
         ? prev.filter(id => id !== stepId)
         : [...prev, stepId]
     );
@@ -200,7 +204,7 @@ const Index = () => {
   const handleAddSkills = async (skills: string[]) => {
     const newSkills = [...new Set([...selectedSkills, ...skills])];
     setSelectedSkills(newSkills);
-    
+
     // Save to profile if user is logged in
     if (user?.id) {
       try {
@@ -229,7 +233,7 @@ const Index = () => {
         setInitialLoadComplete(true);
       }
     }, 3000); // 3 second safety timeout
-    
+
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -290,13 +294,13 @@ const Index = () => {
         >
           <div className="flex items-center justify-between w-full px-6 py-6">
             {/* Logo */}
-            <motion.div 
+            <motion.div
               className="flex items-center"
               whileHover={{ scale: 1.05 }}
             >
               <HorizonLogo size="md" variant="light" />
             </motion.div>
-            
+
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               <Link to='/' className='text-white/80 hover:text-white text-sm font-medium transition-colors duration-300 uppercase tracking-wide font-inter'>
@@ -315,7 +319,7 @@ const Index = () => {
                 COMMUNITY
               </Link>
             </div>
-            
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -323,7 +327,7 @@ const Index = () => {
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            
+
             {/* Right side - Auth & Theme */}
             <div className="flex items-center gap-4">
               {user ? (
@@ -350,10 +354,10 @@ const Index = () => {
               <ModeToggle />
             </div>
           </div>
-          
+
           {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
-              <motion.div
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -376,7 +380,7 @@ const Index = () => {
                   COMMUNITY
                 </Link>
               </div>
-                </motion.div>
+            </motion.div>
           )}
         </motion.nav>
 
@@ -391,17 +395,17 @@ const Index = () => {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="text-left space-y-6 sm:space-y-8 flex flex-col justify-center"
               >
-              {/* Main Heading */}
+                {/* Main Heading */}
                 <div className="space-y-4">
                   {/* HORIZON Title with Gradient Effects */}
-              <motion.div
+                  <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.3 }}
                     className="mb-8 relative"
                   >
                     <h1 className="text-6xl sm:text-7xl lg:text-8xl xl:text-9xl font-black leading-none relative z-10">
-                  <motion.span
+                      <motion.span
                         className="bg-gradient-to-r from-cyan-400 via-purple-500 to-red-500 bg-clip-text text-transparent"
                         animate={{
                           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -414,11 +418,11 @@ const Index = () => {
                         style={{
                           backgroundSize: "200% 200%"
                         }}
-                  >
-                    HORIZON
-                  </motion.span>
-              </h1>
-                    
+                      >
+                        HORIZON
+                      </motion.span>
+                    </h1>
+
                     {/* Multiple animated gradient background effects */}
                     <motion.div
                       className="absolute -z-10 w-full h-32 bg-gradient-to-r from-cyan-400/30 via-purple-500/30 to-red-500/30 blur-3xl"
@@ -447,7 +451,7 @@ const Index = () => {
                         delay: 1
                       }}
                     />
-                    
+
                     {/* Floating particles around HORIZON */}
                     {[...Array(8)].map((_, i) => (
                       <motion.div
@@ -469,8 +473,8 @@ const Index = () => {
                         }}
                       />
                     ))}
-              </motion.div>
-                  
+                  </motion.div>
+
                   <motion.h2
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -481,37 +485,37 @@ const Index = () => {
                       The Gateway to
                     </span>
                     <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent font-extrabold">
-                       Discover Perfect
+                      Discover Perfect
                     </span>
                     <span className="block text-white/70 text-2xl sm:text-3xl lg:text-4xl xl:text-5xl mt-2 font-light">
                       Career Decisions
                     </span>
                   </motion.h2>
                 </div>
-              
-              {/* Description */}
-              <motion.p
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+
+                {/* Description */}
+                <motion.p
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.6 }}
                   className="text-lg sm:text-xl text-white/80 leading-relaxed max-w-2xl font-inter font-light"
-              >
+                >
                   Map your skills, explore opportunities, and unlock your professional journey with confidence.
-              </motion.p>
-              
+                </motion.p>
+
                 {/* CTA Button */}
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.8 }}
                   className="pt-4"
-              >
+                >
                   {/* Test button for modal */}
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button 
+                    <Button
                       size="lg"
                       variant="outline"
                       onClick={() => {
@@ -525,9 +529,9 @@ const Index = () => {
 
                 </motion.div>
               </motion.div>
-                
+
               {/* Right Content - Duck Resume Video - Full Coverage */}
-                <motion.div
+              <motion.div
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
@@ -544,7 +548,7 @@ const Index = () => {
                   >
                     <source src="/Duck_s_Resume_for_Career_Guidance.mp4" type="video/mp4" />
                   </video>
-                  
+
                   {/* Floating particles around video */}
                   {[...Array(6)].map((_, i) => (
                     <motion.div
@@ -572,150 +576,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Community Section */}
-        <div className="relative z-10 bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 py-16 sm:py-20 lg:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-12 sm:mb-16"
-            >
-              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 sm:mb-6">
-                Community
-              </h2>
-              <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
-                Join our vibrant community of career-focused professionals sharing insights, opportunities, and success stories
-              </p>
-            </motion.div>
-            
-            {/* Community Posts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-              {[
-                {
-                  user: "Ruchi Bhat",
-                  handle: "@ruchibhatt",
-                  avatar: "SC",
-                  content: "Just discovered my perfect career path through HORIZON! The AI recommendations were spot-on. From marketing to data science - what a journey! 🚀 #CareerDiscovery #DataScience",
-                  date: "Dec 15",
-                  likes: 24,
-                  retweets: 8
-                },
-                {
-                  user: "Yatin Kumar",
-                  handle: "@YatinKumarr",
-                  avatar: "MR",
-                  content: "The skill gap analysis feature is incredible. It showed me exactly what I needed to learn to transition into product management. Already enrolled in 3 courses! 💪 #ProductManagement #Learning",
-                  date: "Dec 14",
-                  likes: 18,
-                  retweets: 12
-                },
-                {
-                  user: "Kim Kadarshian",
-                  handle: "@Kim23",
-                  avatar: "AK",
-                  content: "HORIZON's interview simulator helped me land my dream job at Google! The AI feedback was so detailed and helpful. Can't recommend it enough! 🎉 #InterviewPrep #Google #Success",
-                  date: "Dec 13",
-                  likes: 42,
-                  retweets: 19
-                },
-                {
-                  user: "Emma Watson",
-                  handle: "@emmawatson",
-                  avatar: "EW",
-                  content: "The career roadmap feature is a game-changer. I can see exactly where I'll be in 5 years and what steps to take. Finally, clarity in my career journey! 📈 #CareerPlanning #Roadmap",
-                  date: "Dec 12",
-                  likes: 31,
-                  retweets: 15
-                },
-                {
-                  user: "Khushi Sharma",
-                  handle: "@khushisharma",
-                  avatar: "DP",
-                  content: "Love how HORIZON connects skills to real job opportunities. Found 3 perfect matches I never would have considered. The AI really understands the market! 🤖 #JobSearch #AI",
-                  date: "Dec 11",
-                  likes: 27,
-                  retweets: 9
-                },
-                {
-                  user: "Lisa",
-                  handle: "@lisazhang",
-                  avatar: "LZ",
-                  content: "The community insights are amazing. Seeing what skills are trending and what companies are hiring for helps me stay ahead of the curve. 📊 #MarketInsights #Trends",
-                  date: "Dec 10",
-                  likes: 35,
-                  retweets: 22
-                }
-              ].map((post, index) => (
-          <motion.div
-                  key={index}
-                  initial={{ y: 50, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  className="group cursor-pointer"
-                  onClick={() => navigate('/community')}
-                >
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300 hover:shadow-lg hover:shadow-white/10">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {post.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-white text-sm">{post.user}</h3>
-                          <span className="text-white/60 text-sm">{post.handle}</span>
-                          <div className="ml-auto">
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">🐦</span>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-white/80 text-sm leading-relaxed">{post.content}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-white/60 text-xs">
-                      <span>{post.date}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <span>❤️</span> {post.likes}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🔄</span> {post.retweets}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            
-            {/* View More Button */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mt-12"
-            >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/community')}
-                className="inline-block cursor-pointer"
-              >
-                <Button 
-                  size="lg"
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:border-white/40 font-medium px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-white/10 font-inter"
-                >
-                  View Full Community →
-                </Button>
-          </motion.div>
-        </motion.div>
-          </div>
-        </div>
+
 
         {/* How It Works Flowchart Section */}
         <HowItWorks />
@@ -727,7 +588,7 @@ const Index = () => {
             <div className="absolute top-20 left-10 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
             <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
           </div>
-          
+
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
               {/* Left Content */}
@@ -785,7 +646,7 @@ const Index = () => {
                 <div className="relative bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/20">
                   {/* Background blur effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl -z-10"></div>
-                  
+
                   {/* Main Card Content - Video covering entire card */}
                   <div className="relative h-[500px] rounded-2xl overflow-hidden">
                     {/* Video covering entire card area */}
@@ -1059,6 +920,50 @@ const Index = () => {
               </div>
             )}
           </div>
+          <PricingSection />
+        </div>
+        {/* Community Section */}
+        <div className="relative z-10 bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 py-16 sm:py-20 lg:py-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-12 sm:mb-16"
+            >
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4 sm:mb-6">
+                Community
+              </h2>
+              <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
+                Join our vibrant community of career-focused professionals sharing insights, opportunities, and success stories
+              </p>
+            </motion.div>
+            <AnimatedTestimonials />
+
+            {/* View More Button */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="text-center mt-12"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/community')}
+                className="inline-block cursor-pointer"
+              >
+                <Button
+                  size="lg"
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:border-white/40 font-medium px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-white/10 font-inter"
+                >
+                  View Full Community →
+                </Button>
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
 
         {/* Our Mission and About Us Section */}
@@ -1076,7 +981,7 @@ const Index = () => {
               </h2>
 
             </motion.div>
-            
+
             {/* Mission Section in Geometric Format */}
             <div className="max-w-6xl mx-auto mb-16">
               <div className="relative">
@@ -1125,7 +1030,7 @@ const Index = () => {
                       <div className="text-xs mt-1 opacity-75">Personalized • Actionable • Future-ready</div>
                     </div>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ x: 50, opacity: 0 }}
                     whileInView={{ x: 0, opacity: 1 }}
@@ -1156,7 +1061,7 @@ const Index = () => {
                 </motion.div>
               </div>
             </div>
-            
+
             {/* About Us Section */}
             <motion.div
               initial={{ y: 50, opacity: 0 }}
@@ -1172,7 +1077,7 @@ const Index = () => {
                 Built by passionate students from Maharaja Agrasen Institute of Technology, each bringing unique skills and expertise to create the perfect career guidance platform
               </p>
             </motion.div>
-            
+
             {/* Team Members Spotlight Section */}
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
@@ -1194,7 +1099,7 @@ const Index = () => {
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-32 h-20 bg-gradient-to-b from-purple-400/25 via-purple-500/15 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-16 bg-gradient-to-b from-white/20 to-transparent rounded-t-full blur-sm"></div>
                   </div>
-                  
+
                   {/* Member Info */}
                   <div className="text-center space-y-2">
                     <h4 className="text-lg font-bold text-white">Divyaansh</h4>
@@ -1224,7 +1129,7 @@ const Index = () => {
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-32 h-20 bg-gradient-to-b from-teal-400/25 via-teal-500/15 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-16 bg-gradient-to-b from-white/20 to-transparent rounded-t-full blur-sm"></div>
                   </div>
-                  
+
                   {/* Member Info */}
                   <div className="text-center space-y-2">
                     <h4 className="text-lg font-bold text-white">Vaasu</h4>
@@ -1235,15 +1140,15 @@ const Index = () => {
                       <div>FastAPI • AWS • System</div>
                       <div>REST APIs</div>
                     </div>
-                      </div>
+                  </div>
                 </motion.div>
 
                 {/* Team Member 3 - Mannat */}
-                  <motion.div
+                <motion.div
                   initial={{ y: 50, opacity: 0 }}
                   whileInView={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.6 }}
-                    viewport={{ once: true }}
+                  viewport={{ once: true }}
                   className="flex flex-col items-center group"
                 >
                   {/* Spotlight Effect */}
@@ -1256,7 +1161,7 @@ const Index = () => {
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-32 h-20 bg-gradient-to-b from-pink-400/25 via-pink-500/15 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-16 bg-gradient-to-b from-white/20 to-transparent rounded-t-full blur-sm"></div>
                   </div>
-                  
+
                   {/* Member Info */}
                   <div className="text-center space-y-2">
                     <h4 className="text-lg font-bold text-white">Mannat</h4>
@@ -1265,15 +1170,15 @@ const Index = () => {
                       <div>Python • Django • FastAPI</div>
                       <div>AWS • System Architecture</div>
                     </div>
-                      </div>
-                  </motion.div>
-                  
+                  </div>
+                </motion.div>
+
                 {/* Team Member 4 - Harshita */}
-                  <motion.div
+                <motion.div
                   initial={{ y: 50, opacity: 0 }}
                   whileInView={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.8 }}
-                    viewport={{ once: true }}
+                  viewport={{ once: true }}
                   className="flex flex-col items-center group"
                 >
                   {/* Spotlight Effect */}
@@ -1285,7 +1190,7 @@ const Index = () => {
                     <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-40 h-24 bg-gradient-to-b from-orange-400/30 via-orange-500/20 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-32 h-20 bg-gradient-to-b from-red-400/25 via-red-500/15 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-16 bg-gradient-to-b from-white/20 to-transparent rounded-t-full blur-sm"></div>
-                </div>
+                  </div>
 
                   {/* Member Info */}
                   <div className="text-center space-y-2">
@@ -1316,7 +1221,7 @@ const Index = () => {
                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 w-32 h-20 bg-gradient-to-b from-blue-400/25 via-blue-500/15 to-transparent rounded-t-full blur-sm"></div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-24 h-16 bg-gradient-to-b from-white/20 to-transparent rounded-t-full blur-sm"></div>
                   </div>
-                  
+
                   {/* Member Info */}
                   <div className="text-center space-y-2">
                     <h4 className="text-lg font-bold text-white">Apoorva</h4>
@@ -1400,12 +1305,12 @@ const Index = () => {
                   answer: "Our career database is updated weekly with the latest job market trends, salary data, and skill requirements. Your personal recommendations are refreshed whenever you update your profile or add new skills."
                 }
               ].map((faq, index) => (
-              <motion.div
+                <motion.div
                   key={index}
-                initial={{ y: 30, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
+                  initial={{ y: 30, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                  viewport={{ once: true }}
                   className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 hover:border-white/40 transition-all duration-300"
                 >
                   <details className="group">
@@ -1451,7 +1356,7 @@ const Index = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button 
+                  <Button
                     size="lg"
                     className="bg-white text-purple-600 hover:bg-gray-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300"
                   >
@@ -1459,7 +1364,7 @@ const Index = () => {
                   </Button>
                 </motion.div>
               </div>
-              </motion.div>
+            </motion.div>
           </div>
         </div>
 
@@ -1473,7 +1378,7 @@ const Index = () => {
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-700 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                     </svg>
                   </div>
                   <div>
@@ -1487,15 +1392,15 @@ const Index = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button 
+                  <Button
                     size="lg"
                     className="bg-white text-purple-600 hover:bg-gray-50 font-semibold px-6 py-3 rounded-lg transition-all duration-300"
                   >
                     Join the HORIZON Discord!
                   </Button>
-            </motion.div>
-          </div>
-        </div>
+                </motion.div>
+              </div>
+            </div>
           </div>
 
           {/* Main Footer Links */}
@@ -1538,36 +1443,36 @@ const Index = () => {
                 <div className="space-y-4">
                   <h4 className="text-lg font-bold text-gray-900">Socials</h4>
                   <div className="space-y-2">
-                    <a 
-                      href="https://github.com" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                       </svg>
                       GitHub
                     </a>
-                    <a 
-                      href="https://linkedin.com" 
-                      target="_blank" 
+                    <a
+                      href="https://linkedin.com"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                       </svg>
                       LinkedIn
                     </a>
-                    <a 
-                      href="https://twitter.com" 
-                      target="_blank" 
+                    <a
+                      href="https://twitter.com"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                       </svg>
                       Twitter
                     </a>
@@ -1590,18 +1495,18 @@ const Index = () => {
           onClose={() => setIsAssessmentOpen(false)}
           onComplete={async (answers) => {
             console.log('Assessment completed:', answers);
-            
+
             try {
               toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis' });
-              
+
               // Analyze answers and get job recommendations from Gemini
               const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
               setJobRecommendations(recommendations);
-              
+
               // Close modal and show results
               setIsAssessmentOpen(false);
               setShowRecommendations(true);
-              
+
               toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis' });
             } catch (error) {
               console.error('Error generating recommendations:', error);
@@ -1632,8 +1537,8 @@ const Index = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-4">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={handleStartOver}
                 className="text-muted-foreground hover:text-foreground text-xs sm:text-sm p-2 sm:p-3"
               >
@@ -1655,7 +1560,7 @@ const Index = () => {
               </div>
             </div>
           </div>
-          
+
           <SkillInput
             selectedSkills={selectedSkills}
             onSkillsChange={setSelectedSkills}
@@ -1668,18 +1573,18 @@ const Index = () => {
           onClose={() => setIsAssessmentOpen(false)}
           onComplete={async (answers) => {
             console.log('Assessment completed:', answers);
-            
+
             try {
               toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis-skills' });
-              
+
               // Analyze answers and get job recommendations from Gemini
               const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
               setJobRecommendations(recommendations);
-              
+
               // Close modal and show results
               setIsAssessmentOpen(false);
               setShowRecommendations(true);
-              
+
               toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis-skills' });
             } catch (error) {
               console.error('Error generating recommendations:', error);
@@ -1687,7 +1592,7 @@ const Index = () => {
             }
           }}
         />
-        
+
         {/* Career Recommendations Results */}
         {showRecommendations && jobRecommendations.length > 0 && (
           <CareerRecommendationResults
@@ -1708,15 +1613,15 @@ const Index = () => {
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-1 sm:gap-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setCurrentStep('skills')}
                 className="text-muted-foreground hover:text-foreground text-xs sm:text-sm p-2"
               >
                 ← Edit Skills
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleStartOver}
                 className="text-xs sm:text-sm px-2 py-1 sm:px-4 sm:py-2"
               >
@@ -1753,18 +1658,18 @@ const Index = () => {
         onClose={() => setIsAssessmentOpen(false)}
         onComplete={async (answers) => {
           console.log('Assessment completed:', answers);
-          
+
           try {
             toast.loading('Analyzing your responses with AI...', { id: 'gemini-analysis-recs' });
-            
+
             // Analyze answers and get job recommendations from Gemini
             const recommendations = await analyzeAssessmentAnswersWithGemini(answers);
             setJobRecommendations(recommendations);
-            
+
             // Close modal and show results
             setIsAssessmentOpen(false);
             setShowRecommendations(true);
-            
+
             toast.success('Assessment completed! Here are your personalized career recommendations.', { id: 'gemini-analysis-recs' });
           } catch (error) {
             console.error('Error generating recommendations:', error);
@@ -1772,7 +1677,7 @@ const Index = () => {
           }
         }}
       />
-      
+
       {/* Career Recommendations Results */}
       {showRecommendations && jobRecommendations.length > 0 && (
         <CareerRecommendationResults

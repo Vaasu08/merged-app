@@ -78,11 +78,11 @@ const App = () => {
     // Prefetch critical external resources
     resourceHints.preconnect('https://fonts.googleapis.com');
     resourceHints.preconnect('https://fonts.gstatic.com', true);
-    
+
     // DNS prefetch for API endpoints
     resourceHints.dnsPrefetch('https://api.groq.com');
     resourceHints.dnsPrefetch('https://generativelanguage.googleapis.com');
-    
+
     // Prefetch likely next routes on idle
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {
@@ -94,7 +94,7 @@ const App = () => {
         ]);
       });
     }
-    
+
     // Send metrics to analytics after page load
     const timer = setTimeout(() => {
       performanceMonitor.sendToAnalytics();

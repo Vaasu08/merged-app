@@ -1,335 +1,295 @@
-# Horizon - AI-Powered Career Discovery Platform
+# 🚀 Horizon - AI-Powered Career Discovery Platform
 
-Discover your perfect career path with Horizon's intelligent skill mapping, personalized career recommendations, AI-powered interview preparation, and resume optimization.
+> Discover your perfect career path with AI-powered insights, smart skill mapping, and personalized guidance.
+
+![React](https://img.shields.io/badge/Frontend-React-blue)
+![Node](https://img.shields.io/badge/Backend-Node.js-green)
+![Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+---
 
 ## ✨ Features
 
 ### 🎯 Career Discovery
-
-- **AI-Powered Analysis**: Advanced career matching using Google Gemini AI
-- **Personalized Recommendations**: Tailored career paths with detailed match percentages
-- **Skill Graph Visualization**: Interactive skill mapping and role proximity analysis
-- **Career Assessment**: Comprehensive career aptitude testing with AI insights
+- **AI-Powered Analysis** using Google Gemini  
+- **Personalized Recommendations** with match %  
+- **Skill Graph Visualization**  
+- **Career Assessment with AI insights**
 
 ### 💼 Resume & ATS Optimization
-
-- **AI Resume Builder**: Create professional resumes with AI-powered content enhancement
-- **ATS Scoring**: Analyze resume compatibility with Applicant Tracking Systems
-- **Smart Parsing**: Extract and organize resume data automatically
-- **PDF Export**: Generate polished, ATS-friendly PDF resumes
-- **Version Control**: Automatic versioning and primary resume management
-- **Persistent Storage**: All resumes and ATS scores saved to database
+- AI Resume Builder  
+- ATS Scoring system  
+- Smart resume parsing  
+- PDF export  
+- Version control  
+- Persistent storage  
 
 ### 🎤 Interview Preparation
-
-- **Mock Interviews**: AI-driven interview simulation for various roles
-- **Real-time Feedback**: Instant analysis of your interview responses
-- **Question Bank**: Curated interview questions by role and difficulty
-- **Performance Tracking**: Monitor your interview readiness score
-- **Session History**: All interview sessions and feedback saved
-- **Audio/Video Support**: Record and review your interview responses
+- Mock interviews  
+- Real-time feedback  
+- Role-based question bank  
+- Performance tracking  
+- Session history  
+- Audio/Video support  
 
 ### 📈 Learning & Development
-
-- **Personalized Roadmaps**: Custom learning paths based on your goals
-- **Skill Assessments**: Interactive quizzes to test your knowledge
-- **Progress Tracking**: Monitor your skill development journey
-- **Resource Recommendations**: Curated learning materials and courses
-- **Phase Management**: Track completion of roadmap phases
-- **Career Assessment Results**: Save and review your career test outcomes
+- Personalized learning roadmaps  
+- Skill assessments  
+- Progress tracking  
+- Resource recommendations  
+- Phase management  
 
 ### 💬 AI Career Coach
-
-- **24/7 Chat Support**: Get instant career guidance via AI chatbot
-- **Career Agent Swarm**: Multi-agent AI system for comprehensive career planning
-- **Job Search Integration**: Real-time job listings from multiple sources
-- **Trend Analysis**: Stay updated with latest industry trends
+- 24/7 chatbot support  
+- Multi-agent system (Career Agent Swarm)  
+- Job search integration  
+- Industry trend analysis  
 
 ### 🔐 User Management
+- Secure authentication (Supabase)  
+- Profile & skill tracking  
+- Cloud sync  
+- Job application tracking  
 
-- **Secure Authentication**: Supabase-powered user authentication
-- **Profile Management**: Comprehensive user profile and skill tracking
-- **Data Privacy**: Your data is secure and never shared
-- **Progress Saving**: Automatic cloud sync of your career data
-- **Job Application Tracking**: Manage and track all your job applications
-- **Complete History**: Access all your resumes, scores, and session data anytime
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Node.js 18+ (Node.js 20+ recommended)
+### 📌 Prerequisites
+- Node.js 18+ (20+ recommended)
 - npm or yarn
-- Supabase account (for authentication and database)
-- Google Gemini API key (for AI features)
+- Supabase account
+- Google Gemini API key
 
-### Installation
+---
 
-1. **Clone the repository**
+### ⚙️ Installation
 
-   ```bash
-   git clone https://github.com/Vaasu08/merged-app.git
-   cd merged-app
-   ```
+```bash
+git clone https://github.com/Vaasu08/merged-app.git
+cd merged-app
+```
 
-2. **Install dependencies**
+```bash
+# frontend
+npm install
 
-   ```bash
-   # Install frontend dependencies
-   npm install
+# backend
+cd server
+npm install
+cd ..
+```
 
-   # Install backend dependencies
-   cd server
-   npm install
-   cd ..
-   ```
+---
 
-3. **Set up environment variables**
+### 🔑 Environment Variables
 
-   Create a `.env` file in the root directory:
+#### Root `.env`
+```env
+VITE_GEMINI_API_KEY=
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
 
-   ```env
-   VITE_GEMINI_API_KEY=your_gemini_api_key
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+#### Server `.env`
+```env
+GEMINI_API_KEY=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+RAPIDAPI_KEY= (optional)
+```
 
-   Create a `.env` file in the `server` directory:
+---
 
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-   RAPIDAPI_KEY=your_rapidapi_key (optional, for job search)
-   ```
+### 🗄️ Database Setup
+Run `database-setup.sql` in Supabase SQL Editor.
 
-4. **Set up the database**
+Creates:
+- User profiles & skills
+- Resume system
+- Career planning
+- Interview tracking
+- Job applications
 
-   Go to your Supabase dashboard → SQL Editor and run the entire `database-setup.sql` file. This creates:
+---
 
-   - **User Management**: `user_profiles`, `user_skills`, `profiles`
-   - **Resume System**: `user_resumes`, `ats_scores`
-   - **Career Planning**: `roadmaps`, `roadmap_phases`
-   - **Interview Prep**: `interview_sessions`, `interview_responses`
-   - **Assessments**: `career_assessments`
-   - **Job Tracking**: `job_applications`
+### ▶️ Run Project
 
-   All tables include RLS policies for security and proper indexing for performance.
+```bash
+# backend
+cd server
+npm start
+```
 
-5. **Start the development servers**
+```bash
+# frontend
+npm run dev
+```
 
-   ```bash
-   # Start backend server (from project root)
-   cd server
-   npm start
+📍 Frontend: http://localhost:8080  
+📍 Backend: http://localhost:4000  
 
-   # In another terminal, start frontend (from project root)
-   npm run dev
-   ```
+---
 
-6. **Open your browser**
-   - Frontend: http://localhost:8080
-   - Backend API: http://localhost:4000
-
-## 🏗️ Technology Stack
+## 🏗️ Tech Stack
 
 ### Frontend
-
-- **React 18.3** - Modern UI library
-- **TypeScript 5.8** - Type-safe development
-- **Vite 5.4** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first CSS framework
-- **Shadcn/ui** - Beautiful, accessible component library
-- **Framer Motion** - Smooth animations
-- **React Router** - Client-side routing
-- **Recharts** - Data visualization
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- Shadcn/ui
+- Framer Motion
+- Recharts
 
 ### Backend
-
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web application framework
-- **Google Gemini AI** - Advanced AI capabilities
-- **Supabase** - Backend-as-a-Service
-
-### AI & Services
-
-- **Google Generative AI SDK** - Gemini AI integration
-- **Custom Gemini Service** - Optimized API client with caching and retry logic
-- **Career Agent Swarm** - Multi-agent AI system
-- **RapidAPI JSearch** - Job listings integration
+- Node.js + Express
+- Gemini AI
+- Supabase
 
 ### Database
+- PostgreSQL (Supabase)
+- RLS security
+- Real-time updates
 
-- **Supabase (PostgreSQL)** - Relational database with 11 production tables
-- **Row-Level Security** - Built-in data protection and user isolation
-- **Real-time subscriptions** - Live data updates
-- **Automatic Backups** - Your data is safe and recoverable
-- **Scalable Architecture** - Handles growing user base efficiently
+---
 
 ## 📁 Project Structure
 
 ```
 merged-app/
 ├── src/
-│   ├── components/       # React components
-│   ├── pages/           # Page components
-│   ├── lib/             # Utility functions and services
-│   │   ├── geminiService.ts          # Optimized Gemini API client
-│   │   ├── dataService.ts            # Database operations (NEW)
-│   │   ├── chatbotService.ts         # AI chatbot
-│   │   ├── careerAgentSwarm.ts       # Multi-agent AI system
-│   │   ├── aiResumeService.ts        # Resume building
-│   │   ├── atsScorerAI.ts            # ATS scoring
-│   │   └── ...
-│   ├── contexts/        # React contexts
-│   ├── hooks/           # Custom React hooks
-│   ├── types/           # TypeScript type definitions
-│   └── data/            # Static data and constants
 ├── server/
-│   └── src/
-│       ├── app.js                     # Express server
-│       └── geminiClient.js            # Backend Gemini client
-├── public/              # Static assets
-└── database-setup.sql   # Complete database schema
-
+├── public/
+└── database-setup.sql
 ```
-
-## 🎯 Key Features Explained
-
-### Gemini AI Integration
-
-The platform uses Google's Gemini AI with advanced optimizations:
-
-- **Caching**: 10-minute TTL for repeated queries (95% faster)
-- **Retry Logic**: Exponential backoff for reliability (99% success rate)
-- **Rate Limiting**: 60 requests/minute to prevent API throttling
-- **Streaming Support**: Real-time AI responses
-- **JSON Parsing**: Automatic response cleanup and validation
-
-### Career Agent Swarm
-
-Multi-agent AI system with specialized agents:
-
-- **Planner Agent**: Creates personalized weekly learning plans
-- **Recruiter Agent**: Finds relevant job opportunities
-- **Interviewer Agent**: Assesses interview readiness
-- **Coach Agent**: Provides career guidance and feedback
-- **Research Agent**: Company and industry analysis
-- **Networking Agent**: LinkedIn strategy and outreach
-- **Negotiation Agent**: Salary optimization and offer analysis
-- **Branding Agent**: Personal brand development
-
-### Data Persistence
-
-All user data is automatically saved to Supabase:
-
-- **Resumes**: Version control, primary flag, full content
-- **ATS Scores**: Complete analysis history with suggestions
-- **Roadmaps**: Learning paths with phase tracking
-- **Interview Sessions**: Full history with AI feedback
-- **Career Assessments**: Test results and recommendations
-- **Job Applications**: Application status and timeline tracking
-
-### ATS Optimization
-
-Resume scoring across multiple dimensions:
-
-- Keyword matching (40%)
-- Skills alignment (25%)
-- Experience relevance (20%)
-- Education fit (10%)
-- Formatting quality (5%)
-
-### Database Architecture
-
-Production-ready PostgreSQL schema with 11 tables:
-
-**User Management**
-
-- `user_profiles` - Complete user information
-- `user_skills` - Skill tracking with many-to-many relationships
-- `profiles` - Auth integration
-
-**Resume & Career**
-
-- `user_resumes` - Version-controlled resume storage
-- `ats_scores` - ATS analysis with detailed feedback
-- `roadmaps` - Career planning and goals
-- `roadmap_phases` - Learning phase tracking
-
-**Interview & Assessment**
-
-- `interview_sessions` - Mock interview history
-- `interview_responses` - Q&A with AI feedback
-- `career_assessments` - Career test results
-
-**Job Search**
-
-- `job_applications` - Application tracking and status
-
-All tables include:
-
-- Row-Level Security (RLS) policies
-- Optimized indexes for query performance
-- Automatic timestamps (created_at, updated_at)
-- Cascade deletion on user removal
-- JSONB columns for flexible data storage
-
-## 🔧 Development
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-### Run Tests
-
-```bash
-npm run test
-```
-
-### Lint Code
-
-```bash
-npm run lint
-```
-
-## 📚 Documentation
-
-Additional documentation available in the repository:
-
-- [API Optimization Summary](API_OPTIMIZATION_SUMMARY.md)
-- [Chatbot Implementation](CHATBOT_IMPLEMENTATION.md)
-- [Profile Setup Guide](PROFILE_SETUP_README.md)
-- [Project Structure](PROJECT_STRUCTURE.md)
-- [Gemini Improvements](GEMINI_IMPROVEMENTS.md)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for powering the AI features
-- Supabase for backend infrastructure
-- Shadcn/ui for beautiful components
-- The open-source community
-
-## 📧 Support
-
-For support, please open an issue in the GitHub repository or contact the maintainers.
 
 ---
 
-Built with ❤️ by the Horizon Team
+## 🎯 Key Features Explained
+
+### 🤖 Gemini AI Integration
+- Caching (10 min TTL)
+- Retry logic (99% success)
+- Rate limiting
+- Streaming responses
+- JSON parsing
+
+---
+
+### 🧠 Career Agent Swarm
+- Planner Agent
+- Recruiter Agent
+- Interviewer Agent
+- Coach Agent
+- Research Agent
+- Networking Agent
+- Negotiation Agent
+- Branding Agent
+
+---
+
+### 💾 Data Persistence
+- Resumes + ATS scores
+- Roadmaps
+- Interview sessions
+- Career assessments
+- Job applications
+
+---
+
+## 🔧 Development
+
+```bash
+npm run build
+npm run test
+npm run lint
+```
+
+---
+
+## 📚 Documentation
+
+- API Optimization Summary  
+- Chatbot Implementation  
+- Profile Setup Guide  
+- Project Structure  
+- Gemini Improvements  
+
+---
+
+# 🤝 Contributing 
+
+We ❤️ contributions! Whether you're a beginner or experienced dev, you're welcome.
+
+## 📌 Ways to Contribute
+- Fix bugs 🐛  
+- Improve UI/UX 🎨  
+- Add new features ✨  
+- Improve documentation 📚  
+- Optimize performance ⚡  
+
+---
+
+## 🛠️ Contribution Workflow
+
+1. **Fork the repo**
+2. **Clone your fork**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/merged-app.git
+   ```
+3. **Create a new branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+4. **Make your changes**
+5. **Commit properly**
+   ```bash
+   git commit -m "feat: added xyz feature"
+   ```
+6. **Push changes**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+7. **Open a Pull Request 🚀**
+
+---
+
+## ✅ Contribution Guidelines
+
+- Follow existing code structure  
+- Use meaningful commit messages  
+- Keep PRs small & focused  
+- Test before submitting  
+- Add comments if needed  
+
+---
+
+## 💡 Beginner Friendly Tips
+
+- Start with UI improvements  
+- Fix small bugs  
+- Improve README/docs  
+- Add reusable components  
+
+---
+
+## 📝 License
+MIT License
+
+---
+
+## 🙏 Acknowledgments
+- Google Gemini AI  
+- Supabase  
+- Shadcn/ui  
+- Open-source community  
+
+---
+
+## 📧 Support
+Open an issue in the repository for help or suggestions.
+
+---
+
+✨ Built with ❤️ by the Horizon Team

@@ -682,9 +682,9 @@ const Index = () => {
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 FEATURES
               </h2>
-              <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
-                Explore our comprehensive suite of AI-powered tools designed to accelerate your career journey
-              </p>
+             <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto px-4">
+                 Discover AI-driven tools that align your skills with the right opportunities
+             </p>
             </motion.div>
 
             {/* Interactive Feature Cards */}

@@ -283,7 +283,9 @@ MIT License
 - Google Gemini AI  
 - Supabase  
 - Shadcn/ui  
-- Open-source community  
+- Open-source community
+- ChatGPT
+- Groq 
 
 ---
 
@@ -292,4 +294,4 @@ Open an issue in the repository for help or suggestions.
 
 ---
 
-✨ Built with ❤️ by the Horizon Team
+✨ Built with ❤️ by the Horizon Team 
